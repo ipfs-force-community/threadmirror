@@ -1,0 +1,83 @@
+openapi: 3.0.3
+info:
+  title: Twitter OpenAPI
+  version: 0.0.1
+
+paths:
+  /graphql/{pathQueryId}/UserByScreenName:
+    get:
+      operationId: getUserByScreenName
+      description: "get user by screen name"
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+      tags:
+        - "user"
+
+  /graphql/{pathQueryId}/UserByRestId:
+    get:
+      operationId: getUserByRestId
+      description: "get user by rest id"
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+      tags:
+        - "user"
+
+  /graphql/{pathQueryId}/UsersByRestIds:
+    get:
+      operationId: getUsersByRestIds
+      description: "get users by rest ids"
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsersResponse"
+      tags:
+        - "users"
+
+components:
+  schemas:
+    UserResponse:
+      required:
+        - "data"
+      properties:
+        data:
+          $ref: "#/components/schemas/UserResponseData"
+        errors:
+          type: array
+          items:
+            $ref: "./../response/error.yaml#/components/schemas/ErrorResponse"
+
+    UserResponseData:
+      properties:
+        user:
+          $ref: "./../schemas/user.yaml#/components/schemas/UserResults"
+
+    UsersResponse:
+      required:
+        - "data"
+      properties:
+        data:
+          $ref: "#/components/schemas/UsersResponseData"
+        errors:
+          type: array
+          items:
+            $ref: "./../response/error.yaml#/components/schemas/ErrorResponse"
+
+    UsersResponseData:
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "./../schemas/user.yaml#/components/schemas/UserResults"

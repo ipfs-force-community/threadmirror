@@ -1,0 +1,7 @@
+package: v1
+output: ../../internal/api/v1/types_gen.go
+generate:
+  models: true
+output-options:
+  user-templates:
+    param-types.tmpl: param-types.tmpl

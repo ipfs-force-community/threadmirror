@@ -1,0 +1,334 @@
+openapi: 3.0.3
+info:
+  title: Twitter OpenAPI
+  version: 0.0.1
+
+paths: {}
+components:
+  schemas:
+    InstructionUnion:
+      oneOf:
+        - $ref: "#/components/schemas/TimelineAddEntries"
+        - $ref: "#/components/schemas/TimelineAddToModule"
+        - $ref: "#/components/schemas/TimelineClearCache"
+        - $ref: "#/components/schemas/TimelinePinEntry"
+        - $ref: "#/components/schemas/TimelineReplaceEntry"
+        - $ref: "#/components/schemas/TimelineShowAlert"
+        - $ref: "#/components/schemas/TimelineTerminateTimeline"
+        - $ref: "#/components/schemas/TimelineShowCover"
+        - $ref: "#/components/schemas/TimelineClearEntriesUnreadState"
+        - $ref: "#/components/schemas/TimelineMarkEntriesUnreadGreaterThanSortIndex"
+
+      discriminator:
+        propertyName: type
+        mapping": # deprecated
+          TimelineAddEntries: "#/components/schemas/TimelineAddEntries"
+          TimelineAddToModule: "#/components/schemas/TimelineAddToModule"
+          TimelineClearCache: "#/components/schemas/TimelineClearCache"
+          TimelinePinEntry: "#/components/schemas/TimelinePinEntry"
+          TimelineReplaceEntry: "#/components/schemas/TimelineReplaceEntry"
+          TimelineShowAlert: "#/components/schemas/TimelineShowAlert"
+          TimelineTerminateTimeline: "#/components/schemas/TimelineTerminateTimeline"
+          TimelineShowCover: "#/components/schemas/TimelineShowCover"
+          TimelineClearEntriesUnreadState: "#/components/schemas/TimelineClearEntriesUnreadState"
+          TimelineMarkEntriesUnreadGreaterThanSortIndex: "#/components/schemas/TimelineMarkEntriesUnreadGreaterThanSortIndex"
+
+    InstructionType:
+      type: string
+      enum:
+        [
+          TimelineAddEntries,
+          TimelineAddToModule,
+          TimelineClearCache,
+          TimelinePinEntry,
+          TimelineReplaceEntry,
+          TimelineShowAlert,
+          TimelineTerminateTimeline,
+          TimelineShowCover,
+          TimelineClearEntriesUnreadState,
+          TimelineMarkEntriesUnreadGreaterThanSortIndex,
+        ]
+
+    TimelineAddEntries:
+      required:
+        - type
+        - entries
+      properties:
+        type:
+          $ref: "#/components/schemas/InstructionType" # TimelineAddEntries
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimelineAddEntry"
+
+    TimelineAddToModule:
+      required:
+        - type
+        - moduleItems
+        - moduleEntryId
+      properties:
+        type:
+          $ref: "#/components/schemas/InstructionType" # TimelineAddToModule
+        moduleItems:
+          type: array
+          items:
+            $ref: "./content.yaml#/components/schemas/ModuleItem"
+        moduleEntryId:
+          type: string
+        prepend:
+          type: boolean
+
+    TimelineClearCache:
+      required:
+        - type
+      properties:
+        type:
+          $ref: "#/components/schemas/InstructionType" # TimelineClearCache
+
+    TimelinePinEntry:
+      required:
+        - type
+        - entry
+      properties:
+        type:
+          $ref: "#/components/schemas/InstructionType" # TimelinePinEntry
+        entry:
+          $ref: "#/components/schemas/TimelineAddEntry"
+
+    TimelineReplaceEntry:
+      required:
+        - type
+        - entry_id_to_replace
+        - entry
+      properties:
+        type:
+          $ref: "#/components/schemas/InstructionType" # TimelineReplaceEntry
+        entry_id_to_replace:
+          type: string
+        entry:
+          $ref: "#/components/schemas/TimelineAddEntry"
+
+    TimelineShowAlert:
+      required:
+        - type
+        - usersResults
+        - richText
+      properties:
+        type:
+          $ref: "#/components/schemas/InstructionType" # TimelineShowAlert
+        alertType:
+          type: string
+          enum: [NewTweets] # which else?
+        triggerDelayMs:
+          type: integer
+        displayDurationMs:
+          type: integer
+        usersResults:
+          type: array
+          items:
+            $ref: "./user.yaml#/components/schemas/UserResults"
+        richText:
+          type: object
+          properties:
+            text:
+              type: string
+            entities:
+              type: array
+              items:
+                type: object
+                additionalProperties: true # todo
+        iconDisplayInfo:
+          type: object
+          additionalProperties: true # todo
+        colorConfig:
+          type: object
+          additionalProperties: true # todo
+        displayLocation:
+          type: string
+          enum: [Top] # which else?
+
+    TimelineTerminateTimeline:
+      required:
+        - type
+        - direction
+      properties:
+        type:
+          $ref: "#/components/schemas/InstructionType" # TimelineTerminateTimeline
+        direction:
+          type: string
+          enum: [Top, Bottom, TopAndBottom]
+
+    TimelineAddEntry:
+      required:
+        - "content"
+        - "entryId"
+        - "sortIndex"
+      properties:
+        content:
+          $ref: "./content.yaml#/components/schemas/ContentUnion"
+        entryId:
+          type: string
+          pattern: "^(([a-zA-Z]+|[0-9]+|[0-9a-f]+)(-|$))+"
+        sortIndex:
+          type: string
+          pattern: "[0-9]+$"
+
+    TimelineShowCover:
+      required:
+        - type
+        - clientEventInfo
+        - cover
+      properties:
+        type:
+          $ref: "#/components/schemas/InstructionType" # TimelineShowCover
+        clientEventInfo:
+          $ref: "./content.yaml#/components/schemas/ClientEventInfo"
+        cover:
+          $ref: "#/components/schemas/TimelineHalfCover"
+
+    TimelineHalfCover:
+      required:
+        - type
+        - halfCoverDisplayType
+        - primaryText
+        - primaryCoverCta
+        - secondaryText
+        - impressionCallbacks
+        - dismissible
+      properties:
+        type:
+          type: string
+          enum: [TimelineHalfCover]
+        halfCoverDisplayType:
+          type: string
+          enum: [Cover]
+        primaryText:
+          $ref: "#/components/schemas/Text"
+        secondaryText:
+          $ref: "#/components/schemas/Text"
+        primaryCoverCta:
+          $ref: "#/components/schemas/CoverCta"
+        impressionCallbacks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Callback"
+        dismissible:
+          type: boolean
+
+    Text:
+      required:
+        - text
+        - entities
+      properties:
+        text:
+          type: string
+        entities:
+          type: array
+          items:
+            $ref: "#/components/schemas/TextEntity"
+
+    TextEntity:
+      required:
+        - fromIndex
+        - toIndex
+        - ref
+      properties:
+        fromIndex:
+          type: integer
+        toIndex:
+          type: integer
+        ref:
+          $ref: "#/components/schemas/TextEntityRef"
+
+    TextEntityRef:
+      required:
+        - type
+        - url
+        - urlType
+      properties:
+        type:
+          type: string
+          enum: [TimelineUrl]
+        url:
+          type: string
+          format: uri
+        urlType:
+          type: string
+          enum: [ExternalUrl]
+
+    CoverCta:
+      required:
+        - text
+        - ctaBehavior
+        - callbacks
+        - clientEventInfo
+      properties:
+        Text:
+          type: string
+        ctaBehavior:
+          $ref: "#/components/schemas/TimelineCoverBehavior"
+        callbacks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Callback"
+        clientEventInfo:
+          $ref: "#/components/schemas/CtaClientEventInfo"
+        buttonStyle:
+          type: string
+          enum: ["Primary"]
+
+    TimelineCoverBehavior:
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [TimelineCoverBehaviorDismiss, TimelineCoverBehaviorNavigate]
+        url:
+          $ref: "#/components/schemas/TimelineCoverBehaviorUrl"
+
+    TimelineCoverBehaviorUrl:
+      required:
+        - "url"
+        - "url_type"
+      properties:
+        url:
+          type: string
+          format: uri
+        url_type:
+          type: string
+          enum: ["ExternalUrl"]
+
+    Callback:
+      required:
+        - endpoint
+      properties:
+        endpoint:
+          type: string
+          format: uri
+          # pattern: '^/1\.1/[a-z]+/[a-z]+\.json\?[a-z_]+=[a-z0-9-]+(&[a-z_]+=[a-z0-9-]+)+?$' #/1.1/onboarding/fatigue.json?{params}
+
+    CtaClientEventInfo:
+      required:
+        - action
+      properties:
+        action:
+          type: string
+          enum: [primary_cta]
+
+    TimelineClearEntriesUnreadState:
+      required:
+        - type
+      properties:
+        type:
+          $ref: "#/components/schemas/InstructionType" # TimelineClearEntriesUnreadState
+
+    TimelineMarkEntriesUnreadGreaterThanSortIndex:
+      required:
+        - type
+      properties:
+        type:
+          $ref: "#/components/schemas/InstructionType" # TimelineMarkEntriesUnreadGreaterThanSortIndex
+        sort_index:
+          type: string
+          pattern: "[0-9]+$"

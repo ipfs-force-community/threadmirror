@@ -1,0 +1,127 @@
+openapi: 3.0.3
+info:
+  title: Twitter OpenAPI
+  version: 0.0.1
+
+paths:
+  /graphql/{pathQueryId}/TweetDetail:
+    get:
+      operationId: getTweetDetail
+      description: get TweetDetail
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TweetDetailResponse"
+      tags:
+        - "tweet"
+
+  /graphql/{pathQueryId}/TweetResultByRestId:
+    get:
+      operationId: getTweetResultByRestId
+      description: get TweetResultByRestId
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TweetResultByRestIdResponse"
+      # tags:
+      #   - "tweet"
+
+  /graphql/{pathQueryId}/Favoriters:
+    get:
+      operationId: getFavoriters
+      description: get tweet favoriters
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TweetFavoritersResponse"
+      tags:
+        - "user-list"
+
+  /graphql/{pathQueryId}/Retweeters:
+    get:
+      operationId: getRetweeters
+      description: get tweet retweeters
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TweetRetweetersResponse"
+      tags:
+        - "user-list"
+
+components:
+  schemas:
+    TweetDetailResponse:
+      required:
+        - "data"
+      properties:
+        data:
+          $ref: "#/components/schemas/TweetDetailResponseData"
+        errors:
+          type: array
+          items:
+            $ref: "./../response/error.yaml#/components/schemas/ErrorResponse"
+
+    TweetDetailResponseData:
+      properties:
+        threaded_conversation_with_injections_v2:
+          $ref: "./../schemas/timeline.yaml#/components/schemas/Timeline"
+
+    TweetResultByRestIdResponse:
+      required:
+        - "data"
+      properties:
+        data:
+          $ref: "#/components/schemas/TweetResultByRestIdData"
+        errors:
+          type: array
+          items:
+            $ref: "./../response/error.yaml#/components/schemas/ErrorResponse"
+
+    TweetResultByRestIdData:
+      properties:
+        tweetResult:
+          $ref: "./../schemas/content.yaml#/components/schemas/ItemResult"
+
+    TweetFavoritersResponse:
+      required:
+        - "data"
+      properties:
+        data:
+          $ref: "#/components/schemas/TweetFavoritersResponseData"
+        errors:
+          type: array
+          items:
+            $ref: "./../response/error.yaml#/components/schemas/ErrorResponse"
+
+    TweetFavoritersResponseData:
+      properties:
+        favoriters_timeline:
+          $ref: "./../schemas/timeline.yaml#/components/schemas/TimelineResult"
+
+    TweetRetweetersResponse:
+      required:
+        - "data"
+      properties:
+        data:
+          $ref: "#/components/schemas/TweetRetweetersResponseData"
+        errors:
+          type: array
+          items:
+            $ref: "./../response/error.yaml#/components/schemas/ErrorResponse"
+
+    TweetRetweetersResponseData:
+      properties:
+        retweeters_timeline:
+          $ref: "./../schemas/timeline.yaml#/components/schemas/TimelineResult"

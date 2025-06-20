@@ -1,0 +1,30 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+When generating code, follow these principles:
+
+## **Identify and reuse shared logic**
+    For structs, functions, constants, and business logic, if there are repeated or similar patterns, prefer extracting them into reusable components rather than duplicating code.
+## **Struct reuse**
+    If multiple structs share common fields, use struct embedding or composition. Alternatively, define a centralized conversion or mapping function to avoid redefining fields manually.
+## **Logic reuse**
+    If common logic appears across different functions or services, extract it into a helper function or shared method. Do not repeat the same logic inline.
+## **Constant/config reuse**
+    Avoid magic numbers or hardcoded values across the codebase. Centralize all constants, enums, and default values and reuse them consistently.
+## **Constructor/conversion functions**
+    For data conversion between models, DTOs, and API response objects, define reusable factory or transformer functions to ensure consistency and reduce boilerplate.
+## **Reference Prior Work**
+    When generating code, try to reuse patterns and structures from existing implementations in the codebase. Favor consistency and avoid writing from scratch unless necessary.
+## **Go 1.18 Generics**
+    Understand how generics work in Go 1.18 and later versions.  Use them judiciously to improve code reusability and type safety.
+## **Utility Functions**
+    - Use github.com/samber/lo utilities for common operations. It is a utility library based on Go 1.18+ generics that makes it easier to work with slices, maps, strings, channels, and functions. It provides dozens of handy methods to simplify common coding tasks and improve code readability. It may look like Lodash in some aspects.
+    - Add utility functions in:
+      1. `pkg/util/` package for shared utilities.
+      2. `internal/api/v1/util.go` file for API-specific helpers
+      3. `internal/testsuit` package for shared test suits
+
+
+✳️ The goal is to **minimize duplication and maximize maintainability, readability, and consistency** across the codebase.

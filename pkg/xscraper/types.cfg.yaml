@@ -1,0 +1,8 @@
+package: generated
+generate:
+  models: true
+output: generated/types.gen.go
+output-options:
+  user-templates:
+    union.tmpl: union.tmpl
+    param-types.tmpl: param-types.tmpl

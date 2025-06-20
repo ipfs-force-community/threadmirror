@@ -1,0 +1,558 @@
+openapi: 3.0.3
+info:
+  title: Threadmirror Backend API
+  description: API for managing user profiles and follows
+  version: 1.0.0
+  contact:
+    name: API Support
+    url: https://github.com/example/threadmirror
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+security:
+  - bearerAuth: []
+
+paths:
+  # Config endpoints
+  /config/supabase:
+    get:
+      summary: Get Supabase configuration
+      description: Retrieve Supabase configuration for client-side initialization
+      tags:
+        - Config
+      security: []
+      responses:
+        '200':
+          description: Supabase configuration information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SupabaseConfig'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /me:
+    get:
+      summary: Get current user profile
+      description: Retrieve the authenticated user's profile information including basic info, social stats, and content overview
+      tags:
+        - UserProfiles
+      responses:
+        '200':
+          description: Current user's profile information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update current user profile
+      description: Update the authenticated user's profile information
+      tags:
+        - UserProfiles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserProfileRequest'
+      responses:
+        '200':
+          description: User profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /posts:
+    get:
+      summary: Get posts feed
+      description: Get a paginated list of posts from followed users or public posts
+      tags:
+        - Posts
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/PageLimit'
+        - $ref: '#/components/parameters/PageOffset'
+      responses:
+        '200':
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a new post
+      tags:
+        - Posts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostRequest'
+      responses:
+        '201':
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /posts/{id}:
+    get:
+      summary: Get post details
+      description: Get detailed information about a specific post
+      tags:
+        - Posts
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Post ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PostDetails'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update a post
+      description: Update an existing post (only by the post author)
+      tags:
+        - Posts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Post ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePostRequest'
+      responses:
+        '200':
+          description: Post updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete a post
+      description: Delete a post (only by the post author)
+      tags:
+        - Posts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Post ID
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Post deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    PageLimit:
+      name: limit
+      in: query
+      description: Maximum number of items to return
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    PageOffset:
+      name: offset
+      in: query
+      description: Number of items to skip
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+  schemas:
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Post unique identifier
+        content:
+          type: string
+          description: Post text content
+          maxLength: 1000
+        user:
+          $ref: '#/components/schemas/UserProfileSummary'
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              image_id:
+                type: string
+                description: Image ID
+            required:
+              - image_id
+          description: Post images
+          maxItems: 9
+        created_at:
+          type: string
+          format: date-time
+          description: Post creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Post last update timestamp
+      required:
+        - id
+        - content
+        - user
+        - images
+        - created_at
+        - updated_at
+
+    PostDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Post unique identifier
+        content:
+          type: string
+          description: Post text content
+        user:
+          $ref: '#/components/schemas/UserProfileSummary'
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              image_id:
+                type: string
+                description: Image ID
+            required:
+              - image_id
+          description: Post images
+          maxItems: 9
+        created_at:
+          type: string
+          format: date-time
+          description: Post creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Post last update timestamp
+      required:
+        - id
+        - content
+        - user
+        - images
+        - likes_count
+        - comments_count
+        - is_public
+        - is_draft
+        - recent_comments
+        - created_at
+        - updated_at
+
+    CreatePostRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          description: Post text content
+          maxLength: 1000
+          minLength: 1
+        image_ids:
+          type: array
+          items:
+            type: string
+          description: Post image IDs
+          maxItems: 9
+      required:
+        - content
+
+    UpdatePostRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          description: Updated post text content
+          maxLength: 1000
+          minLength: 1
+        image_ids:
+          type: array
+          items:
+            type: string
+          description: Updated post image IDs
+          maxItems: 9
+      # All fields are optional for updates
+
+    Image:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Image unique identifier
+          maxLength: 26
+          nullable: true
+        bucket:
+          type: string
+          description: Storage bucket name
+      required:
+        - bucket
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          description: User unique identifier
+        display_id:
+          type: string
+          description: User public display ID
+        nickname:
+          type: string
+          description: User display name
+          maxLength: 20
+        bio:
+          type: string
+          description: User biography/signature
+          maxLength: 100
+          nullable: true
+        email:
+          type: string
+          format: email
+          description: User contact email (only visible to profile owner)
+          nullable: true
+        posts_count:
+          type: integer
+          format: int64
+          description: Number of posts created
+        created_at:
+          type: string
+          format: date-time
+          description: User registration timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Profile last update timestamp
+      required:
+        - id
+        - display_id
+        - nickname
+        - posts_count
+        - created_at
+        - updated_at
+        - avatar
+
+    UserProfileSummary:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: User unique identifier
+        display_id:
+          type: string
+          description: User public display ID
+        nickname:
+          type: string
+          description: User display name
+        bio:
+          type: string
+          description: User biography/signature (truncated)
+          maxLength: 50
+          nullable: true
+      required:
+        - user_id
+        - display_id
+        - nickname
+
+    UpdateUserProfileRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+          description: User display name
+          maxLength: 20
+          minLength: 2
+        bio:
+          type: string
+          description: User biography/signature
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          description: User contact email
+
+      # All fields are optional for updates
+    SupabaseConfig:
+      type: object
+      properties:
+        project_reference:
+          type: string
+          description: Supabase project reference ID
+        api_anno_key:
+          type: string
+          description: Supabase anonymous API key
+        bucket_names:
+          type: object
+          description: Storage bucket names configuration
+          properties:
+            post_images:
+              type: string
+              description: post images bucket name
+          required:
+            - post_images
+      required:
+        - project_reference
+        - api_anno_key
+        - bucket_names
+
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of items
+        limit:
+          type: integer
+          description: Maximum number of items returned
+        offset:
+          type: integer
+          description: Number of items skipped
+      required:
+        - total
+        - limit
+        - offset
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+        message:
+          type: string
+          description: Error message
+      required:
+        - code
+        - message
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Forbidden - access denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error' 

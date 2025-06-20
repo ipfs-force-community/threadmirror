@@ -1,0 +1,329 @@
+openapi: 3.0.3
+info:
+  title: Twitter OpenAPI
+  version: 0.0.1
+
+paths:
+  /graphql/{pathQueryId}/FavoriteTweet:
+    post:
+      operationId: postFavoriteTweet
+      description: favorite Tweet
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FavoriteTweetResponse"
+      tags:
+        - "post"
+
+  /graphql/{pathQueryId}/UnfavoriteTweet:
+    post:
+      operationId: postUnfavoriteTweet
+      description: unfavorite Tweet
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnfavoriteTweetResponse"
+      tags:
+        - "post"
+
+  /graphql/{pathQueryId}/CreateRetweet:
+    post:
+      operationId: postCreateRetweet
+      description: create Retweet
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateRetweetResponse"
+      tags:
+        - "post"
+
+  /graphql/{pathQueryId}/DeleteRetweet:
+    post:
+      operationId: postDeleteRetweet
+      description: delete Retweet
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteRetweetResponse"
+      tags:
+        - "post"
+
+  /graphql/{pathQueryId}/CreateTweet:
+    post:
+      operationId: postCreateTweet
+      description: create Tweet
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateTweetResponse"
+      tags:
+        - "post"
+
+  /graphql/{pathQueryId}/DeleteTweet:
+    post:
+      operationId: postDeleteTweet
+      description: delete Retweet
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteTweetResponse"
+      tags:
+        - "post"
+
+  /graphql/{pathQueryId}/CreateBookmark:
+    post:
+      operationId: postCreateBookmark
+      description: create Bookmark
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateBookmarkResponse"
+      tags:
+        - "post"
+
+  /graphql/{pathQueryId}/DeleteBookmark:
+    post:
+      operationId: postDeleteBookmark
+      description: delete Bookmark
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteBookmarkResponse"
+      tags:
+        - "post"
+
+components:
+  schemas:
+    # ---Favorite---
+    FavoriteTweetResponse:
+      required:
+        - "data"
+      properties:
+        data:
+          $ref: "#/components/schemas/FavoriteTweet"
+        errors:
+          type: array
+          items:
+            $ref: "./../response/error.yaml#/components/schemas/ErrorResponse"
+
+    FavoriteTweet:
+      properties:
+        favorite_tweet:
+          type: string
+
+    # ---Unfavorite---
+
+    UnfavoriteTweetResponse:
+      required:
+        - "data"
+      properties:
+        data:
+          $ref: "#/components/schemas/UnfavoriteTweet"
+        errors:
+          type: array
+          items:
+            $ref: "./../response/error.yaml#/components/schemas/ErrorResponse"
+
+    UnfavoriteTweet:
+      properties:
+        unfavorite_tweet:
+          type: string
+
+    # ---Retweet---
+
+    CreateRetweetResponse:
+      required:
+        - "data"
+      properties:
+        data:
+          $ref: "#/components/schemas/CreateRetweetResponseData"
+        errors:
+          type: array
+          items:
+            $ref: "./../response/error.yaml#/components/schemas/ErrorResponse"
+
+    CreateRetweetResponseData:
+      properties:
+        create_retweet:
+          $ref: "#/components/schemas/CreateRetweetResponseResult"
+
+    CreateRetweetResponseResult:
+      required:
+        - "retweet_results"
+      properties:
+        retweet_results:
+          $ref: "#/components/schemas/CreateRetweet"
+
+    CreateRetweet:
+      required:
+        - "result"
+      properties:
+        result:
+          $ref: "#/components/schemas/Retweet"
+
+    Retweet:
+      required:
+        - "rest_id"
+        - "legacy"
+      properties:
+        rest_id:
+          type: string
+          pattern: "^[0-9]+$"
+        legacy:
+          type: object
+          required:
+            - "full_text"
+          properties:
+            full_text:
+              type: string
+
+    # ---DeleteRetweet---
+
+    DeleteRetweetResponse:
+      required:
+        - "data"
+      properties:
+        data:
+          $ref: "#/components/schemas/DeleteRetweetResponseData"
+        errors:
+          type: array
+          items:
+            $ref: "./../response/error.yaml#/components/schemas/ErrorResponse"
+
+    DeleteRetweetResponseData:
+      properties:
+        create_retweet:
+          $ref: "#/components/schemas/DeleteRetweetResponseResult"
+
+    DeleteRetweetResponseResult:
+      required:
+        - "source_tweet_results"
+      properties:
+        retweet_results:
+          $ref: "#/components/schemas/DeleteRetweet"
+
+    DeleteRetweet:
+      required:
+        - "result"
+      properties:
+        result:
+          type: object
+          items:
+            $ref: "#/components/schemas/Retweet"
+
+    # ---Tweet---
+
+    CreateTweetResponse:
+      required:
+        - "data"
+      properties:
+        data:
+          $ref: "#/components/schemas/CreateTweetResponseData"
+        errors:
+          type: array
+          items:
+            $ref: "./../response/error.yaml#/components/schemas/ErrorResponse"
+
+    CreateTweetResponseData:
+      properties:
+        create_tweet:
+          $ref: "#/components/schemas/CreateTweetResponseResult"
+
+    CreateTweetResponseResult:
+      required:
+        - "tweet_results"
+      properties:
+        tweet_results:
+          $ref: "#/components/schemas/CreateTweet"
+
+    CreateTweet:
+      required:
+        - "result"
+      properties:
+        result:
+          $ref: "./../schemas/tweet.yaml#/components/schemas/Tweet"
+
+    # ---DeleteTweet---
+
+    DeleteTweetResponse:
+      required:
+        - "data"
+      properties:
+        data:
+          $ref: "#/components/schemas/DeleteTweetResponseData"
+        errors:
+          type: array
+          items:
+            $ref: "./../response/error.yaml#/components/schemas/ErrorResponse"
+
+    DeleteTweetResponseData:
+      properties:
+        delete_retweet:
+          $ref: "#/components/schemas/DeleteTweetResponseResult"
+
+    DeleteTweetResponseResult:
+      required:
+        - "tweet_results"
+      properties:
+        tweet_results:
+          type: object
+
+    # ---Bookmark---
+
+    CreateBookmarkResponse:
+      required:
+        - "data"
+      properties:
+        data:
+          $ref: "#/components/schemas/CreateBookmarkResponseData"
+        errors:
+          type: array
+          items:
+            $ref: "./../response/error.yaml#/components/schemas/ErrorResponse"
+
+    CreateBookmarkResponseData:
+      properties:
+        tweet_bookmark_put:
+          type: string
+
+    # ---DeleteBookmark---
+
+    DeleteBookmarkResponse:
+      required:
+        - "data"
+      properties:
+        data:
+          $ref: "#/components/schemas/DeleteBookmarkResponseData"
+        errors:
+          type: array
+          items:
+            $ref: "./../response/error.yaml#/components/schemas/ErrorResponse"
+
+    DeleteBookmarkResponseData:
+      properties:
+        tweet_bookmark_delete:
+          type: string

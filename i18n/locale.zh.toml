@@ -1,0 +1,29 @@
+# 中文语言文件
+[ErrorNotFound]
+description = "未找到资源时的错误消息"
+other = "请求的资源未找到。"
+
+[ErrorInternalServer]
+description = "内部服务器错误消息"
+other = "发生内部服务器错误，请稍后重试。"
+
+[Success]
+description = "成功消息"
+other = "操作成功完成。"
+
+# 用户相关错误
+[ErrorUserNotFound]
+description = "用户未找到错误"
+other = "用户未找到"
+
+[ErrorFailedToGetUserProfile]
+description = "获取用户资料失败错误"
+other = "获取用户资料失败"
+
+[ErrorCannotUpdateAnotherUserProfile]
+description = "无法更新其他用户资料错误"
+other = "无法更新其他用户的资料"
+
+[ErrorFailedToUpdateUserProfile]
+description = "更新用户资料失败错误"
+other = "更新用户资料失败"
