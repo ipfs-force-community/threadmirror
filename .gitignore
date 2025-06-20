@@ -19,3 +19,9 @@ go.work
 go.work.sum
 
 *.db
+
+# env files
+.env 
+
+# bin files 
+bin

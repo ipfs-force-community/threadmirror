@@ -1,0 +1,98 @@
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.backLink {
+  display: block;
+  color: #1da1f2;
+  margin-bottom: 20px;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e1e8ed;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.profileImage {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.userName {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.userDescription {
+  font-size: 14px;
+  color: #657786;
+  margin: 5px 0 0;
+}
+
+.tweetContent {
+  padding-top: 10px;
+  text-align: left; /* 居左对齐 */
+}
+
+.tweetItem {
+  margin-bottom: 15px;
+  display: block;
+  cursor: pointer; /* 鼠标悬停时显示手型 */
+}
+
+.tweetText {
+  font-size: 16px;
+  color: #14171a;
+  line-height: 1.6;
+  margin: 0 0 10px;
+  user-select: text; /* 确保文本可划选复制 */
+  font-family: 'Arial', sans-serif; /* 美化字体 */
+}
+
+.tweetLink {
+  display: block;
+  padding: 12px 15px;
+  border: 1px solid #e1e8ed;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  text-decoration: none; /* 移除下划线 */
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.tweetLink:hover {
+  background-color: #f9f9f9; /* 悬停时浅灰背景 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 增强阴影 */
+}
+
+.mediaContainer {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.mediaImage {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid #e1e8ed;
+  transition: transform 0.2s;
+}
+
+.mediaImage:hover {
+  transform: scale(1.02); /* 鼠标悬停时轻微放大 */
+}
