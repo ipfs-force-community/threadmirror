@@ -8,5 +8,7 @@ import (
 
 var Module = fx.Module("service",
 	fx.Provide(fx.Annotate(sqlrepo.NewUserRepo, fx.As(new(service.UserRepoInterface)))),
+	fx.Provide(fx.Annotate(sqlrepo.NewPostRepo, fx.As(new(service.PostRepoInterface)))),
 	fx.Provide(service.NewUserService),
+	fx.Provide(service.NewPostService),
 )
