@@ -13,6 +13,21 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// BotStats defines model for BotStats.
+type BotStats struct {
+	// CheckInterval Bot's check interval (e.g., "5m0s")
+	CheckInterval string `json:"check_interval"`
+
+	// Enabled Whether the bot is enabled
+	Enabled bool `json:"enabled"`
+
+	// ProcessedCount Number of mentions processed
+	ProcessedCount int `json:"processed_count"`
+
+	// Username Bot's Twitter username
+	Username *string `json:"username"`
+}
+
 // CreatePostRequest defines model for CreatePostRequest.
 type CreatePostRequest struct {
 	// Content Post text content
