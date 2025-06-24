@@ -91,45 +91,57 @@ func convertTimelineToTweets(timeline *generated.Timeline) ([]*Tweet, error) {
 	}
 
 	var tweets []*Tweet
+	convertAndAppendTweet := func(timelineTweet *generated.TimelineTweet) error {
+		if timelineTweet.TweetResults.Result == nil {
+			return nil
+		}
+		// Try to get Tweet from TweetUnion
+		tweetData, err := timelineTweet.TweetResults.Result.AsTweet()
+		if err != nil {
+			return nil
+		}
+
+		tweet, err := convertGeneratedTweetToTweet(&tweetData)
+		if err != nil {
+			return fmt.Errorf("failed to convert tweet data: %w", err)
+		}
+		tweets = append(tweets, tweet)
+
+		return nil
+	}
+
 	// Iterate through instructions to find TimelineAddEntries
 	for _, instruction := range timeline.Instructions {
 		addEntries, err := instruction.AsTimelineAddEntries()
 		if err != nil {
 			continue // Skip if not TimelineAddEntries
 		}
-
 		// Look for the main tweet entry
 		for _, entry := range addEntries.Entries {
+			// Try to get TimelineTimelineModule
+			if timelineModule, err := entry.Content.AsTimelineTimelineModule(); err == nil && timelineModule.Items != nil {
+				for _, item := range *timelineModule.Items {
+					timelineTweet, err := item.Item.ItemContent.AsTimelineTweet()
+					if err != nil {
+						continue // Skip if not TimelineTimelineItem
+					}
+					if err := convertAndAppendTweet(&timelineTweet); err != nil {
+						return nil, err
+					}
+				}
+			}
+
 			// Try to get TimelineTimelineItem
-			timelineItem, err := entry.Content.AsTimelineTimelineItem()
-			if err != nil {
-				continue // Skip if not TimelineTimelineItem
+			if timelineItem, err := entry.Content.AsTimelineTimelineItem(); err == nil {
+				// Try to get TimelineTweet from ItemContent
+				timelineTweet, err := timelineItem.ItemContent.AsTimelineTweet()
+				if err != nil {
+					continue // Skip if not TimelineTweet
+				}
+				if err := convertAndAppendTweet(&timelineTweet); err != nil {
+					return nil, err
+				}
 			}
-
-			// Try to get TimelineTweet from ItemContent
-			timelineTweet, err := timelineItem.ItemContent.AsTimelineTweet()
-			if err != nil {
-				continue // Skip if not TimelineTweet
-			}
-
-			// Extract tweet from TweetResults
-			if timelineTweet.TweetResults.Result == nil {
-				continue
-			}
-
-			// Try to get Tweet from TweetUnion
-			tweetData, err := timelineTweet.TweetResults.Result.AsTweet()
-			if err != nil {
-				continue // Skip if not Tweet
-			}
-
-			// Convert to our Tweet struct
-			tweet, err := convertGeneratedTweetToTweet(&tweetData)
-			if err != nil {
-				return nil, fmt.Errorf("failed to convert tweet data: %w", err)
-			}
-
-			tweets = append(tweets, tweet)
 		}
 	}
 
@@ -218,7 +230,7 @@ func convertGeneratedTweetToTweet(genTweet *generated.Tweet) (*Tweet, error) {
 					Type:        string(media.Type),
 					URL:         media.Url,
 					DisplayURL:  media.DisplayUrl,
-					ExpandedURL: media.ExpandedUrl,
+					ExpandedURL: media.MediaUrlHttps,
 				}
 				if media.ExtAltText != nil {
 					mediaInfo.AltText = *media.ExtAltText

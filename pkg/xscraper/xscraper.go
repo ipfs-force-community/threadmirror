@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -23,10 +24,11 @@ import (
 // default http client timeout
 const DefaultClientTimeout = 10 * time.Second
 
-// Twitter Web App (GraphQL API)
-const TWITTER_WEB_APP_BEARER_TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
-
-var BASE_URL = lo.Must(url.Parse("https://x.com"))
+var (
+	// Twitter Web App (GraphQL API)
+	TWITTER_WEB_APP_BEARER_TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
+	BASE_URL                     = lo.Must(url.Parse("https://x.com"))
+)
 
 type XScraper struct {
 	realHeader        RealHeader
@@ -39,6 +41,12 @@ type XScraper struct {
 	csrfToken     string
 	loginMu       sync.Mutex
 	initLoginOnce sync.Once
+}
+
+func init() {
+	if bearerToken := os.Getenv("X_BEARER_TOKEN"); bearerToken != "" {
+		TWITTER_WEB_APP_BEARER_TOKEN = "Bearer " + bearerToken
+	}
 }
 
 func New(loginOpts LoginOptions, logger *slog.Logger) *XScraper {
@@ -141,7 +149,7 @@ func (x *XScraper) doJson(req *http.Request, target any) error {
 		return fmt.Errorf("read response body: %w", err)
 	}
 
-	fmt.Printf("Response: %s\n", string(respBody))
+	fmt.Printf("Response: \n%s\n", string(respBody))
 	if http.StatusOK != resp.StatusCode {
 		return &badRequestError{
 			StatusCode: resp.StatusCode,
