@@ -1,3 +1,0 @@
-[submodule "pkg/xscraper/twitter-openapi"]
-	path = pkg/xscraper/twitter-openapi
-	url = https://github.com/fa0311/twitter-openapi

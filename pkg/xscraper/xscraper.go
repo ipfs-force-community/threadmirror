@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -41,12 +40,6 @@ type XScraper struct {
 	csrfToken     string
 	loginMu       sync.Mutex
 	initLoginOnce sync.Once
-}
-
-func init() {
-	if bearerToken := os.Getenv("X_BEARER_TOKEN"); bearerToken != "" {
-		TWITTER_WEB_APP_BEARER_TOKEN = "Bearer " + bearerToken
-	}
 }
 
 func New(loginOpts LoginOptions, logger *slog.Logger) *XScraper {
