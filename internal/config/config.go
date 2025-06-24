@@ -33,6 +33,18 @@ type DatabaseConfig struct {
 	DSN    string
 }
 
+// BotConfig holds Twitter bot configuration
+type BotConfig struct {
+	// Twitter credentials
+	Username string
+	Password string
+	Email    string
+
+	// Bot behavior settings
+	CheckInterval    time.Duration
+	MaxMentionsCheck int
+}
+
 func LoadServerConfigFromCLI(c *cli.Context) *ServerConfig {
 	return &ServerConfig{
 		Addr:         c.String("server-addr"),
@@ -57,6 +69,16 @@ func LoadSupabaseConfigFromCLI(c *cli.Context) *SupabaseConfig {
 		BucketNames: SupabaseBucketNames{
 			PostImages: c.String("supabase-bucket-post-images"),
 		},
+	}
+}
+
+func LoadBotConfigFromCLI(c *cli.Context) *BotConfig {
+	return &BotConfig{
+		Username:         c.String("bot-username"),
+		Password:         c.String("bot-password"),
+		Email:            c.String("bot-email"),
+		CheckInterval:    c.Duration("bot-check-interval"),
+		MaxMentionsCheck: c.Int("bot-max-mentions"),
 	}
 }
 
@@ -125,6 +147,39 @@ func GetSupabaseCLIFlags() []cli.Flag {
 			Value:   "post-images",
 			Usage:   "Supabase post images bucket name",
 			EnvVars: []string{"SUPABASE_BUCKET_POST_IMAGES"},
+		},
+	}
+}
+
+// GetBotCLIFlags returns bot-related CLI flags
+func GetBotCLIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "bot-username",
+			Usage:   "Twitter bot username",
+			EnvVars: []string{"BOT_USERNAME"},
+		},
+		&cli.StringFlag{
+			Name:    "bot-password",
+			Usage:   "Twitter bot password",
+			EnvVars: []string{"BOT_PASSWORD"},
+		},
+		&cli.StringFlag{
+			Name:    "bot-email",
+			Usage:   "Twitter bot email",
+			EnvVars: []string{"BOT_EMAIL"},
+		},
+		&cli.DurationFlag{
+			Name:    "bot-check-interval",
+			Value:   5 * time.Minute,
+			Usage:   "Interval to check for new mentions",
+			EnvVars: []string{"BOT_CHECK_INTERVAL"},
+		},
+		&cli.IntFlag{
+			Name:    "bot-max-mentions",
+			Value:   10,
+			Usage:   "Maximum number of mentions to check per interval",
+			EnvVars: []string{"BOT_MAX_MENTIONS"},
 		},
 	}
 }

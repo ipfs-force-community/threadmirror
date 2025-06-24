@@ -227,6 +227,29 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  # Bot endpoints
+  /bot/stats:
+    get:
+      summary: Get bot statistics
+      description: Get current bot statistics and status
+      tags:
+        - Bot
+      security: []
+      responses:
+        '200':
+          description: Bot statistics and status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BotStats'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+
+
 
 components:
   securitySchemes:
@@ -525,6 +548,29 @@ components:
         - code
         - message
 
+    BotStats:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the bot is enabled
+        username:
+          type: string
+          description: Bot's Twitter username
+          nullable: true
+        check_interval:
+          type: string
+          description: Bot's check interval (e.g., "5m0s")
+        processed_count:
+          type: integer
+          description: Number of mentions processed
+      required:
+        - enabled
+        - check_interval
+        - processed_count
+
+
+
   responses:
     Unauthorized:
       description: Unauthorized - authentication required
@@ -555,4 +601,4 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error' 
+            $ref: '#/components/schemas/Error'
