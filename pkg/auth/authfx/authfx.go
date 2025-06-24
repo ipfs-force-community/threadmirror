@@ -7,8 +7,8 @@ import (
 
 func Module(supabaseJWTKey []byte) fx.Option {
 	return fx.Module("auth",
-		fx.Provide(func() (*auth.JWTVerifier, error) {
-			return &auth.JWTVerifier{
+		fx.Provide(func() (auth.JWTVerifier, error) {
+			return &auth.JWTVerifierImpl{
 				JWTKey: supabaseJWTKey,
 			}, nil
 		}),

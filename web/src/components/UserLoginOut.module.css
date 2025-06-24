@@ -1,0 +1,22 @@
+.nav_container {
+    width: 100%;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding-right: 20px;
+    box-sizing: border-box;
+
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.user_button {
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.user_button:hover {
+    background-color: #f0f0f0;
+}

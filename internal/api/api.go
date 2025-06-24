@@ -28,7 +28,7 @@ func NewServer(
 	serverConfig *config.ServerConfig,
 	v1Handler *v1.V1Handler,
 	i18nBundle *i18n.I18nBundle,
-	jwtVerifier *auth.JWTVerifier,
+	jwtVerifier auth.JWTVerifier,
 ) *Server {
 	engine := gin.New()
 

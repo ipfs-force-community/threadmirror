@@ -5,7 +5,7 @@ import ThreadList from '@components/thread/ThreadList';
 import { UserProfile, UserTwitterResponse } from '@src/types';
 import { fetchUserTwitter } from '@services/api';
 import { convTweetData2Thread } from '../types/format';
-import './User.css';
+import styles from './User.module.css';
 
 const User = () => {
   const { id } = useParams<{ id: string, name: string }>();
@@ -28,7 +28,7 @@ const User = () => {
   }, [id]);
 
   return (
-    <div className="user-page">
+    <div className={styles.user_page}>
       {!userProfile ? <div>作者信息缺失</div> :
         (
           <div>

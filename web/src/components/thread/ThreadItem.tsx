@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Thread } from '@src/types';
 import { formatDate } from '@utils/formatDate';
-import './ThreadItem.css';
+import styles from './ThreadItem.module.css';
 
 interface ThreadItemProps {
     thread: Thread;
@@ -15,12 +15,12 @@ const ThreadItem = ({ thread }: ThreadItemProps) => {
         : thread.content;
 
     return (
-        <Link to={`/thread/${thread.id}`} className="thread-item" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="thread-item-content">
-                <div className="thread-meta">
+        <Link to={`/thread/${thread.id}`} className={styles.thread_item} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <div className={styles.thread_item_content}>
+                <div className={styles.thread_meta}>
                     <span>{formattedDate}</span> • <span>{thread.tweetCount} tweets</span> • <span>{thread.readingTime} read</span>
                 </div>
-                <div className="thread-summary" dangerouslySetInnerHTML={{ __html: truncatedContent }} />
+                <div className={styles.thread_summary} dangerouslySetInnerHTML={{ __html: truncatedContent }} />
             </div>
         </Link>
     );

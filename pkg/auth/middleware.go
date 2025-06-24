@@ -11,7 +11,7 @@ import (
 const authInfoKey = "auth.auth_info"
 
 func Middleware(
-	v *JWTVerifier,
+	v JWTVerifier,
 	errorHandler func(c *gin.Context, statusCode int),
 ) gin.HandlerFunc {
 	if errorHandler == nil {
