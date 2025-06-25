@@ -224,7 +224,7 @@ func (tt *testTime) advanceToTimer() {
 }
 
 // makeTestTime hooks the testTimer into the package.
-func makeTestTime(t *testing.T) *testTime {
+func makeTestTime(_ *testing.T) *testTime {
 	return &testTime{
 		cur: time.Now(),
 	}
@@ -605,7 +605,7 @@ func BenchmarkWaitNNoDelay(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		lim.WaitN(ctx, 1)
+		lim.WaitN(ctx, 1) //nolint:errcheck
 	}
 }
 

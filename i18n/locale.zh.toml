@@ -24,6 +24,4 @@ other = "获取用户资料失败"
 description = "无法更新其他用户资料错误"
 other = "无法更新其他用户的资料"
 
-[ErrorFailedToUpdateUserProfile]
-description = "更新用户资料失败错误"
-other = "更新用户资料失败"
+

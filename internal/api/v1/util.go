@@ -4,9 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	v1errors "github.com/ipfs-force-community/threadmirror/internal/api/v1/errors"
-	"gorm.io/datatypes"
 )
 
 type PaginationParm interface {
@@ -42,15 +40,14 @@ func PaginatedJSON(c *gin.Context, data any, total int64, limit, offset int) {
 	})
 }
 
-func ParseUserID(c *gin.Context, id string) (datatypes.UUID, bool) {
+func ParseUserID(c *gin.Context, id string) (string, bool) {
 	return ParseStringUUID(c, id, ErrCodeUserNotFound)
 }
 
-func ParseStringUUID(c *gin.Context, id string, errCode v1errors.ErrorCode) (datatypes.UUID, bool) {
-	uuid, err := uuid.Parse(id)
-	if err != nil {
-		_ = c.Error(v1errors.NotFound(err).WithCode(errCode))
-		return datatypes.UUID{}, false
+func ParseStringUUID(c *gin.Context, id string, errCode v1errors.ErrorCode) (string, bool) {
+	if id == "" {
+		_ = c.Error(v1errors.NotFound(nil).WithCode(errCode))
+		return "", false
 	}
-	return datatypes.UUID(uuid), true
+	return id, true
 }

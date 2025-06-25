@@ -54,33 +54,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
-    put:
-      summary: Update current user profile
-      description: Update the authenticated user's profile information
-      tags:
-        - UserProfiles
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateUserProfileRequest'
-      responses:
-        '200':
-          description: User profile updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/UserProfile'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
 
   /posts:
     get:
@@ -110,32 +83,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
-    post:
-      summary: Create a new post
-      tags:
-        - Posts
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreatePostRequest'
-      responses:
-        '201':
-          description: Post created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Post'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+
+
 
   /posts/{id}:
     get:
@@ -165,67 +114,10 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
-    put:
-      summary: Update a post
-      description: Update an existing post (only by the post author)
-      tags:
-        - Posts
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Post ID
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdatePostRequest'
-      responses:
-        '200':
-          description: Post updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Post'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    delete:
-      summary: Delete a post
-      description: Delete a post (only by the post author)
-      tags:
-        - Posts
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Post ID
-          schema:
-            type: string
-      responses:
-        '204':
-          description: Post deleted successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+
+    
+
+
 
   # Bot endpoints
   /bot/stats:
@@ -355,46 +247,14 @@ components:
         - content
         - user
         - images
-        - likes_count
-        - comments_count
-        - is_public
-        - is_draft
-        - recent_comments
         - created_at
         - updated_at
 
-    CreatePostRequest:
-      type: object
-      properties:
-        content:
-          type: string
-          description: Post text content
-          maxLength: 1000
-          minLength: 1
-        image_ids:
-          type: array
-          items:
-            type: string
-          description: Post image IDs
-          maxItems: 9
-      required:
-        - content
 
-    UpdatePostRequest:
-      type: object
-      properties:
-        content:
-          type: string
-          description: Updated post text content
-          maxLength: 1000
-          minLength: 1
-        image_ids:
-          type: array
-          items:
-            type: string
-          description: Updated post image IDs
-          maxItems: 9
-      # All fields are optional for updates
+
+
+
+
 
     Image:
       type: object
@@ -476,24 +336,7 @@ components:
         - display_id
         - nickname
 
-    UpdateUserProfileRequest:
-      type: object
-      properties:
-        nickname:
-          type: string
-          description: User display name
-          maxLength: 20
-          minLength: 2
-        bio:
-          type: string
-          description: User biography/signature
-          maxLength: 100
-        email:
-          type: string
-          format: email
-          description: User contact email
 
-      # All fields are optional for updates
     SupabaseConfig:
       type: object
       properties:

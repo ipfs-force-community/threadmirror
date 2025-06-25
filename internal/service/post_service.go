@@ -1,29 +1,26 @@
 package service
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/ipfs-force-community/threadmirror/internal/model"
-	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
 // Post Service Errors
 var (
-	ErrPostNotFound      = errors.New("post not found")
-	ErrUnauthorized      = errors.New("unauthorized")
-	ErrInvalidContent    = errors.New("invalid content")
-	ErrInvalidImageCount = errors.New("invalid image count")
-	ErrInvalidImageID    = errors.New("invalid image ID")
+	ErrPostNotFound   = errors.New("post not found")
+	ErrUnauthorized   = errors.New("unauthorized")
+	ErrInvalidContent = errors.New("invalid content")
+	ErrInvalidPath    = errors.New("invalid file path")
 )
 
 // PostDetail represents a complete post with all details
 type PostDetail struct {
-	ID        datatypes.UUID     `json:"id"`
+	ID        string             `json:"id"`
 	Content   string             `json:"content"`
 	User      UserProfileSummary `json:"user"`
 	Images    []PostImageDetail  `json:"images"`
@@ -33,7 +30,7 @@ type PostDetail struct {
 
 // PostSummaryDetail represents a post summary for list views
 type PostSummaryDetail struct {
-	ID             datatypes.UUID     `json:"id"`
+	ID             string             `json:"id"`
 	ContentPreview string             `json:"content_preview"`
 	User           UserProfileSummary `json:"user"`
 	CreatedAt      time.Time          `json:"created_at"`
@@ -44,35 +41,21 @@ type PostImageDetail struct {
 	ImageID string `json:"image_id"`
 }
 
-// PostImage represents a post image
-type PostImage struct {
-	ImageID string `json:"image_id"`
-}
-
 // CreatePostRequest represents a request to create a new post
 type CreatePostRequest struct {
-	Content  string   `json:"content"`
-	ImageIDs []string `json:"image_ids"`
-}
-
-// UpdatePostRequest represents a request to update a post
-type UpdatePostRequest struct {
-	Content  *string  `json:"content"`
-	ImageIDs []string `json:"image_ids"`
+	FilePath string `json:"file_path"`
 }
 
 // PostRepoInterface defines the interface for post repo operations
 type PostRepoInterface interface {
 	// Post CRUD
-	GetPostByID(id datatypes.UUID) (*model.Post, error)
+	GetPostByID(id string) (*model.Post, error)
 	CreatePost(post *model.Post) error
-	UpdatePost(post *model.Post) error
-	DeletePost(id datatypes.UUID) error
 	GetPosts(
-		userID datatypes.UUID,
+		userID string,
 		limit, offset int,
 	) ([]model.Post, int64, error)
-	GetPostsByUser(userID datatypes.UUID, limit, offset int) ([]model.Post, int64, error)
+	GetPostsByUser(userID string, limit, offset int) ([]model.Post, int64, error)
 }
 
 // PostService provides business logic for post operations
@@ -94,42 +77,18 @@ func NewPostService(
 
 // CreatePost creates a new post
 func (s *PostService) CreatePost(
-	userID datatypes.UUID,
+	userID string,
 	req *CreatePostRequest,
 ) (*PostDetail, error) {
 	// Validate input
-	if err := s.validatePostContent(req.Content); err != nil {
+	if err := s.validateFilePath(req.FilePath); err != nil {
 		return nil, err
 	}
 
-	if err := s.validateImageIDs(req.ImageIDs); err != nil {
-		return nil, err
-	}
-
-	// Prepare images JSONB data
-	var imagesJSON datatypes.JSON
-	if len(req.ImageIDs) > 0 {
-		images := make([]model.PostImage, len(req.ImageIDs))
-		for i, id := range req.ImageIDs {
-			images[i] = model.PostImage{
-				ImageID: id,
-			}
-		}
-
-		jsonData, err := json.Marshal(images)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal images: %w", err)
-		}
-		imagesJSON = datatypes.JSON(jsonData)
-	} else {
-		imagesJSON = datatypes.JSON([]byte("[]"))
-	}
-
-	// Create post
+	// Create post record
 	post := &model.Post{
-		Content: req.Content,
-		UserID:  userID,
-		Images:  imagesJSON,
+		UserID:   userID,
+		FilePath: req.FilePath,
 	}
 
 	if err := s.postRepo.CreatePost(post); err != nil {
@@ -142,8 +101,8 @@ func (s *PostService) CreatePost(
 
 // GetPostByID retrieves a post by ID
 func (s *PostService) GetPostByID(
-	postID datatypes.UUID,
-	currentUserID datatypes.UUID,
+	postID string,
+	currentUserID string,
 ) (*PostDetail, error) {
 	post, err := s.postRepo.GetPostByID(postID)
 	if err != nil {
@@ -153,190 +112,99 @@ func (s *PostService) GetPostByID(
 		return nil, fmt.Errorf("failed to get post: %w", err)
 	}
 
-	return s.buildPostDetail(post, currentUserID, true)
+	return s.buildPostDetail(post, currentUserID)
 }
 
 // GetPosts retrieves posts based on feed type
 func (s *PostService) GetPosts(
-	userID datatypes.UUID,
+	userID string,
 	limit, offset int,
 ) ([]PostSummaryDetail, int64, error) {
-	posts, _, err := s.postRepo.GetPosts(userID, limit, offset)
+	posts, total, err := s.postRepo.GetPosts(userID, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get posts: %w", err)
 	}
 
-	postSummaries := make([]PostSummaryDetail, len(posts))
-	for i, post := range posts {
+	postSummaries := make([]PostSummaryDetail, 0, len(posts))
+	for _, post := range posts {
 		summary, err := s.buildPostSummary(&post)
 		if err != nil {
-			return nil, 0, fmt.Errorf("failed to build post summary: %w", err)
+			// Log error but continue with other posts
+			continue
 		}
-		postSummaries[i] = *summary
+		postSummaries = append(postSummaries, *summary)
 	}
 
-	return postSummaries, int64(len(posts)), nil
+	return postSummaries, total, nil
 }
 
-// UpdatePost updates an existing post
-func (s *PostService) UpdatePost(
-	postID, userID datatypes.UUID,
-	req *UpdatePostRequest,
-) (*PostDetail, error) {
-	// Get existing post
-	post, err := s.postRepo.GetPostByID(postID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrPostNotFound
-		}
-		return nil, fmt.Errorf("failed to get post: %w", err)
+// validateFilePath validates file path
+func (s *PostService) validateFilePath(filePath string) error {
+	filePath = strings.TrimSpace(filePath)
+	if filePath == "" {
+		return ErrInvalidPath
 	}
-
-	// Check ownership
-	if post.UserID != userID {
-		return nil, ErrUnauthorized
-	}
-
-	// Update fields if provided
-	if req.Content != nil {
-		if err := s.validatePostContent(*req.Content); err != nil {
-			return nil, err
-		}
-		post.Content = *req.Content
-	}
-
-	// Update post images if provided
-	if req.ImageIDs != nil {
-		if err := s.validateImageIDs(req.ImageIDs); err != nil {
-			return nil, err
-		}
-
-		// Update images JSONB data
-		var imagesJSON datatypes.JSON
-		if len(req.ImageIDs) > 0 {
-			images := make([]model.PostImage, len(req.ImageIDs))
-			for i, id := range req.ImageIDs {
-				images[i] = model.PostImage{
-					ImageID: id,
-				}
-			}
-
-			jsonData, err := json.Marshal(images)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal images: %w", err)
-			}
-			imagesJSON = datatypes.JSON(jsonData)
-		} else {
-			imagesJSON = datatypes.JSON([]byte("[]"))
-		}
-
-		post.Images = imagesJSON
-	}
-
-	// Update the post
-	if err := s.postRepo.UpdatePost(post); err != nil {
-		return nil, fmt.Errorf("failed to update post: %w", err)
-	}
-	// Return updated post
-	return s.GetPostByID(postID, userID)
-}
-
-// DeletePost deletes a post
-func (s *PostService) DeletePost(postID, userID datatypes.UUID) error {
-	post, err := s.postRepo.GetPostByID(postID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrPostNotFound
-		}
-		return fmt.Errorf("failed to get post: %w", err)
-	}
-
-	if post.UserID != userID {
-		return ErrUnauthorized
-	}
-
-	if err := s.postRepo.DeletePost(postID); err != nil {
-		return fmt.Errorf("failed to delete post: %w", err)
-	}
-
+	// Add more validation logic as needed (e.g., check file extension, path format)
 	return nil
 }
 
-func (s *PostService) validatePostContent(content string) error {
-	content = strings.TrimSpace(content)
-	if len(content) == 0 {
-		return ErrInvalidContent
-	}
-	if len(content) > 5000 {
-		return ErrInvalidContent
-	}
-	return nil
-}
-
-func (s *PostService) validateImageIDs(ids []string) error {
-	for _, id := range ids {
-		if len(id) == 0 {
-			return ErrInvalidImageID
-		}
-	}
-	return nil
-}
-
+// buildPostDetail builds a PostDetail from a model.Post
 func (s *PostService) buildPostDetail(
 	post *model.Post,
-	currentUserID datatypes.UUID,
-	includeComments bool,
+	_ string,
 ) (*PostDetail, error) {
-	// Parse images from JSONB
-	var images []model.PostImage
-	if len(post.Images) > 0 {
-		if err := json.Unmarshal(post.Images, &images); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal post images: %w", err)
-		}
+	// Get user profile
+	user, err := s.userRepo.GetUserByID(post.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
-	imageDetails := make([]PostImageDetail, len(images))
-	for i, img := range images {
-		imageDetails[i] = PostImageDetail{
-			ImageID: img.ImageID,
-		}
-	}
-
+	// For now, return empty content and images since they're stored in files
+	// In the future, you might want to load content from the file path
 	return &PostDetail{
 		ID:        post.ID,
-		Content:   post.Content,
-		User:      s.userToProfileSummary(&post.User),
-		Images:    imageDetails,
+		Content:   "", // Content should be loaded from file_path when needed
+		User:      s.userToProfileSummary(user),
+		Images:    []PostImageDetail{}, // Images should be loaded from file_path when needed
 		CreatedAt: post.CreatedAt,
 		UpdatedAt: post.UpdatedAt,
 	}, nil
 }
 
+// buildPostSummary builds a PostSummaryDetail from a model.Post
 func (s *PostService) buildPostSummary(
 	post *model.Post,
 ) (*PostSummaryDetail, error) {
-
-	// Create content preview (first 200 characters)
-	contentPreview := post.Content
-	if len(contentPreview) > 200 {
-		contentPreview = contentPreview[:200] + "..."
+	// Get user profile
+	user, err := s.userRepo.GetUserByID(post.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
 	return &PostSummaryDetail{
 		ID:             post.ID,
-		ContentPreview: contentPreview,
-		User:           s.userToProfileSummary(&post.User),
+		ContentPreview: "", // Content preview should be loaded from file_path when needed
+		User:           s.userToProfileSummary(user),
 		CreatedAt:      post.CreatedAt,
 	}, nil
 }
 
+// userToProfileSummary converts a UserProfile to UserProfileSummary
 func (s *PostService) userToProfileSummary(
 	user *model.UserProfile,
 ) UserProfileSummary {
+	bio := ""
+	if user.Bio != nil {
+		bio = *user.Bio
+		if len(bio) > 50 {
+			bio = bio[:50] + "..."
+		}
+	}
+
 	return UserProfileSummary{
 		UserID:    user.ID,
 		DisplayID: user.DisplayID,
 		Nickname:  user.Nickname,
-		Bio:       user.Bio,
+		Bio:       &bio,
 	}
 }

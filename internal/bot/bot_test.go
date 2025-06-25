@@ -81,7 +81,7 @@ func (m *MockBotCookieRepo) SaveCookies(ctx context.Context, email, username str
 	return fmt.Errorf("invalid cookie data type")
 }
 
-func createTestBot(t *testing.T) *TwitterBot {
+func createTestBot(_ *testing.T) *TwitterBot {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Create mock services

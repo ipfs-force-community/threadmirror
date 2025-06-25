@@ -150,10 +150,10 @@ func SetupTestServer(t *testing.T, db *sql.DB) *gin.Engine {
 		if strings.Contains(path, "/users/user1/") || strings.Contains(path, "/users/user2/") {
 			SetTestAuthInfo(
 				c,
-				datatypes.NewUUIDv4(),
+				datatypes.NewUUIDv4().String(),
 			) // For follow/unfollow tests, set current user as user1
 		} else {
-			SetTestAuthInfo(c, datatypes.NewUUIDv4()) // For profile tests
+			SetTestAuthInfo(c, datatypes.NewUUIDv4().String()) // For profile tests
 		}
 		c.Next()
 	})
