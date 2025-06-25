@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 
+	"github.com/urfave/cli/v2"
+	"go.uber.org/fx"
+
 	"github.com/ipfs-force-community/threadmirror/i18n"
 	"github.com/ipfs-force-community/threadmirror/internal/api/apifx"
 	"github.com/ipfs-force-community/threadmirror/internal/bot/botfx"
@@ -15,8 +18,6 @@ import (
 	"github.com/ipfs-force-community/threadmirror/pkg/i18n/i18nfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/log/logfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/util"
-	"github.com/urfave/cli/v2"
-	"go.uber.org/fx"
 )
 
 var ServerCommand = &cli.Command{
@@ -27,6 +28,7 @@ var ServerCommand = &cli.Command{
 		config.GetDatabaseCLIFlags(),
 		config.GetSupabaseCLIFlags(),
 		config.GetBotCLIFlags(),
+		config.GetAuth0CLIFlags(),
 	),
 	Action: func(c *cli.Context) error {
 		serverConf := config.LoadServerConfigFromCLI(c)
@@ -34,6 +36,7 @@ var ServerCommand = &cli.Command{
 		supabaseConf := config.LoadSupabaseConfigFromCLI(c)
 		botConf := config.LoadBotConfigFromCLI(c)
 		debug := serverConf.Debug
+		auth0Conf := config.LoadAuth0ConfigFromCLI(c)
 
 		fxApp := fx.New(
 			// Provide the configuration
@@ -53,7 +56,8 @@ var ServerCommand = &cli.Command{
 			apifx.Module,
 			servicefx.Module,
 			i18nfx.Module(&i18n.LocaleFS),
-			authfx.Module([]byte(supabaseConf.JWTKey)),
+			// authfx.Module([]byte(supabaseConf.JWTKey)),
+			authfx.ModuleAuth0(auth0Conf),
 			botfx.Module,
 			fx.Invoke(func(lc fx.Lifecycle, db *sql.DB) {
 				if debug {

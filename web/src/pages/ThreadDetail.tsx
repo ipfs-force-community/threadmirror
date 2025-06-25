@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchTwitterDetail } from '@services/api';
+import { useApiService } from '@services/api';
 import UserProfileComponent from '@components/common/UserProfile';
 import { TwitterDetailResponse } from '@src/types';
 import styles from './ThreadDetail.module.css';
@@ -10,6 +10,8 @@ const ThreadDetail = () => {
   const [detail, setDetail] = useState<TwitterDetailResponse | []>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { fetchTwitterDetail } = useApiService();
+  
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -23,7 +25,8 @@ const ThreadDetail = () => {
       }
     };
     loadData();
-  }, [id]);
+  }, [id, fetchTwitterDetail]);
+  
   if (loading) return <div className={styles.container}>Loading...</div>;
   if (error) return <div className={styles.container}>Error: {error}</div>;
   if (!detail?.length) return <div className={styles.container}>No data found</div>;

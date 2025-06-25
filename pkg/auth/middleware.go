@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -10,7 +11,7 @@ import (
 const authInfoKey = "auth.auth_info"
 
 func Middleware(
-	v *JWTVerifier,
+	v JWTVerifier,
 	errorHandler func(c *gin.Context, statusCode int),
 ) gin.HandlerFunc {
 	if errorHandler == nil {
@@ -30,6 +31,7 @@ func Middleware(
 
 		jwtString := strings.TrimPrefix(authorization, "Bearer ")
 		if ai, err := v.Verify(jwtString); err != nil {
+			fmt.Println("[auth.middleware] verify token error:", err)
 			errorHandler(c, http.StatusForbidden)
 		} else {
 			SetAuthInfo(c, ai)

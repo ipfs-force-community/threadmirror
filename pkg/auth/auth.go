@@ -23,11 +23,15 @@ type AuthInfo struct {
 	UserMetadata map[string]any
 }
 
-type JWTVerifier struct {
+type JWTVerifier interface {
+	Verify(accesssToken string) (*AuthInfo, error)
+}
+
+type JWTVerifierImpl struct {
 	JWTKey []byte
 }
 
-func (a *JWTVerifier) Verify(accesssToken string) (*AuthInfo, error) {
+func (a *JWTVerifierImpl) Verify(accesssToken string) (*AuthInfo, error) {
 	token, err := jwt.ParseWithClaims(
 		accesssToken,
 		&JWTClaims{},

@@ -28,13 +28,12 @@ func NewServer(
 	serverConfig *config.ServerConfig,
 	v1Handler *v1.V1Handler,
 	i18nBundle *i18n.I18nBundle,
-	jwtVerifier *auth.JWTVerifier,
+	jwtVerifier auth.JWTVerifier,
 ) *Server {
-	engine := gin.New()
-
 	if !serverConfig.Debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
+	engine := gin.New()
 
 	engine.Use(sloggin.New(logger))
 	engine.Use(gin.Recovery())
@@ -94,7 +93,10 @@ func (s *Server) Start(ctx context.Context) error {
 		return fmt.Errorf("start http server listen on %s: %w", addr, err)
 	}
 	go func() {
-		_ = s.HttpServer.Serve(ln)
+		err = s.HttpServer.Serve(ln)
+		if err != nil {
+			panic(err)
+		}
 	}()
 	return nil
 }
