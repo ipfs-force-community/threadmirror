@@ -3,39 +3,30 @@ package model
 import (
 	"time"
 
-	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
-// PostImage represents an image in a post's JSONB array
+// PostImage represents an image in a post's content
 type PostImage struct {
 	ImageID string `json:"image_id"`
 }
 
-// Post represents a diary post in the database
+// Post represents a diary post record in the database
+// The actual post content is stored in JSON files, this model only tracks the file location
 type Post struct {
-	ID      datatypes.UUID `gorm:"primaryKey" json:"id"`
-	Content string         `gorm:"not null;size:1000"          json:"content"`
-	UserID  datatypes.UUID `gorm:"not null;index"              json:"user_id"`
-	Images  datatypes.JSON `gorm:"type:jsonb"                  json:"images"`
+	ID       string `gorm:"primaryKey;type:varchar(36)" json:"id"`
+	UserID   string `gorm:"not null;index;type:varchar(36)" json:"user_id"`
+	FilePath string `gorm:"not null;size:500" json:"file_path"` // Path to the JSON file containing post content
 
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"-"          gorm:"index"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
 	// Foreign key relationships
-	User UserProfile `gorm:"foreignKey:UserID;"            json:"user"`
+	User UserProfile `gorm:"foreignKey:UserID;" json:"user"`
 }
 
 // TableName returns the table name for the Post model
 func (Post) TableName() string {
 	return "posts"
-}
-
-// BeforeCreate hook to generate ID if not provided
-func (p *Post) BeforeCreate(tx *gorm.DB) error {
-	if p.ID.IsEmpty() {
-		p.ID = datatypes.NewUUIDv4()
-	}
-	return nil
 }

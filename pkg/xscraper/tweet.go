@@ -85,6 +85,7 @@ func (x *XScraper) SearchTweets(ctx context.Context, query string, maxTweets int
 	if maxTweets > 50 {
 		maxTweets = 50
 	}
+	p.Variables.Count = maxTweets
 	p.Variables.RawQuery = query
 	p.Variables.QuerySource = "typed_query"
 	p.Variables.Product = "Top"

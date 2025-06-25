@@ -57,7 +57,7 @@ var ServerCommand = &cli.Command{
 			botfx.Module,
 			fx.Invoke(func(lc fx.Lifecycle, db *sql.DB) {
 				if debug {
-					lc.Append(fx.StartHook(migrateFn(db, dbConf.Driver)))
+					lc.Append(fx.StartHook(migrateFn(db)))
 				}
 			}),
 		)
@@ -66,7 +66,7 @@ var ServerCommand = &cli.Command{
 	},
 }
 
-func migrateFn(db *sql.DB, dbDriver string) func(context.Context) error {
+func migrateFn(db *sql.DB) func(context.Context) error {
 	return func(ctx context.Context) error {
 		return db.Migrate(ctx, model.AllModels())
 	}

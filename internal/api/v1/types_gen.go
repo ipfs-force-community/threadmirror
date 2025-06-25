@@ -28,15 +28,6 @@ type BotStats struct {
 	Username *string `json:"username"`
 }
 
-// CreatePostRequest defines model for CreatePostRequest.
-type CreatePostRequest struct {
-	// Content Post text content
-	Content string `json:"content"`
-
-	// ImageIds Post image IDs
-	ImageIds *[]string `json:"image_ids,omitempty"`
-}
-
 // Error defines model for Error.
 type Error struct {
 	// Code Error code
@@ -117,27 +108,6 @@ type SupabaseConfig struct {
 	ProjectReference string `json:"project_reference"`
 }
 
-// UpdatePostRequest defines model for UpdatePostRequest.
-type UpdatePostRequest struct {
-	// Content Updated post text content
-	Content *string `json:"content,omitempty"`
-
-	// ImageIds Updated post image IDs
-	ImageIds *[]string `json:"image_ids,omitempty"`
-}
-
-// UpdateUserProfileRequest defines model for UpdateUserProfileRequest.
-type UpdateUserProfileRequest struct {
-	// Bio User biography/signature
-	Bio *string `json:"bio,omitempty"`
-
-	// Email User contact email
-	Email *openapi_types.Email `json:"email,omitempty"`
-
-	// Nickname User display name
-	Nickname *string `json:"nickname,omitempty"`
-}
-
 // UserProfile defines model for UserProfile.
 type UserProfile struct {
 	// Bio User biography/signature
@@ -186,12 +156,6 @@ type PageLimit = int
 // PageOffset defines model for PageOffset.
 type PageOffset = int
 
-// BadRequest defines model for BadRequest.
-type BadRequest = Error
-
-// Forbidden defines model for Forbidden.
-type Forbidden = Error
-
 // InternalServerError defines model for InternalServerError.
 type InternalServerError = Error
 
@@ -212,12 +176,3 @@ type GetPostsParams struct {
 
 func (p *GetPostsParams) GetLimit() *PageLimit   { return p.Limit }
 func (p *GetPostsParams) GetOffset() *PageOffset { return p.Offset }
-
-// PutMeJSONRequestBody defines body for PutMe for application/json ContentType.
-type PutMeJSONRequestBody = UpdateUserProfileRequest
-
-// PostPostsJSONRequestBody defines body for PostPosts for application/json ContentType.
-type PostPostsJSONRequestBody = CreatePostRequest
-
-// PutPostsIdJSONRequestBody defines body for PutPostsId for application/json ContentType.
-type PutPostsIdJSONRequestBody = UpdatePostRequest

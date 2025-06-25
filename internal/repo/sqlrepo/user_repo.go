@@ -3,7 +3,6 @@ package sqlrepo
 import (
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
-	"gorm.io/datatypes"
 )
 
 type UserRepo struct {
@@ -15,7 +14,7 @@ func NewUserRepo(db *sql.DB) *UserRepo {
 }
 
 // GetUserByID retrieves a user by ID
-func (r *UserRepo) GetUserByID(id datatypes.UUID) (*model.UserProfile, error) {
+func (r *UserRepo) GetUserByID(id string) (*model.UserProfile, error) {
 	var user model.UserProfile
 	if err := r.db.Where("id = ?", id).First(&user).Error; err != nil {
 		return nil, err
@@ -43,7 +42,7 @@ func (r *UserRepo) UpdateUser(user *model.UserProfile) error {
 }
 
 // DeleteUser soft deletes a user
-func (r *UserRepo) DeleteUser(id datatypes.UUID) error {
+func (r *UserRepo) DeleteUser(id string) error {
 	return r.db.Where("id = ?", id).Delete(&model.UserProfile{}).Error
 }
 

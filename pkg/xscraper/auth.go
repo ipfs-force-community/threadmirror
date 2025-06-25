@@ -113,8 +113,7 @@ func (x *XScraper) ensureLoggedIn(ctx context.Context) error {
 	authHandler := &authHandler{
 		scraper: x,
 	}
-	if csrfToken, err := authHandler.tryLogin(ctx); err != nil {
-		x.csrfToken = csrfToken
+	if err := authHandler.tryLogin(ctx); err != nil {
 		return err
 	}
 	x.isLoggedIn = true
@@ -149,11 +148,12 @@ func (a *authHandler) prepareRequest(req *http.Request) {
 	req.Header.Set("X-Client-Transaction-Id", xClientTransactionID(req.Method, req.URL.Path))
 }
 
-func (a *authHandler) tryLogin(ctx context.Context) (csrfToken string, err error) {
+func (a *authHandler) tryLogin(ctx context.Context) error { //nolint:unparam
 	var (
-		nextState     privLoginState = privLoginStateInitPrivateApi
+		nextState     = privLoginStateInitPrivateApi
 		nextFlowToken string
 		nextSubtaskID string
+		err           error
 	)
 
 	for {
@@ -161,67 +161,65 @@ func (a *authHandler) tryLogin(ctx context.Context) (csrfToken string, err error
 		case privLoginStateInitPrivateApi:
 			nextFlowToken, nextSubtaskID, err = a.initPrivateApiLogin(ctx)
 			if err != nil {
-				return
+				return err
 			}
 			nextState = subtaskIDToPrivLoginState(nextSubtaskID)
 		case privLoginStateLoginJsInstrumentationSubtask:
 			nextFlowToken, nextSubtaskID, err = a.handleLoginJsInstrumentationSubtask(ctx, nextFlowToken)
 			if err != nil {
-				return
+				return err
 			}
 			nextState = subtaskIDToPrivLoginState(nextSubtaskID)
 		case privLoginStateLoginEnterUserIdentifierSSO:
 			nextFlowToken, nextSubtaskID, err = a.handleLoginEnterUserIdentifierSSO(ctx, nextFlowToken, a.scraper.loginOpts.Username)
 			if err != nil {
-				return
+				return err
 			}
 			nextState = subtaskIDToPrivLoginState(nextSubtaskID)
 		case privLoginStateLoginEnterAlternateIdentifierSubtask:
 			nextFlowToken, nextSubtaskID, err = a.handleLoginEnterAlternateIdentifierSubtask(ctx, nextFlowToken, a.scraper.loginOpts.Email)
 			if err != nil {
-				return
+				return err
 			}
 			nextState = subtaskIDToPrivLoginState(nextSubtaskID)
 		case privLoginStateLoginEnterPassword:
 			nextFlowToken, nextSubtaskID, err = a.handleLoginEnterPassword(ctx, nextFlowToken, a.scraper.loginOpts.Password)
 			if err != nil {
-				return
+				return err
 			}
 			nextState = subtaskIDToPrivLoginState(nextSubtaskID)
 		case privLoginStateAccountDuplicationCheck:
 			nextFlowToken, nextSubtaskID, err = a.handleAccountDuplicationCheck(ctx, nextFlowToken)
 			if err != nil {
-				return
+				return err
 			}
 			nextState = subtaskIDToPrivLoginState(nextSubtaskID)
 		case privLoginStateLoginTwoFactorAuthChallenge:
 			nextFlowToken, nextSubtaskID, err = a.handleLoginTwoFactorAuthChallenge(ctx, nextFlowToken)
 			if err != nil {
-				return
+				return err
 			}
 			nextState = subtaskIDToPrivLoginState(nextSubtaskID)
 		case privLoginStateLoginAcid:
 			nextFlowToken, nextSubtaskID, err = a.handleLoginAcid(ctx, nextFlowToken, &a.scraper.loginOpts.Email)
 			if err != nil {
-				return
+				return err
 			}
 			nextState = subtaskIDToPrivLoginState(nextSubtaskID)
 		case privLoginStateLoginSuccessSubtask:
 			nextFlowToken, _, err = a.handleLoginSuccessSubtask(ctx, nextFlowToken)
 			if err != nil {
-				return
+				return err
 			}
 			nextState = privLoginStateLoggedIn
 		case privLoginStateDenyLoginSubtask:
-			return "", fmt.Errorf("authentication error: DenyLoginSubtask")
+			return fmt.Errorf("authentication error: DenyLoginSubtask")
 		case privLoginStateLoggedIn:
 			err = a.scraper.loginOpts.SaveCookies(ctx, a.scraper.xPrivateApiClient.Jar.Cookies(BASE_URL))
-			if err != nil {
-				return
-			}
-			return
+			return err
+
 		case privLoginStateUnknown:
-			return "", fmt.Errorf("unknown state")
+			return fmt.Errorf("unknown state")
 		}
 		// sleep 0.5s to 1.5s
 		time.Sleep(time.Duration(500+rand.IntN(1000)) * time.Millisecond)
@@ -238,8 +236,8 @@ func (a *authHandler) requestHashflags(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("send hashflags request: %w", err)
 	}
-	defer resp.Body.Close()
-	io.Copy(io.Discard, resp.Body)
+	defer resp.Body.Close() // nolint:errcheck
+	_, _ = io.Copy(io.Discard, resp.Body)
 	return nil
 }
 
@@ -272,8 +270,8 @@ func (a *authHandler) simulateXWebRequest(ctx context.Context) (err error) {
 	if err != nil {
 		return fmt.Errorf("send request: %w", err)
 	}
-	io.Copy(io.Discard, resp.Body)
-	resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
+	_ = resp.Body.Close()
 
 	if _, ok := a.scraper.GetCookie("gt"); !ok {
 		a.guestToken, err = a.requestGuestToken(ctx)

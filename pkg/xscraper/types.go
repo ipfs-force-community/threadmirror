@@ -76,8 +76,7 @@ type Tweet struct {
 	Source            string        `json:"source,omitempty"`
 	PossiblySensitive bool          `json:"possibly_sensitive"`
 	IsTranslatable    bool          `json:"is_translatable"`
-	EditControl       interface{}   `json:"edit_control,omitempty"`
-	Views             interface{}   `json:"views,omitempty"`
+	Views             int           `json:"views,omitempty"`
 }
 
 // convertTimelineToTweets converts a generated.Timeline to our Tweet struct
@@ -263,18 +262,12 @@ func convertGeneratedTweetToTweet(genTweet *generated.Tweet) (*Tweet, error) {
 	}
 
 	// Extract view count if available
-	if genTweet.Views != nil {
-		tweet.Views = genTweet.Views
-		// Try to extract view count if it's available
-		if genTweet.Views.Count != nil {
-			if count, err := fmt.Sscanf(*genTweet.Views.Count, "%d", &tweet.Stats.ViewCount); count == 1 && err == nil {
-				// View count successfully parsed
-			}
+	if genTweet.Views != nil && genTweet.Views.Count != nil {
+		if count, err := fmt.Sscanf(*genTweet.Views.Count, "%d", &tweet.Views); count == 1 && err == nil {
+			// View count successfully parsed and assigned to tweet.Views
+			tweet.Stats.ViewCount = tweet.Views // Also update the Stats field for backward compatibility
 		}
 	}
-
-	// Store edit control information
-	tweet.EditControl = genTweet.EditControl
 
 	// Handle quoted tweet if present
 	if genTweet.QuotedStatusResult != nil && genTweet.QuotedStatusResult.Result != nil {

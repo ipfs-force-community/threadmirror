@@ -32,7 +32,7 @@ func fetchTransactionIDPairs() error {
 	if err != nil {
 		return fmt.Errorf("failed to fetch transaction ID pairs: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // nolint:errcheck
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to fetch transaction ID pairs: status code %d", resp.StatusCode)

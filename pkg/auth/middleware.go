@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/datatypes"
 )
 
 const authInfoKey = "auth.auth_info"
@@ -62,10 +61,10 @@ func MustAuthInfo(c *gin.Context) (ai *AuthInfo) {
 	return
 }
 
-func CurrentUserID(c *gin.Context) datatypes.UUID {
+func CurrentUserID(c *gin.Context) string {
 	ai, ok := GetAuthInfo(c)
 	if !ok {
-		return datatypes.UUID{}
+		return ""
 	}
 	return ai.UserID
 }
