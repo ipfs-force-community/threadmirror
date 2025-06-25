@@ -33,6 +33,12 @@ type DatabaseConfig struct {
 	DSN    string
 }
 
+// Auth0Config holds Auth0-related configuration
+type Auth0Config struct {
+	Domain   string
+	Audience string
+}
+
 // BotConfig holds Twitter bot configuration
 type BotConfig struct {
 	// Twitter credentials
@@ -69,6 +75,13 @@ func LoadSupabaseConfigFromCLI(c *cli.Context) *SupabaseConfig {
 		BucketNames: SupabaseBucketNames{
 			PostImages: c.String("supabase-bucket-post-images"),
 		},
+	}
+}
+
+func LoadAuth0ConfigFromCLI(c *cli.Context) *Auth0Config {
+	return &Auth0Config{
+		Domain:   c.String("auth0-domain"),
+		Audience: c.String("auth0-audience"),
 	}
 }
 
@@ -120,6 +133,22 @@ func GetDatabaseCLIFlags() []cli.Flag {
 			Value:   "file::memory:?cache=shared",
 			Usage:   "Database connection string",
 			EnvVars: []string{"DB_DSN"},
+		},
+	}
+}
+
+// GetAuth0CLIFlags returns Auth0-related CLI flags
+func GetAuth0CLIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "auth0-domain",
+			Usage:   "Auth0 domain",
+			EnvVars: []string{"AUTH0_DOMAIN"},
+		},
+		&cli.StringFlag{
+			Name:    "auth0-audience",
+			Usage:   "Auth0 API audience",
+			EnvVars: []string{"AUTH0_AUDIENCE"},
 		},
 	}
 }

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import UserProfileComponent from '@components/common/UserProfile';
 import ThreadList from '@components/thread/ThreadList';
 import { UserProfile, UserTwitterResponse } from '@src/types';
-import { fetchUserTwitter } from '@services/api';
+import { useApiService } from '@services/api';
 import { convTweetData2Thread } from '../types/format';
 import styles from './User.module.css';
 
@@ -11,6 +11,8 @@ const User = () => {
   const { id } = useParams<{ id: string, name: string }>();
   const [userTwitters, setUserTwitters] = useState<UserTwitterResponse | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const { fetchUserTwitter } = useApiService();
+  
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -25,7 +27,7 @@ const User = () => {
       }
     };
     loadData();
-  }, [id]);
+  }, [id, fetchUserTwitter]);
 
   return (
     <div className={styles.user_page}>

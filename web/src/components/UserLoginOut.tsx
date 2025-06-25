@@ -6,7 +6,7 @@ import styles from "./UserLoginOut.module.css";
 
 
 const UserLgoinOut = () => {
-    const { user, isAuthenticated, loginWithRedirect, logout ,getAccessTokenSilently} = useAuth0();
+    const { user, isAuthenticated, loginWithRedirect, logout, getAccessTokenSilently } = useAuth0();
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const logoutWithRedirect = () =>
         logout({
