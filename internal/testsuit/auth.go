@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	supabase_auth "github.com/supabase-community/auth-go"
 	"github.com/supabase-community/auth-go/types"
-	"gorm.io/datatypes"
 )
 
 // MockAuthClient is a mock implementation of auth.Client for testing
@@ -219,12 +218,12 @@ func (m *MockAuthClient) SAMLACS(req *http.Request) (*http.Response, error)    {
 func (m *MockAuthClient) SSO(req types.SSORequest) (*types.SSOResponse, error) { return nil, nil }
 
 // SetTestAuthInfo sets authentication info in gin context for testing purposes
-func SetTestAuthInfo(c *gin.Context, userID datatypes.UUID) {
+func SetTestAuthInfo(c *gin.Context, userID string) {
 	SetTestAuthInfoWithEmail(c, userID, "test@example.com")
 }
 
 // SetTestAuthInfoWithEmail sets authentication info in gin context with custom email for testing purposes
-func SetTestAuthInfoWithEmail(c *gin.Context, userID datatypes.UUID, email string) {
+func SetTestAuthInfoWithEmail(c *gin.Context, userID string, email string) {
 	authInfo := &auth.AuthInfo{
 		UserID:    userID,
 		Email:     email,

@@ -104,7 +104,9 @@ func (x *XScraper) SetCookies(cs []*http.Cookie) {
 }
 
 func (x *XScraper) do(req *http.Request) (resp *http.Response, err error) {
-	x.WaitForReady(req.Context())
+	if err := x.WaitForReady(req.Context()); err != nil {
+		return nil, fmt.Errorf("wait for ready: %w", err)
+	}
 	resp, err = x.xPrivateApiClient.Do(req)
 	if err != nil {
 		return
@@ -135,7 +137,7 @@ func (x *XScraper) doJson(req *http.Request, target any) error {
 	if err != nil {
 		return fmt.Errorf("send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // nolint:errcheck
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

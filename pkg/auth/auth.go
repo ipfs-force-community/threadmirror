@@ -5,15 +5,13 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 	supabaseauth "github.com/supabase-community/auth-go"
-	"gorm.io/datatypes"
 )
 
 type AuthClient = supabaseauth.Client
 
 type AuthInfo struct {
-	UserID       datatypes.UUID
+	UserID       string
 	Email        string
 	Phone        string
 	AccesssToken string
@@ -51,12 +49,8 @@ func (a *JWTVerifier) Verify(accesssToken string) (*AuthInfo, error) {
 	issuedAt := time.Unix(claims.Iat, 0)
 	expiresAt := time.Unix(claims.Exp, 0)
 
-	userID, err := uuid.Parse(claims.Sub)
-	if err != nil {
-		return nil, fmt.Errorf("invalid user ID: %w", err)
-	}
 	return &AuthInfo{
-		UserID:       datatypes.UUID(userID),
+		UserID:       claims.Sub,
 		Email:        claims.Email,
 		Phone:        claims.Phone,
 		AccesssToken: accesssToken,
