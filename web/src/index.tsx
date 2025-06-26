@@ -4,6 +4,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { Auth0Provider } from '@auth0/auth0-react';
+import { CookiesProvider } from 'react-cookie';
 import history from "./utils/history";
 
 
@@ -22,9 +23,12 @@ root.render(
     authorizationParams={{
       redirect_uri: window.location.origin,
       ...(process.env.REACT_APP_AUTH0_AUDIENCE ? { audience: process.env.REACT_APP_AUTH0_AUDIENCE } : null),
+      scope: 'openid profile email',
     }}
   >
-    <App />
+    <CookiesProvider>
+      <App />
+    </CookiesProvider>
   </Auth0Provider>,
   // <React.StrictMode>
   //   <App />

@@ -1,6 +1,6 @@
 export const UserIcon = ({ isLoggedIn }: { isLoggedIn?: boolean }) => {
     const iconStyle: React.CSSProperties = {
-        color: isLoggedIn ? 'red' : 'currentColor',
+        color: isLoggedIn ? '#28a745' : 'currentColor', // 绿色表示登录状态
         opacity: isLoggedIn ? 1 : 0.8,
     };
 

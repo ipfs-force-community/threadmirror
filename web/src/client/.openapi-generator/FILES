@@ -1,3 +1,4 @@
+.openapi-generator-ignore
 apis/BotApi.ts
 apis/PostsApi.ts
 apis/index.ts
