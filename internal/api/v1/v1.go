@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ipfs-force-community/threadmirror/internal/bot"
-	"github.com/ipfs-force-community/threadmirror/internal/config"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/i18n"
 )
@@ -13,23 +12,20 @@ import (
 var _ ServerInterface = (*V1Handler)(nil)
 
 type V1Handler struct {
-	logger         *slog.Logger
-	supabaseConfig *config.SupabaseConfig
-	postService    *service.PostService
-	twitterBot     *bot.TwitterBot
+	logger      *slog.Logger
+	postService *service.PostService
+	twitterBot  *bot.TwitterBot
 }
 
 func NewV1Handler(
 	postService *service.PostService,
-	supabaseConfig *config.SupabaseConfig,
 	logger *slog.Logger,
 	twitterBot *bot.TwitterBot,
 ) *V1Handler {
 	return &V1Handler{
-		supabaseConfig: supabaseConfig,
-		postService:    postService,
-		twitterBot:     twitterBot,
-		logger:         logger.With("api", "v1"),
+		postService: postService,
+		twitterBot:  twitterBot,
+		logger:      logger.With("api", "v1"),
 	}
 }
 

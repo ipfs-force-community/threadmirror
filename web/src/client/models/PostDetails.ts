@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { PostImagesInner } from './PostImagesInner';
+import type { PostAuthor } from './PostAuthor';
 import {
-    PostImagesInnerFromJSON,
-    PostImagesInnerFromJSONTyped,
-    PostImagesInnerToJSON,
-    PostImagesInnerToJSONTyped,
-} from './PostImagesInner';
+    PostAuthorFromJSON,
+    PostAuthorFromJSONTyped,
+    PostAuthorToJSON,
+    PostAuthorToJSONTyped,
+} from './PostAuthor';
 
 /**
  * 
@@ -34,17 +34,17 @@ export interface PostDetails {
      */
     id: string;
     /**
-     * Post text content
+     * Full post content
      * @type {string}
      * @memberof PostDetails
      */
     content: string;
     /**
-     * Post images
-     * @type {Array<PostImagesInner>}
+     * 
+     * @type {PostAuthor}
      * @memberof PostDetails
      */
-    images: Array<PostImagesInner>;
+    author?: PostAuthor;
     /**
      * Post creation timestamp
      * @type {Date}
@@ -65,7 +65,6 @@ export interface PostDetails {
 export function instanceOfPostDetails(value: object): value is PostDetails {
     if (!('id' in value) || value['id'] === undefined) return false;
     if (!('content' in value) || value['content'] === undefined) return false;
-    if (!('images' in value) || value['images'] === undefined) return false;
     if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
     if (!('updatedAt' in value) || value['updatedAt'] === undefined) return false;
     return true;
@@ -83,7 +82,7 @@ export function PostDetailsFromJSONTyped(json: any, ignoreDiscriminator: boolean
         
         'id': json['id'],
         'content': json['content'],
-        'images': ((json['images'] as Array<any>).map(PostImagesInnerFromJSON)),
+        'author': json['author'] == null ? undefined : PostAuthorFromJSON(json['author']),
         'createdAt': (new Date(json['created_at'])),
         'updatedAt': (new Date(json['updated_at'])),
     };
@@ -102,7 +101,7 @@ export function PostDetailsToJSONTyped(value?: PostDetails | null, ignoreDiscrim
         
         'id': value['id'],
         'content': value['content'],
-        'images': ((value['images'] as Array<any>).map(PostImagesInnerToJSON)),
+        'author': PostAuthorToJSON(value['author']),
         'created_at': ((value['createdAt']).toISOString()),
         'updated_at': ((value['updatedAt']).toISOString()),
     };

@@ -3,6 +3,7 @@ package config
 import (
 	"time"
 
+	"github.com/ipfs-force-community/threadmirror/pkg/llm/llmfx"
 	"github.com/urfave/cli/v2"
 )
 
@@ -12,19 +13,6 @@ type ServerConfig struct {
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	Debug        bool
-}
-
-// SupabaseConfig holds Supabase-related configuration
-type SupabaseConfig struct {
-	ProjectReference string
-	ApiAnnoKey       string
-	BucketNames      SupabaseBucketNames
-	JWTKey           string
-}
-
-// SupabaseBucketNames holds bucket names configuration
-type SupabaseBucketNames struct {
-	PostImages string
 }
 
 type DatabaseConfig struct {
@@ -64,17 +52,6 @@ func LoadDatabaseConfigFromCLI(c *cli.Context) *DatabaseConfig {
 	return &DatabaseConfig{
 		Driver: c.String("db-driver"),
 		DSN:    c.String("db-dsn"),
-	}
-}
-
-func LoadSupabaseConfigFromCLI(c *cli.Context) *SupabaseConfig {
-	return &SupabaseConfig{
-		ProjectReference: c.String("supabase-project-ref"),
-		ApiAnnoKey:       c.String("supabase-api-anno-key"),
-		JWTKey:           c.String("subpabase-jwt-key"),
-		BucketNames: SupabaseBucketNames{
-			PostImages: c.String("supabase-bucket-post-images"),
-		},
 	}
 }
 
@@ -153,33 +130,6 @@ func GetAuth0CLIFlags() []cli.Flag {
 	}
 }
 
-// GetSupabaseCLIFlags returns Supabase-related CLI flags
-func GetSupabaseCLIFlags() []cli.Flag {
-	return []cli.Flag{
-		&cli.StringFlag{
-			Name:    "supabase-project-ref",
-			Usage:   "Supabase project reference",
-			EnvVars: []string{"SUPABASE_PROJECT_REF"},
-		},
-		&cli.StringFlag{
-			Name:    "supabase-api-anno-key",
-			Usage:   "Supabase API anonymous key",
-			EnvVars: []string{"SUPABASE_API_ANNO_KEY"},
-		},
-		&cli.StringFlag{
-			Name:    "subpabase-jwt-key",
-			Usage:   "Supabase JWT key",
-			EnvVars: []string{"SUPABASE_JWT_KEY"},
-		},
-		&cli.StringFlag{
-			Name:    "supabase-bucket-post-images",
-			Value:   "post-images",
-			Usage:   "Supabase post images bucket name",
-			EnvVars: []string{"SUPABASE_BUCKET_POST_IMAGES"},
-		},
-	}
-}
-
 // GetBotCLIFlags returns bot-related CLI flags
 func GetBotCLIFlags() []cli.Flag {
 	return []cli.Flag{
@@ -209,6 +159,37 @@ func GetBotCLIFlags() []cli.Flag {
 			Value:   10,
 			Usage:   "Maximum number of mentions to check per interval",
 			EnvVars: []string{"BOT_MAX_MENTIONS"},
+		},
+	}
+}
+
+func LoadLLMConfigFromCLI(c *cli.Context) *llmfx.Config {
+	return &llmfx.Config{
+		OpenAIBaseURL: c.String("openai-base-url"),
+		OpenAIAPIKey:  c.String("openai-api-key"),
+		OpenAIModel:   c.String("openai-model"),
+	}
+}
+
+// GetLLMCLIFlags returns LLM-related CLI flags
+func GetLLMCLIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "openai-base-url",
+			Value:   "https://api.openai.com/v1",
+			Usage:   "OpenAI API base URL",
+			EnvVars: []string{"OPENAI_BASE_URL"},
+		},
+		&cli.StringFlag{
+			Name:    "openai-api-key",
+			Usage:   "OpenAI API key",
+			EnvVars: []string{"OPENAI_API_KEY"},
+		},
+		&cli.StringFlag{
+			Name:    "openai-model",
+			Value:   "gpt-4o-mini",
+			Usage:   "OpenAI model name",
+			EnvVars: []string{"OPENAI_MODEL"},
 		},
 	}
 }

@@ -64,7 +64,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PostDetails'
+                    $ref: '#/components/schemas/Post'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -126,73 +126,290 @@ components:
         id:
           type: string
           description: Post unique identifier
-        content:
+        content_preview:
           type: string
-          description: Post text content
-          maxLength: 1000
-        images:
-          type: array
-          items:
-            type: object
-            properties:
-              image_id:
-                type: string
-                description: Image ID
-            required:
-              - image_id
-          description: Post images
-          maxItems: 9
+          description: Post content preview/summary
+          maxLength: 500
+        author:
+          $ref: '#/components/schemas/PostAuthor'
         created_at:
           type: string
           format: date-time
           description: Post creation timestamp
-        updated_at:
-          type: string
-          format: date-time
-          description: Post last update timestamp
+        threads:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tweet'
+          description: Thread tweets associated with this post
+          nullable: true
       required:
         - id
-        - content
-        - images
+        - content_preview
         - created_at
-        - updated_at
 
-    PostDetails:
+    PostAuthor:
       type: object
       properties:
         id:
           type: string
-          description: Post unique identifier
-        content:
+          description: Author's unique identifier (Twitter user ID)
+        name:
           type: string
-          description: Post text content
-        images:
-          type: array
-          items:
-            type: object
-            properties:
-              image_id:
-                type: string
-                description: Image ID
-            required:
-              - image_id
-          description: Post images
-          maxItems: 9
+          description: Author's display name
+        screen_name:
+          type: string
+          description: Author's screen name (without @)
+        profile_image_url:
+          type: string
+          description: Author's profile image URL
+          format: uri
+      required:
+        - id
+        - name
+        - screen_name
+        - profile_image_url
+
+    Tweet:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Tweet unique identifier
+        rest_id:
+          type: string
+          description: Tweet REST API identifier
+        text:
+          type: string
+          description: Tweet text content
         created_at:
           type: string
           format: date-time
-          description: Post creation timestamp
-        updated_at:
+          description: Tweet creation timestamp
+        author:
+          $ref: '#/components/schemas/TweetUser'
+        entities:
+          $ref: '#/components/schemas/TweetEntities'
+        stats:
+          $ref: '#/components/schemas/TweetStats'
+        is_retweet:
+          type: boolean
+          description: Whether this is a retweet
+        is_reply:
+          type: boolean
+          description: Whether this is a reply
+        is_quote_status:
+          type: boolean
+          description: Whether this is a quote tweet
+        conversation_id:
           type: string
-          format: date-time
-          description: Post last update timestamp
+          description: Conversation thread identifier
+        in_reply_to_status_id:
+          type: string
+          description: ID of the tweet this is replying to
+          nullable: true
+        in_reply_to_user_id:
+          type: string
+          description: ID of the user this is replying to
+          nullable: true
+        quoted_tweet:
+          $ref: '#/components/schemas/Tweet'
+          nullable: true
+        has_birdwatch_notes:
+          type: boolean
+          description: Whether this tweet has Birdwatch notes
+        lang:
+          type: string
+          description: Tweet language code
+        source:
+          type: string
+          description: Source application
+          nullable: true
+        possibly_sensitive:
+          type: boolean
+          description: Whether content might be sensitive
+        is_translatable:
+          type: boolean
+          description: Whether tweet can be translated
+        views:
+          type: integer
+          description: Number of views
+          nullable: true
       required:
         - id
-        - content
-        - images
+        - rest_id
+        - text
         - created_at
-        - updated_at
+        - stats
+        - is_retweet
+        - is_reply
+        - is_quote_status
+        - conversation_id
+        - has_birdwatch_notes
+        - lang
+        - possibly_sensitive
+        - is_translatable
 
+    TweetUser:
+      type: object
+      properties:
+        id:
+          type: string
+          description: User unique identifier
+        rest_id:
+          type: string
+          description: User REST API identifier
+        name:
+          type: string
+          description: User display name
+        screen_name:
+          type: string
+          description: User screen name (without @)
+        profile_image_url:
+          type: string
+          description: User profile image URL
+          format: uri
+        description:
+          type: string
+          description: User bio/description
+        followers_count:
+          type: integer
+          description: Number of followers
+        friends_count:
+          type: integer
+          description: Number of following
+        statuses_count:
+          type: integer
+          description: Number of tweets
+        created_at:
+          type: string
+          format: date-time
+          description: User account creation timestamp
+        verified:
+          type: boolean
+          description: Whether user is verified
+        is_blue_verified:
+          type: boolean
+          description: Whether user has blue verification
+      required:
+        - id
+        - rest_id
+        - name
+        - screen_name
+        - profile_image_url
+        - description
+        - followers_count
+        - friends_count
+        - statuses_count
+        - created_at
+        - verified
+        - is_blue_verified
+
+    TweetEntities:
+      type: object
+      properties:
+        hashtags:
+          type: array
+          items:
+            type: object
+          description: Hashtags in the tweet
+        symbols:
+          type: array
+          items:
+            type: object
+          description: Financial symbols in the tweet
+        urls:
+          type: array
+          items:
+            type: object
+          description: URLs in the tweet
+        user_mentions:
+          type: array
+          items:
+            type: object
+          description: User mentions in the tweet
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaInfo'
+          description: Media attachments
+          nullable: true
+      required:
+        - hashtags
+        - symbols
+        - urls
+        - user_mentions
+
+    MediaInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Media unique identifier
+        media_key:
+          type: string
+          description: Media key identifier
+        type:
+          type: string
+          description: Media type (photo, video, etc.)
+        url:
+          type: string
+          description: Media URL
+          format: uri
+        display_url:
+          type: string
+          description: Display URL for media
+        expanded_url:
+          type: string
+          description: Expanded URL for media
+          format: uri
+        alt_text:
+          type: string
+          description: Alternative text for accessibility
+          nullable: true
+        width:
+          type: integer
+          description: Media width in pixels
+          nullable: true
+        height:
+          type: integer
+          description: Media height in pixels
+          nullable: true
+      required:
+        - id
+        - media_key
+        - type
+        - url
+        - display_url
+        - expanded_url
+
+    TweetStats:
+      type: object
+      properties:
+        reply_count:
+          type: integer
+          description: Number of replies
+        retweet_count:
+          type: integer
+          description: Number of retweets
+        favorite_count:
+          type: integer
+          description: Number of likes/favorites
+        quote_count:
+          type: integer
+          description: Number of quote tweets
+        bookmark_count:
+          type: integer
+          description: Number of bookmarks
+        view_count:
+          type: integer
+          description: Number of views
+          nullable: true
+      required:
+        - reply_count
+        - retweet_count
+        - favorite_count
+        - quote_count
+        - bookmark_count
 
     Image:
       type: object
