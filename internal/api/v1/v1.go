@@ -15,13 +15,11 @@ var _ ServerInterface = (*V1Handler)(nil)
 type V1Handler struct {
 	logger         *slog.Logger
 	supabaseConfig *config.SupabaseConfig
-	userService    *service.UserService
 	postService    *service.PostService
 	twitterBot     *bot.TwitterBot
 }
 
 func NewV1Handler(
-	userService *service.UserService,
 	postService *service.PostService,
 	supabaseConfig *config.SupabaseConfig,
 	logger *slog.Logger,
@@ -29,7 +27,6 @@ func NewV1Handler(
 ) *V1Handler {
 	return &V1Handler{
 		supabaseConfig: supabaseConfig,
-		userService:    userService,
 		postService:    postService,
 		twitterBot:     twitterBot,
 		logger:         logger.With("api", "v1"),

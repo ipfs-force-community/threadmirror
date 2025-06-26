@@ -107,10 +107,8 @@ func (m *MockBotCookieRepo) SaveCookies(ctx context.Context, email, username str
 
 // SetupTestServer sets up a test server with the given database
 func SetupTestServer(t *testing.T, db *sql.DB) *gin.Engine {
-	userRepo := sqlrepo.NewUserRepo(db)
 	postRepo := sqlrepo.NewPostRepo(db)
-	userSvc := service.NewUserService(userRepo)
-	postSvc := service.NewPostService(postRepo, userRepo)
+	postSvc := service.NewPostService(postRepo)
 	logger := slog.New(slog.NewTextHandler(nil, nil))
 
 	// Mock processed mention repo and service
@@ -138,7 +136,7 @@ func SetupTestServer(t *testing.T, db *sql.DB) *gin.Engine {
 		logger,
 	)
 
-	server := v1.NewV1Handler(userSvc, postSvc, createTestSupabaseConfig(), logger, twitterBot)
+	server := v1.NewV1Handler(postSvc, createTestSupabaseConfig(), logger, twitterBot)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()

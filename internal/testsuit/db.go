@@ -25,9 +25,7 @@ func SetupTestDB(t *testing.T) *sql.DB {
 // DBTestSuite provides a test suite based on real database instead of mocks
 type DBTestSuite struct {
 	DB          *sql.DB
-	UserRepo    *sqlrepo.UserRepo
 	PostRepo    *sqlrepo.PostRepo
-	UserService *service.UserService
 	PostService *service.PostService
 }
 
@@ -37,18 +35,14 @@ func SetupDBTestSuite(t *testing.T) *DBTestSuite {
 	db := SetupTestDB(t)
 
 	// Create repositories
-	userRepo := sqlrepo.NewUserRepo(db)
 	postRepo := sqlrepo.NewPostRepo(db)
 
 	// Create services
-	userService := service.NewUserService(userRepo)
-	postService := service.NewPostService(postRepo, userRepo)
+	postService := service.NewPostService(postRepo)
 
 	return &DBTestSuite{
 		DB:          db,
-		UserRepo:    userRepo,
 		PostRepo:    postRepo,
-		UserService: userService,
 		PostService: postService,
 	}
 }
