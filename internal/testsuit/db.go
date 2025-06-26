@@ -8,6 +8,8 @@ import (
 	"github.com/ipfs-force-community/threadmirror/internal/repo/sqlrepo"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
+	"github.com/ipfs-force-community/threadmirror/pkg/ipfs"
+	"github.com/ipfs-force-community/threadmirror/pkg/llm"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,8 +39,12 @@ func SetupDBTestSuite(t *testing.T) *DBTestSuite {
 	// Create repositories
 	postRepo := sqlrepo.NewPostRepo(db)
 
+	// Create mock dependencies
+	mockLLM := &MockLLM{}
+	mockIPFS := &MockIPFSStorage{}
+
 	// Create services
-	postService := service.NewPostService(postRepo)
+	postService := service.NewPostService(postRepo, llm.Model(mockLLM), ipfs.Storage(mockIPFS))
 
 	return &DBTestSuite{
 		DB:          db,

@@ -8,6 +8,7 @@ import (
 	v1errors "github.com/ipfs-force-community/threadmirror/internal/api/v1/errors"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/auth"
+	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"github.com/samber/lo"
 )
 
@@ -48,7 +49,7 @@ func (h *V1Handler) GetPosts(c *gin.Context, params GetPostsParams) {
 
 // GetPostsId handles GET /posts/{id}
 func (h *V1Handler) GetPostsId(c *gin.Context, id string) {
-	post, err := h.postService.GetPostByID(id)
+	post, err := h.postService.GetPostByID(c, id)
 	if err != nil {
 		if errors.Is(err, service.ErrPostNotFound) {
 			_ = c.Error(v1errors.NotFound(err).WithCode(ErrCodePostNotFound))
@@ -68,33 +69,144 @@ func (h *V1Handler) GetPostsId(c *gin.Context, id string) {
 // Conversion functions from service types to API types
 
 func (h *V1Handler) convertPostSummaryToAPI(post service.PostSummaryDetail) Post {
+	var author *PostAuthor
+	if post.Author != nil {
+		author = &PostAuthor{
+			Id:              post.Author.ID,
+			Name:            post.Author.Name,
+			ScreenName:      post.Author.ScreenName,
+			ProfileImageUrl: post.Author.ProfileImageURL,
+		}
+	}
+
 	return Post{
-		Id:      post.ID,
-		Content: post.ContentPreview,
-		Images: []struct {
-			ImageId string `json:"image_id"`
-		}{}, // Summary doesn't include all images
-		CreatedAt: post.CreatedAt,
-		UpdatedAt: post.CreatedAt, // Use created_at as fallback
+		Id:             post.ID,
+		ContentPreview: post.ContentPreview,
+		Author:         author,
+		CreatedAt:      post.CreatedAt,
+		Threads:        nil, // 列表接口不返回 threads
 	}
 }
 
-func (h *V1Handler) convertPostDetailToAPI(post service.PostDetail) PostDetails {
-	images := lo.Map(post.Images, func(img service.PostImageDetail, _ int) struct {
-		ImageId string `json:"image_id"`
-	} {
-		return struct {
-			ImageId string `json:"image_id"`
-		}{
-			ImageId: img.ImageID,
+func (h *V1Handler) convertPostDetailToAPI(post service.PostDetail) Post {
+	var author *PostAuthor
+	if post.Author != nil {
+		author = &PostAuthor{
+			Id:              post.Author.ID,
+			Name:            post.Author.Name,
+			ScreenName:      post.Author.ScreenName,
+			ProfileImageUrl: post.Author.ProfileImageURL,
 		}
-	})
+	}
 
-	return PostDetails{
-		Id:        post.ID,
-		Content:   post.Content,
-		Images:    images,
-		CreatedAt: post.CreatedAt,
-		UpdatedAt: post.UpdatedAt,
+	// Convert threads to API format for detail response
+	var apiThreads *[]Tweet
+	if len(post.Threads) > 0 {
+		threads := lo.Map(post.Threads, func(tweet *xscraper.Tweet, _ int) Tweet {
+			return h.convertXScraperTweetToAPI(tweet)
+		})
+		apiThreads = &threads
+	}
+
+	return Post{
+		Id:             post.ID,
+		ContentPreview: "", // Detail API doesn't need content preview
+		Author:         author,
+		CreatedAt:      post.CreatedAt,
+		Threads:        apiThreads,
+	}
+}
+
+// convertXScraperTweetToAPI converts xscraper.Tweet to API Tweet type
+func (h *V1Handler) convertXScraperTweetToAPI(tweet *xscraper.Tweet) Tweet {
+	if tweet == nil {
+		return Tweet{}
+	}
+
+	// Convert author
+	var author *TweetUser
+	if tweet.Author != nil {
+		author = &TweetUser{
+			Id:              tweet.Author.ID,
+			RestId:          tweet.Author.RestID,
+			Name:            tweet.Author.Name,
+			ScreenName:      tweet.Author.ScreenName,
+			ProfileImageUrl: tweet.Author.ProfileImageURL,
+			Description:     tweet.Author.Description,
+			FollowersCount:  tweet.Author.FollowersCount,
+			FriendsCount:    tweet.Author.FriendsCount,
+			StatusesCount:   tweet.Author.StatusesCount,
+			CreatedAt:       tweet.Author.CreatedAt,
+			Verified:        tweet.Author.Verified,
+			IsBlueVerified:  tweet.Author.IsBlueVerified,
+		}
+	}
+
+	// Convert entities
+	entities := &TweetEntities{
+		Hashtags:     tweet.Entities.Hashtags,
+		Symbols:      tweet.Entities.Symbols,
+		Urls:         tweet.Entities.URLs,
+		UserMentions: tweet.Entities.UserMentions,
+	}
+
+	// Convert media
+	if len(tweet.Entities.Media) > 0 {
+		media := lo.Map(tweet.Entities.Media, func(m xscraper.MediaInfo, _ int) MediaInfo {
+			return MediaInfo{
+				Id:          m.ID,
+				MediaKey:    m.MediaKey,
+				Type:        m.Type,
+				Url:         m.URL,
+				DisplayUrl:  m.DisplayURL,
+				ExpandedUrl: m.ExpandedURL,
+				AltText:     &m.AltText,
+				Width:       &m.Width,
+				Height:      &m.Height,
+			}
+		})
+		entities.Media = &media
+	}
+
+	// Convert stats
+	stats := TweetStats{
+		ReplyCount:    tweet.Stats.ReplyCount,
+		RetweetCount:  tweet.Stats.RetweetCount,
+		FavoriteCount: tweet.Stats.FavoriteCount,
+		QuoteCount:    tweet.Stats.QuoteCount,
+		BookmarkCount: tweet.Stats.BookmarkCount,
+	}
+	if tweet.Stats.ViewCount > 0 {
+		stats.ViewCount = &tweet.Stats.ViewCount
+	}
+
+	// Convert quoted tweet if exists
+	var quotedTweet *Tweet
+	if tweet.QuotedTweet != nil {
+		quoted := h.convertXScraperTweetToAPI(tweet.QuotedTweet)
+		quotedTweet = &quoted
+	}
+
+	return Tweet{
+		Id:                tweet.ID,
+		RestId:            tweet.RestID,
+		Text:              tweet.Text,
+		CreatedAt:         tweet.CreatedAt,
+		Author:            author,
+		Entities:          entities,
+		Stats:             stats,
+		IsRetweet:         tweet.IsRetweet,
+		IsReply:           tweet.IsReply,
+		IsQuoteStatus:     tweet.IsQuoteStatus,
+		ConversationId:    tweet.ConversationID,
+		InReplyToStatusId: &tweet.InReplyToStatusID,
+		InReplyToUserId:   &tweet.InReplyToUserID,
+		QuotedTweet:       quotedTweet,
+		HasBirdwatchNotes: tweet.HasBirdwatchNotes,
+		Lang:              tweet.Lang,
+		Source:            &tweet.Source,
+		PossiblySensitive: tweet.PossiblySensitive,
+		IsTranslatable:    tweet.IsTranslatable,
+		Views:             &tweet.Views,
 	}
 }

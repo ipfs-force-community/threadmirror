@@ -35,6 +35,36 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// MediaInfo defines model for MediaInfo.
+type MediaInfo struct {
+	// AltText Alternative text for accessibility
+	AltText *string `json:"alt_text"`
+
+	// DisplayUrl Display URL for media
+	DisplayUrl string `json:"display_url"`
+
+	// ExpandedUrl Expanded URL for media
+	ExpandedUrl string `json:"expanded_url"`
+
+	// Height Media height in pixels
+	Height *int `json:"height"`
+
+	// Id Media unique identifier
+	Id string `json:"id"`
+
+	// MediaKey Media key identifier
+	MediaKey string `json:"media_key"`
+
+	// Type Media type (photo, video, etc.)
+	Type string `json:"type"`
+
+	// Url Media URL
+	Url string `json:"url"`
+
+	// Width Media width in pixels
+	Width *int `json:"width"`
+}
+
 // PaginationMeta defines model for PaginationMeta.
 type PaginationMeta struct {
 	// Limit Maximum number of items returned
@@ -49,8 +79,10 @@ type PaginationMeta struct {
 
 // Post defines model for Post.
 type Post struct {
-	// Content Post text content
-	Content string `json:"content"`
+	Author *PostAuthor `json:"author,omitempty"`
+
+	// ContentPreview Post content preview/summary
+	ContentPreview string `json:"content_preview"`
 
 	// CreatedAt Post creation timestamp
 	CreatedAt time.Time `json:"created_at"`
@@ -58,35 +90,157 @@ type Post struct {
 	// Id Post unique identifier
 	Id string `json:"id"`
 
-	// Images Post images
-	Images []struct {
-		// ImageId Image ID
-		ImageId string `json:"image_id"`
-	} `json:"images"`
-
-	// UpdatedAt Post last update timestamp
-	UpdatedAt time.Time `json:"updated_at"`
+	// Threads Thread tweets associated with this post
+	Threads *[]Tweet `json:"threads"`
 }
 
-// PostDetails defines model for PostDetails.
-type PostDetails struct {
-	// Content Post text content
-	Content string `json:"content"`
-
-	// CreatedAt Post creation timestamp
-	CreatedAt time.Time `json:"created_at"`
-
-	// Id Post unique identifier
+// PostAuthor defines model for PostAuthor.
+type PostAuthor struct {
+	// Id Author's unique identifier (Twitter user ID)
 	Id string `json:"id"`
 
-	// Images Post images
-	Images []struct {
-		// ImageId Image ID
-		ImageId string `json:"image_id"`
-	} `json:"images"`
+	// Name Author's display name
+	Name string `json:"name"`
 
-	// UpdatedAt Post last update timestamp
-	UpdatedAt time.Time `json:"updated_at"`
+	// ProfileImageUrl Author's profile image URL
+	ProfileImageUrl string `json:"profile_image_url"`
+
+	// ScreenName Author's screen name (without @)
+	ScreenName string `json:"screen_name"`
+}
+
+// Tweet defines model for Tweet.
+type Tweet struct {
+	Author *TweetUser `json:"author,omitempty"`
+
+	// ConversationId Conversation thread identifier
+	ConversationId string `json:"conversation_id"`
+
+	// CreatedAt Tweet creation timestamp
+	CreatedAt time.Time      `json:"created_at"`
+	Entities  *TweetEntities `json:"entities,omitempty"`
+
+	// HasBirdwatchNotes Whether this tweet has Birdwatch notes
+	HasBirdwatchNotes bool `json:"has_birdwatch_notes"`
+
+	// Id Tweet unique identifier
+	Id string `json:"id"`
+
+	// InReplyToStatusId ID of the tweet this is replying to
+	InReplyToStatusId *string `json:"in_reply_to_status_id"`
+
+	// InReplyToUserId ID of the user this is replying to
+	InReplyToUserId *string `json:"in_reply_to_user_id"`
+
+	// IsQuoteStatus Whether this is a quote tweet
+	IsQuoteStatus bool `json:"is_quote_status"`
+
+	// IsReply Whether this is a reply
+	IsReply bool `json:"is_reply"`
+
+	// IsRetweet Whether this is a retweet
+	IsRetweet bool `json:"is_retweet"`
+
+	// IsTranslatable Whether tweet can be translated
+	IsTranslatable bool `json:"is_translatable"`
+
+	// Lang Tweet language code
+	Lang string `json:"lang"`
+
+	// PossiblySensitive Whether content might be sensitive
+	PossiblySensitive bool   `json:"possibly_sensitive"`
+	QuotedTweet       *Tweet `json:"quoted_tweet,omitempty"`
+
+	// RestId Tweet REST API identifier
+	RestId string `json:"rest_id"`
+
+	// Source Source application
+	Source *string    `json:"source"`
+	Stats  TweetStats `json:"stats"`
+
+	// Text Tweet text content
+	Text string `json:"text"`
+
+	// Views Number of views
+	Views *int `json:"views"`
+}
+
+// TweetEntities defines model for TweetEntities.
+type TweetEntities struct {
+	// Hashtags Hashtags in the tweet
+	Hashtags []map[string]interface{} `json:"hashtags"`
+
+	// Media Media attachments
+	Media *[]MediaInfo `json:"media"`
+
+	// Symbols Financial symbols in the tweet
+	Symbols []map[string]interface{} `json:"symbols"`
+
+	// Urls URLs in the tweet
+	Urls []map[string]interface{} `json:"urls"`
+
+	// UserMentions User mentions in the tweet
+	UserMentions []map[string]interface{} `json:"user_mentions"`
+}
+
+// TweetStats defines model for TweetStats.
+type TweetStats struct {
+	// BookmarkCount Number of bookmarks
+	BookmarkCount int `json:"bookmark_count"`
+
+	// FavoriteCount Number of likes/favorites
+	FavoriteCount int `json:"favorite_count"`
+
+	// QuoteCount Number of quote tweets
+	QuoteCount int `json:"quote_count"`
+
+	// ReplyCount Number of replies
+	ReplyCount int `json:"reply_count"`
+
+	// RetweetCount Number of retweets
+	RetweetCount int `json:"retweet_count"`
+
+	// ViewCount Number of views
+	ViewCount *int `json:"view_count"`
+}
+
+// TweetUser defines model for TweetUser.
+type TweetUser struct {
+	// CreatedAt User account creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// Description User bio/description
+	Description string `json:"description"`
+
+	// FollowersCount Number of followers
+	FollowersCount int `json:"followers_count"`
+
+	// FriendsCount Number of following
+	FriendsCount int `json:"friends_count"`
+
+	// Id User unique identifier
+	Id string `json:"id"`
+
+	// IsBlueVerified Whether user has blue verification
+	IsBlueVerified bool `json:"is_blue_verified"`
+
+	// Name User display name
+	Name string `json:"name"`
+
+	// ProfileImageUrl User profile image URL
+	ProfileImageUrl string `json:"profile_image_url"`
+
+	// RestId User REST API identifier
+	RestId string `json:"rest_id"`
+
+	// ScreenName User screen name (without @)
+	ScreenName string `json:"screen_name"`
+
+	// StatusesCount Number of tweets
+	StatusesCount int `json:"statuses_count"`
+
+	// Verified Whether user is verified
+	Verified bool `json:"verified"`
 }
 
 // PageLimit defines model for PageLimit.
