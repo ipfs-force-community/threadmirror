@@ -13,13 +13,20 @@
  */
 
 import { mapValues } from '../runtime';
-import type { PostImagesInner } from './PostImagesInner';
+import type { PostAuthor } from './PostAuthor';
 import {
-    PostImagesInnerFromJSON,
-    PostImagesInnerFromJSONTyped,
-    PostImagesInnerToJSON,
-    PostImagesInnerToJSONTyped,
-} from './PostImagesInner';
+    PostAuthorFromJSON,
+    PostAuthorFromJSONTyped,
+    PostAuthorToJSON,
+    PostAuthorToJSONTyped,
+} from './PostAuthor';
+import type { Tweet } from './Tweet';
+import {
+    TweetFromJSON,
+    TweetFromJSONTyped,
+    TweetToJSON,
+    TweetToJSONTyped,
+} from './Tweet';
 
 /**
  * 
@@ -34,17 +41,17 @@ export interface Post {
      */
     id: string;
     /**
-     * Post text content
+     * Post content preview/summary
      * @type {string}
      * @memberof Post
      */
-    content: string;
+    contentPreview: string;
     /**
-     * Post images
-     * @type {Array<PostImagesInner>}
+     * 
+     * @type {PostAuthor}
      * @memberof Post
      */
-    images: Array<PostImagesInner>;
+    author?: PostAuthor;
     /**
      * Post creation timestamp
      * @type {Date}
@@ -52,11 +59,11 @@ export interface Post {
      */
     createdAt: Date;
     /**
-     * Post last update timestamp
-     * @type {Date}
+     * Thread tweets associated with this post
+     * @type {Array<Tweet>}
      * @memberof Post
      */
-    updatedAt: Date;
+    threads?: Array<Tweet> | null;
 }
 
 /**
@@ -64,10 +71,8 @@ export interface Post {
  */
 export function instanceOfPost(value: object): value is Post {
     if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('content' in value) || value['content'] === undefined) return false;
-    if (!('images' in value) || value['images'] === undefined) return false;
+    if (!('contentPreview' in value) || value['contentPreview'] === undefined) return false;
     if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
-    if (!('updatedAt' in value) || value['updatedAt'] === undefined) return false;
     return true;
 }
 
@@ -82,10 +87,10 @@ export function PostFromJSONTyped(json: any, ignoreDiscriminator: boolean): Post
     return {
         
         'id': json['id'],
-        'content': json['content'],
-        'images': ((json['images'] as Array<any>).map(PostImagesInnerFromJSON)),
+        'contentPreview': json['content_preview'],
+        'author': json['author'] == null ? undefined : PostAuthorFromJSON(json['author']),
         'createdAt': (new Date(json['created_at'])),
-        'updatedAt': (new Date(json['updated_at'])),
+        'threads': json['threads'] == null ? undefined : ((json['threads'] as Array<any>).map(TweetFromJSON)),
     };
 }
 
@@ -101,10 +106,10 @@ export function PostToJSONTyped(value?: Post | null, ignoreDiscriminator: boolea
     return {
         
         'id': value['id'],
-        'content': value['content'],
-        'images': ((value['images'] as Array<any>).map(PostImagesInnerToJSON)),
+        'content_preview': value['contentPreview'],
+        'author': PostAuthorToJSON(value['author']),
         'created_at': ((value['createdAt']).toISOString()),
-        'updated_at': ((value['updatedAt']).toISOString()),
+        'threads': value['threads'] == null ? undefined : ((value['threads'] as Array<any>).map(TweetToJSON)),
     };
 }
 
