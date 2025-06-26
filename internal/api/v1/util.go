@@ -40,10 +40,6 @@ func PaginatedJSON(c *gin.Context, data any, total int64, limit, offset int) {
 	})
 }
 
-func ParseUserID(c *gin.Context, id string) (string, bool) {
-	return ParseStringUUID(c, id, ErrCodeUserNotFound)
-}
-
 func ParseStringUUID(c *gin.Context, id string, errCode v1errors.ErrorCode) (string, bool) {
 	if id == "" {
 		_ = c.Error(v1errors.NotFound(nil).WithCode(errCode))

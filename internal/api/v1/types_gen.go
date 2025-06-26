@@ -5,8 +5,6 @@ package v1
 
 import (
 	"time"
-
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
@@ -67,8 +65,7 @@ type Post struct {
 	} `json:"images"`
 
 	// UpdatedAt Post last update timestamp
-	UpdatedAt time.Time          `json:"updated_at"`
-	User      UserProfileSummary `json:"user"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // PostDetails defines model for PostDetails.
@@ -89,65 +86,7 @@ type PostDetails struct {
 	} `json:"images"`
 
 	// UpdatedAt Post last update timestamp
-	UpdatedAt time.Time          `json:"updated_at"`
-	User      UserProfileSummary `json:"user"`
-}
-
-// SupabaseConfig defines model for SupabaseConfig.
-type SupabaseConfig struct {
-	// ApiAnnoKey Supabase anonymous API key
-	ApiAnnoKey string `json:"api_anno_key"`
-
-	// BucketNames Storage bucket names configuration
-	BucketNames struct {
-		// PostImages post images bucket name
-		PostImages string `json:"post_images"`
-	} `json:"bucket_names"`
-
-	// ProjectReference Supabase project reference ID
-	ProjectReference string `json:"project_reference"`
-}
-
-// UserProfile defines model for UserProfile.
-type UserProfile struct {
-	// Bio User biography/signature
-	Bio *string `json:"bio"`
-
-	// CreatedAt User registration timestamp
-	CreatedAt time.Time `json:"created_at"`
-
-	// DisplayId User public display ID
-	DisplayId string `json:"display_id"`
-
-	// Email User contact email (only visible to profile owner)
-	Email *openapi_types.Email `json:"email"`
-
-	// Id User unique identifier
-	Id string `json:"id"`
-
-	// Nickname User display name
-	Nickname string `json:"nickname"`
-
-	// PostsCount Number of posts created
-	PostsCount int64 `json:"posts_count"`
-
-	// UpdatedAt Profile last update timestamp
 	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// UserProfileSummary defines model for UserProfileSummary.
-type UserProfileSummary struct {
-	// Bio User biography/signature (truncated)
-	Bio *string `json:"bio"`
-
-	// DisplayId User public display ID
-	DisplayId string `json:"display_id"`
-
-	// Nickname User display name
-	Nickname string `json:"nickname"`
-
-	// UserId User unique identifier
-	UserId string `json:"user_id"`
 }
 
 // PageLimit defines model for PageLimit.

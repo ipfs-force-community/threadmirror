@@ -20,8 +20,7 @@ func NewPostRepo(db *sql.DB) *PostRepo {
 // GetPostByID retrieves a post by ID with preloaded relationships
 func (r *PostRepo) GetPostByID(id string) (*model.Post, error) {
 	var post model.Post
-	err := r.db.Preload("User").
-		Where("id = ?", id).First(&post).Error
+	err := r.db.Where("id = ?", id).First(&post).Error
 	if err != nil {
 		return nil, err
 	}

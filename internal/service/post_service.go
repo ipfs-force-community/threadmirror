@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -12,28 +13,24 @@ import (
 
 // Post Service Errors
 var (
-	ErrPostNotFound   = errors.New("post not found")
-	ErrUnauthorized   = errors.New("unauthorized")
-	ErrInvalidContent = errors.New("invalid content")
-	ErrInvalidPath    = errors.New("invalid file path")
+	ErrPostNotFound = errors.New("post not found")
+	ErrInvalidPath  = errors.New("invalid file path")
 )
 
 // PostDetail represents a complete post with all details
 type PostDetail struct {
-	ID        string             `json:"id"`
-	Content   string             `json:"content"`
-	User      UserProfileSummary `json:"user"`
-	Images    []PostImageDetail  `json:"images"`
-	CreatedAt time.Time          `json:"created_at"`
-	UpdatedAt time.Time          `json:"updated_at"`
+	ID        string            `json:"id"`
+	Content   string            `json:"content"`
+	Images    []PostImageDetail `json:"images"`
+	CreatedAt time.Time         `json:"created_at"`
+	UpdatedAt time.Time         `json:"updated_at"`
 }
 
 // PostSummaryDetail represents a post summary for list views
 type PostSummaryDetail struct {
-	ID             string             `json:"id"`
-	ContentPreview string             `json:"content_preview"`
-	User           UserProfileSummary `json:"user"`
-	CreatedAt      time.Time          `json:"created_at"`
+	ID             string    `json:"id"`
+	ContentPreview string    `json:"content_preview"`
+	CreatedAt      time.Time `json:"created_at"`
 }
 
 // PostImageDetail represents a post image
@@ -61,17 +58,14 @@ type PostRepoInterface interface {
 // PostService provides business logic for post operations
 type PostService struct {
 	postRepo PostRepoInterface
-	userRepo UserRepoInterface
 }
 
 // NewPostService creates a new post service
 func NewPostService(
 	postRepo PostRepoInterface,
-	userRepo UserRepoInterface,
 ) *PostService {
 	return &PostService{
 		postRepo: postRepo,
-		userRepo: userRepo,
 	}
 }
 
@@ -96,14 +90,11 @@ func (s *PostService) CreatePost(
 	}
 
 	// Return the created post details
-	return s.GetPostByID(post.ID, userID)
+	return s.GetPostByID(post.ID)
 }
 
 // GetPostByID retrieves a post by ID
-func (s *PostService) GetPostByID(
-	postID string,
-	currentUserID string,
-) (*PostDetail, error) {
+func (s *PostService) GetPostByID(postID string) (*PostDetail, error) {
 	post, err := s.postRepo.GetPostByID(postID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -112,7 +103,7 @@ func (s *PostService) GetPostByID(
 		return nil, fmt.Errorf("failed to get post: %w", err)
 	}
 
-	return s.buildPostDetail(post, currentUserID)
+	return s.buildPostDetail(post)
 }
 
 // GetPosts retrieves posts based on feed type
@@ -127,12 +118,7 @@ func (s *PostService) GetPosts(
 
 	postSummaries := make([]PostSummaryDetail, 0, len(posts))
 	for _, post := range posts {
-		summary, err := s.buildPostSummary(&post)
-		if err != nil {
-			// Log error but continue with other posts
-			continue
-		}
-		postSummaries = append(postSummaries, *summary)
+		postSummaries = append(postSummaries, *s.buildPostSummary(&post))
 	}
 
 	return postSummaries, total, nil
@@ -151,21 +137,17 @@ func (s *PostService) validateFilePath(filePath string) error {
 // buildPostDetail builds a PostDetail from a model.Post
 func (s *PostService) buildPostDetail(
 	post *model.Post,
-	_ string,
 ) (*PostDetail, error) {
-	// Get user profile
-	user, err := s.userRepo.GetUserByID(post.UserID)
+	filePath := post.FilePath
+	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	// For now, return empty content and images since they're stored in files
-	// In the future, you might want to load content from the file path
 	return &PostDetail{
 		ID:        post.ID,
-		Content:   "", // Content should be loaded from file_path when needed
-		User:      s.userToProfileSummary(user),
-		Images:    []PostImageDetail{}, // Images should be loaded from file_path when needed
+		Content:   string(content),
+		Images:    []PostImageDetail{},
 		CreatedAt: post.CreatedAt,
 		UpdatedAt: post.UpdatedAt,
 	}, nil
@@ -174,37 +156,10 @@ func (s *PostService) buildPostDetail(
 // buildPostSummary builds a PostSummaryDetail from a model.Post
 func (s *PostService) buildPostSummary(
 	post *model.Post,
-) (*PostSummaryDetail, error) {
-	// Get user profile
-	user, err := s.userRepo.GetUserByID(post.UserID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
-	}
-
+) *PostSummaryDetail {
 	return &PostSummaryDetail{
 		ID:             post.ID,
 		ContentPreview: "", // Content preview should be loaded from file_path when needed
-		User:           s.userToProfileSummary(user),
 		CreatedAt:      post.CreatedAt,
-	}, nil
-}
-
-// userToProfileSummary converts a UserProfile to UserProfileSummary
-func (s *PostService) userToProfileSummary(
-	user *model.UserProfile,
-) UserProfileSummary {
-	bio := ""
-	if user.Bio != nil {
-		bio = *user.Bio
-		if len(bio) > 50 {
-			bio = bio[:50] + "..."
-		}
-	}
-
-	return UserProfileSummary{
-		UserID:    user.ID,
-		DisplayID: user.DisplayID,
-		Nickname:  user.Nickname,
-		Bio:       &bio,
 	}
 }

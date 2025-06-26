@@ -1,0 +1,16 @@
+apis/BotApi.ts
+apis/PostsApi.ts
+apis/index.ts
+index.ts
+models/BotStats.ts
+models/BotStatsGet200Response.ts
+models/Image.ts
+models/ModelError.ts
+models/PaginationMeta.ts
+models/Post.ts
+models/PostDetails.ts
+models/PostImagesInner.ts
+models/PostsGet200Response.ts
+models/PostsIdGet200Response.ts
+models/index.ts
+runtime.ts

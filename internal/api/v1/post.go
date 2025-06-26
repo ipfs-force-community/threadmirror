@@ -48,14 +48,7 @@ func (h *V1Handler) GetPosts(c *gin.Context, params GetPostsParams) {
 
 // GetPostsId handles GET /posts/{id}
 func (h *V1Handler) GetPostsId(c *gin.Context, id string) {
-	authInfo := auth.MustAuthInfo(c)
-
-	postID, ok := ParseStringUUID(c, id, ErrCodePostNotFound)
-	if !ok {
-		return
-	}
-
-	post, err := h.postService.GetPostByID(postID, authInfo.UserID)
+	post, err := h.postService.GetPostByID(id)
 	if err != nil {
 		if errors.Is(err, service.ErrPostNotFound) {
 			_ = c.Error(v1errors.NotFound(err).WithCode(ErrCodePostNotFound))
@@ -78,7 +71,6 @@ func (h *V1Handler) convertPostSummaryToAPI(post service.PostSummaryDetail) Post
 	return Post{
 		Id:      post.ID,
 		Content: post.ContentPreview,
-		User:    h.convertUserProfileSummaryToAPI(post.User),
 		Images: []struct {
 			ImageId string `json:"image_id"`
 		}{}, // Summary doesn't include all images
@@ -101,20 +93,8 @@ func (h *V1Handler) convertPostDetailToAPI(post service.PostDetail) PostDetails 
 	return PostDetails{
 		Id:        post.ID,
 		Content:   post.Content,
-		User:      h.convertUserProfileSummaryToAPI(post.User),
 		Images:    images,
 		CreatedAt: post.CreatedAt,
 		UpdatedAt: post.UpdatedAt,
-	}
-}
-
-func (h *V1Handler) convertUserProfileSummaryToAPI(
-	user service.UserProfileSummary,
-) UserProfileSummary {
-	return UserProfileSummary{
-		UserId:    user.UserID,
-		DisplayId: user.DisplayID,
-		Nickname:  user.Nickname,
-		Bio:       user.Bio,
 	}
 }

@@ -56,7 +56,6 @@ var ServerCommand = &cli.Command{
 			apifx.Module,
 			servicefx.Module,
 			i18nfx.Module(&i18n.LocaleFS),
-			// authfx.Module([]byte(supabaseConf.JWTKey)),
 			authfx.ModuleAuth0(auth0Conf),
 			botfx.Module,
 			fx.Invoke(func(lc fx.Lifecycle, db *sql.DB) {

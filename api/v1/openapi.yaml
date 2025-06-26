@@ -13,55 +13,12 @@ security:
   - bearerAuth: []
 
 paths:
-  # Config endpoints
-  /config/supabase:
-    get:
-      summary: Get Supabase configuration
-      description: Retrieve Supabase configuration for client-side initialization
-      tags:
-        - Config
-      security: []
-      responses:
-        '200':
-          description: Supabase configuration information
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/SupabaseConfig'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /me:
-    get:
-      summary: Get current user profile
-      description: Retrieve the authenticated user's profile information including basic info, social stats, and content overview
-      tags:
-        - UserProfiles
-      responses:
-        '200':
-          description: Current user's profile information
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/UserProfile'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
   /posts:
     get:
       summary: Get posts feed
       description: Get a paginated list of posts from followed users or public posts
       tags:
         - Posts
-      security: []
       parameters:
         - $ref: '#/components/parameters/PageLimit'
         - $ref: '#/components/parameters/PageOffset'
@@ -83,8 +40,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
-
-
 
   /posts/{id}:
     get:
@@ -115,10 +70,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-    
-
-
-
   # Bot endpoints
   /bot/stats:
     get:
@@ -139,8 +90,6 @@ paths:
                     $ref: '#/components/schemas/BotStats'
         '500':
           $ref: '#/components/responses/InternalServerError'
-
-
 
 
 components:
@@ -181,8 +130,6 @@ components:
           type: string
           description: Post text content
           maxLength: 1000
-        user:
-          $ref: '#/components/schemas/UserProfileSummary'
         images:
           type: array
           items:
@@ -206,7 +153,6 @@ components:
       required:
         - id
         - content
-        - user
         - images
         - created_at
         - updated_at
@@ -220,8 +166,6 @@ components:
         content:
           type: string
           description: Post text content
-        user:
-          $ref: '#/components/schemas/UserProfileSummary'
         images:
           type: array
           items:
@@ -245,15 +189,9 @@ components:
       required:
         - id
         - content
-        - user
         - images
         - created_at
         - updated_at
-
-
-
-
-
 
 
     Image:
@@ -269,96 +207,6 @@ components:
           description: Storage bucket name
       required:
         - bucket
-
-    UserProfile:
-      type: object
-      properties:
-        id:
-          type: string
-          description: User unique identifier
-        display_id:
-          type: string
-          description: User public display ID
-        nickname:
-          type: string
-          description: User display name
-          maxLength: 20
-        bio:
-          type: string
-          description: User biography/signature
-          maxLength: 100
-          nullable: true
-        email:
-          type: string
-          format: email
-          description: User contact email (only visible to profile owner)
-          nullable: true
-        posts_count:
-          type: integer
-          format: int64
-          description: Number of posts created
-        created_at:
-          type: string
-          format: date-time
-          description: User registration timestamp
-        updated_at:
-          type: string
-          format: date-time
-          description: Profile last update timestamp
-      required:
-        - id
-        - display_id
-        - nickname
-        - posts_count
-        - created_at
-        - updated_at
-        - avatar
-
-    UserProfileSummary:
-      type: object
-      properties:
-        user_id:
-          type: string
-          description: User unique identifier
-        display_id:
-          type: string
-          description: User public display ID
-        nickname:
-          type: string
-          description: User display name
-        bio:
-          type: string
-          description: User biography/signature (truncated)
-          maxLength: 50
-          nullable: true
-      required:
-        - user_id
-        - display_id
-        - nickname
-
-
-    SupabaseConfig:
-      type: object
-      properties:
-        project_reference:
-          type: string
-          description: Supabase project reference ID
-        api_anno_key:
-          type: string
-          description: Supabase anonymous API key
-        bucket_names:
-          type: object
-          description: Storage bucket names configuration
-          properties:
-            post_images:
-              type: string
-              description: post images bucket name
-          required:
-            - post_images
-      required:
-        - project_reference
-        - api_anno_key
-        - bucket_names
 
     PaginationMeta:
       type: object
@@ -411,7 +259,6 @@ components:
         - enabled
         - check_interval
         - processed_count
-
 
 
   responses:

@@ -16,6 +16,10 @@ help: ## Display this help
 generate:
 	@echo "Generating code..."
 	$(GO) generate ./...
+	docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate \
+		-i /local/api/v1/openapi.yaml \
+		-g typescript-fetch \
+		-o /local/web/src/client
 
 # Generate API documentation
 .PHONY: generate-apidoc
@@ -42,7 +46,7 @@ build: deps generate ## Build the application
 .PHONY: run
 run: build ## Run the application
 	@echo "Running application..."
-	./bin/ server
+	./bin/threadmirror server
 
 # Run development server
 .PHONY: dev
