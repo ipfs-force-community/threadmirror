@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"github.com/urfave/cli/v2"
 	"go.uber.org/fx"
@@ -43,6 +44,7 @@ var ServerCommand = &cli.Command{
 		ipfsConf := config.LoadIPFSConfigFromCLI(c)
 
 		fxApp := fx.New(
+			fx.StartTimeout(60*time.Second),
 			// Provide the configuration
 			fx.Supply(serverConf),
 			fx.Supply(botConf),
@@ -62,7 +64,7 @@ var ServerCommand = &cli.Command{
 			servicefx.Module,
 			i18nfx.Module(&i18n.LocaleFS),
 			authfx.ModuleAuth0(auth0Conf),
-			botfx.Module,
+			botfx.Module(botConf.Enable),
 			llmfx.Module,
 			ipfsfx.Module,
 			fx.Invoke(func(lc fx.Lifecycle, db *sql.DB) {

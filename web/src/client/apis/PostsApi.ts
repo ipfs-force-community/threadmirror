@@ -56,11 +56,8 @@ export class PostsApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-
-        let urlPath = `/posts`;
-
         const response = await this.request({
-            path: urlPath,
+            path: `/posts`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -94,12 +91,8 @@ export class PostsApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-
-        let urlPath = `/posts/{id}`;
-        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
-
         const response = await this.request({
-            path: urlPath,
+            path: `/posts/{id}`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id']))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,

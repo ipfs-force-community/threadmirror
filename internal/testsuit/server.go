@@ -61,6 +61,7 @@ func SetupTestServer(t *testing.T, db *sql.DB) *gin.Engine {
 		testBotConfig.MaxMentionsCheck,
 		processedMentionService,
 		botCookieService,
+		postSvc,
 		logger,
 	)
 

@@ -91,6 +91,10 @@ func createTestBot(_ *testing.T) *TwitterBot {
 	mockBotCookieRepo := NewMockBotCookieRepo()
 	botCookieService := service.NewBotCookieService(mockBotCookieRepo)
 
+	// Create mock post service - create a real PostService with nil dependencies for testing
+	// For the bot test, we can pass nil dependencies since we're mainly testing bot initialization
+	mockPostService := service.NewPostService(nil, nil, nil)
+
 	return NewTwitterBot(
 		"testbot",          // username
 		"testpass",         // password
@@ -99,6 +103,7 @@ func createTestBot(_ *testing.T) *TwitterBot {
 		10,                 // maxMentionsCheck
 		processedMentionService,
 		botCookieService,
+		mockPostService,
 		logger,
 	)
 }
@@ -188,5 +193,45 @@ func TestGetStats(t *testing.T) {
 	assert.Equal(t, true, stats["enabled"])
 	assert.Equal(t, "testbot", stats["username"])
 	assert.Equal(t, "5m0s", stats["check_interval"])
+	assert.Equal(t, true, stats["randomized"])
 	assert.Equal(t, "database", stats["storage_type"])
+}
+
+func TestRandomizedInterval(t *testing.T) {
+	bot := createTestBot(t)
+	baseInterval := bot.checkInterval // 5 minutes
+
+	// Test multiple calculations to ensure randomization
+	intervals := make([]time.Duration, 20)
+	for i := 0; i < 20; i++ {
+		intervals[i] = bot.randomizedInterval()
+	}
+
+	// Calculate expected range (±30% of base interval)
+	jitterRange := time.Duration(float64(baseInterval) * 0.3)
+	minExpected := baseInterval - jitterRange
+	maxExpected := baseInterval + jitterRange
+
+	// Ensure minimum of 30 seconds
+	if minExpected < 30*time.Second {
+		minExpected = 30 * time.Second
+	}
+
+	for _, interval := range intervals {
+		// Should be within expected bounds
+		assert.GreaterOrEqual(t, interval, minExpected,
+			"Interval should be >= min expected (%v)", minExpected)
+		assert.LessOrEqual(t, interval, maxExpected,
+			"Interval should be <= max expected (%v)", maxExpected)
+	}
+
+	// Check that we get variation (not all the same)
+	allSame := true
+	for i := 1; i < len(intervals); i++ {
+		if intervals[i] != intervals[0] {
+			allSame = false
+			break
+		}
+	}
+	assert.False(t, allSame, "Should generate different intervals, got all same: %v", intervals[0])
 }

@@ -289,7 +289,7 @@ func convertGeneratedUserToUser(genUser *generated.User) *User {
 	legacy := &genUser.Legacy
 	user := &User{
 		RestID:         genUser.RestId,
-		ID:             genUser.RestId,
+		ID:             genUser.Id,
 		Name:           legacy.Name,
 		ScreenName:     legacy.ScreenName,
 		Description:    legacy.Description,

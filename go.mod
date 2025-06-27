@@ -9,6 +9,8 @@ tool (
 
 require (
 	github.com/auth0/go-jwt-middleware/v2 v2.3.0
+	github.com/filecoin-project/go-fil-commcid v0.2.0
+	github.com/filecoin-project/go-fil-commp-hashhash v0.2.0
 	github.com/getkin/kin-openapi v0.127.0
 	github.com/gin-contrib/cors v1.7.5
 	github.com/gin-gonic/gin v1.10.1

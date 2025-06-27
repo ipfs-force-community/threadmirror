@@ -30,6 +30,7 @@ type Auth0Config struct {
 
 // BotConfig holds Twitter bot configuration
 type BotConfig struct {
+	Enable bool
 	// Twitter credentials
 	Username string
 	Password string
@@ -65,6 +66,7 @@ func LoadAuth0ConfigFromCLI(c *cli.Context) *Auth0Config {
 
 func LoadBotConfigFromCLI(c *cli.Context) *BotConfig {
 	return &BotConfig{
+		Enable:           c.Bool("bot-enable"),
 		Username:         c.String("bot-username"),
 		Password:         c.String("bot-password"),
 		Email:            c.String("bot-email"),
@@ -74,10 +76,33 @@ func LoadBotConfigFromCLI(c *cli.Context) *BotConfig {
 }
 
 func LoadIPFSConfigFromCLI(c *cli.Context) *ipfsfx.Config {
-	return &ipfsfx.Config{
-		Backend: c.String("ipfs-backend"),
-		NodeURL: c.String("ipfs-node-url"),
+	backend := c.String("ipfs-backend")
+
+	config := &ipfsfx.Config{
+		Backend: backend,
 	}
+
+	// Configure backend-specific settings
+	switch backend {
+	case "kubo":
+		config.Kubo = &ipfsfx.KuboConfig{
+			NodeURL: c.String("ipfs-kubo-node-url"),
+		}
+	case "pdp":
+		config.PDP = &ipfsfx.PDPConfig{
+			ServiceURL:  c.String("ipfs-pdp-service-url"),
+			ServiceName: c.String("ipfs-pdp-service-name"),
+			PrivateKey:  c.String("ipfs-pdp-private-key"),
+		}
+	default:
+		// Default to kubo if backend is not recognized
+		config.Backend = "kubo"
+		config.Kubo = &ipfsfx.KuboConfig{
+			NodeURL: c.String("ipfs-kubo-node-url"),
+		}
+	}
+
+	return config
 }
 
 // GetServerCLIFlags returns server-related CLI flags
@@ -141,6 +166,12 @@ func GetAuth0CLIFlags() []cli.Flag {
 // GetBotCLIFlags returns bot-related CLI flags
 func GetBotCLIFlags() []cli.Flag {
 	return []cli.Flag{
+		&cli.BoolFlag{
+			Name:    "bot-enable",
+			Usage:   "Enable the bot",
+			EnvVars: []string{"BOT_ENABLE"},
+			Value:   true,
+		},
 		&cli.StringFlag{
 			Name:    "bot-username",
 			Usage:   "Twitter bot username",
@@ -208,14 +239,31 @@ func GetIPFSCLIFlags() []cli.Flag {
 		&cli.StringFlag{
 			Name:    "ipfs-backend",
 			Value:   "kubo",
-			Usage:   "IPFS backend (kubo)",
+			Usage:   "IPFS backend (kubo, pdp)",
 			EnvVars: []string{"IPFS_BACKEND"},
 		},
+		// Kubo backend flags
 		&cli.StringFlag{
-			Name:    "ipfs-node-url",
+			Name:    "ipfs-kubo-node-url",
 			Value:   "/ip4/127.0.0.1/tcp/5001",
-			Usage:   "IPFS node URL/multiaddr",
-			EnvVars: []string{"IPFS_NODE_URL"},
+			Usage:   "Kubo IPFS node URL/multiaddr",
+			EnvVars: []string{"IPFS_KUBO_NODE_URL"},
+		},
+		// PDP backend flags
+		&cli.StringFlag{
+			Name:    "ipfs-pdp-service-url",
+			Usage:   "PDP service URL",
+			EnvVars: []string{"IPFS_PDP_SERVICE_URL"},
+		},
+		&cli.StringFlag{
+			Name:    "ipfs-pdp-service-name",
+			Usage:   "PDP service name",
+			EnvVars: []string{"IPFS_PDP_SERVICE_NAME"},
+		},
+		&cli.StringFlag{
+			Name:    "ipfs-pdp-private-key",
+			Usage:   "PDP private key (PEM format)",
+			EnvVars: []string{"IPFS_PDP_PRIVATE_KEY"},
 		},
 	}
 }

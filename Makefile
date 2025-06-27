@@ -16,7 +16,7 @@ help: ## Display this help
 generate:
 	@echo "Generating code..."
 	$(GO) generate ./...
-	docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate \
+	rm -rf web/src/client/ && docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate \
 		-i /local/api/v1/openapi.yaml \
 		-g typescript-fetch \
 		-o /local/web/src/client
