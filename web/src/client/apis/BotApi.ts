@@ -36,8 +36,11 @@ export class BotApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/bot/stats`;
+
         const response = await this.request({
-            path: `/bot/stats`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,

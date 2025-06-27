@@ -17,7 +17,7 @@ Follow these steps to set up and run the project locally:
 
    ```bash
    git clone <repository-url>
-   cd msg-stream
+   cd <repository-name-dir>/web
    ```
 
 2. **Install Dependencies**  

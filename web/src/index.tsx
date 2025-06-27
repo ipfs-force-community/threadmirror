@@ -23,7 +23,6 @@ root.render(
     authorizationParams={{
       redirect_uri: window.location.origin,
       ...(process.env.REACT_APP_AUTH0_AUDIENCE ? { audience: process.env.REACT_APP_AUTH0_AUDIENCE } : null),
-      scope: 'openid profile email',
     }}
   >
     <CookiesProvider>

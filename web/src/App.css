@@ -13,6 +13,26 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+.project-title-link {
+  text-decoration: none !important;
+  color: white !important;
+  cursor: default;
+}
+
+.project-title-link:hover, 
+.App-header a.project-title-link:hover,
+.App-header .project-title-link:hover {
+  text-decoration: none !important;
+  color: white !important;
+  background-color: transparent !important;
+}
+
+.project-title {
+  margin: 0;
+  font-size: 1.8em;
+  font-weight: bold;
+}
+
 main {
   padding: 20px;
   max-width: 1080px;
