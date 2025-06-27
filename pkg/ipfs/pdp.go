@@ -98,7 +98,7 @@ func (p *PDP) Get(ctx context.Context, cid cid.Cid) (io.ReadCloser, error) {
 
 	// Check response status
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return nil, fmt.Errorf("failed to download piece %s: status code %d", cid.String(), resp.StatusCode)
 	}
 
@@ -170,9 +170,10 @@ func uploadOnePiece(client *http.Client, serviceURL string, reqBody []byte, jwtT
 	if err != nil {
 		return fmt.Errorf("failed to send request: %v", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // nolint:errcheck
 
-	if resp.StatusCode == http.StatusOK {
+	switch resp.StatusCode {
+	case http.StatusOK:
 		// Piece already exists, get the pieceCID from the response
 		var respData map[string]string
 		err = json.NewDecoder(resp.Body).Decode(&respData)
@@ -181,7 +182,7 @@ func uploadOnePiece(client *http.Client, serviceURL string, reqBody []byte, jwtT
 		}
 
 		return nil
-	} else if resp.StatusCode == http.StatusCreated {
+	case http.StatusCreated:
 
 		// Get the upload URL from the Location header
 		uploadURL := resp.Header.Get("Location")
@@ -206,7 +207,7 @@ func uploadOnePiece(client *http.Client, serviceURL string, reqBody []byte, jwtT
 		if err != nil {
 			return fmt.Errorf("failed to upload piece data: %v", err)
 		}
-		defer uploadResp.Body.Close()
+		defer uploadResp.Body.Close() // nolint:errcheck
 
 		if uploadResp.StatusCode != http.StatusNoContent {
 			body, _ := io.ReadAll(uploadResp.Body)
@@ -214,7 +215,7 @@ func uploadOnePiece(client *http.Client, serviceURL string, reqBody []byte, jwtT
 		}
 
 		return nil
-	} else {
+	default:
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("server returned status code %d: %s", resp.StatusCode, string(body))
 	}

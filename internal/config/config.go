@@ -30,6 +30,7 @@ type Auth0Config struct {
 
 // BotConfig holds Twitter bot configuration
 type BotConfig struct {
+	Enable bool
 	// Twitter credentials
 	Username string
 	Password string
@@ -65,6 +66,7 @@ func LoadAuth0ConfigFromCLI(c *cli.Context) *Auth0Config {
 
 func LoadBotConfigFromCLI(c *cli.Context) *BotConfig {
 	return &BotConfig{
+		Enable:           c.Bool("bot-enable"),
 		Username:         c.String("bot-username"),
 		Password:         c.String("bot-password"),
 		Email:            c.String("bot-email"),
@@ -164,6 +166,12 @@ func GetAuth0CLIFlags() []cli.Flag {
 // GetBotCLIFlags returns bot-related CLI flags
 func GetBotCLIFlags() []cli.Flag {
 	return []cli.Flag{
+		&cli.BoolFlag{
+			Name:    "bot-enable",
+			Usage:   "Enable the bot",
+			EnvVars: []string{"BOT_ENABLE"},
+			Value:   true,
+		},
 		&cli.StringFlag{
 			Name:    "bot-username",
 			Usage:   "Twitter bot username",

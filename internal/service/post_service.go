@@ -91,6 +91,9 @@ func (s *PostService) CreatePost(
 	userID string,
 	req *CreatePostRequest,
 ) (*PostDetail, error) {
+	if len(req.Tweets) == 0 {
+		return nil, fmt.Errorf("no tweets provided")
+	}
 
 	jsonTweets, err := json.Marshal(req.Tweets)
 	if err != nil {
@@ -110,7 +113,7 @@ func (s *PostService) CreatePost(
 
 	// Extract author information from the first tweet (main tweet)
 	var authorID, authorName, authorScreenName, authorProfileImageURL string
-	if len(req.Tweets) > 0 && req.Tweets[0].Author != nil {
+	if req.Tweets[0].Author != nil {
 		author := req.Tweets[0].Author
 		authorID = author.ID
 		authorName = author.Name
@@ -120,6 +123,7 @@ func (s *PostService) CreatePost(
 
 	// Create post record
 	post := &model.Post{
+		ID:                    req.Tweets[0].ID,
 		UserID:                userID,
 		AuthorID:              authorID,
 		CID:                   cid.String(),
@@ -266,7 +270,7 @@ func (s *PostService) loadThreadsFromIPFS(ctx context.Context, cidStr string) ([
 	if err != nil {
 		return nil, fmt.Errorf("failed to get content from IPFS: %w", err)
 	}
-	defer reader.Close()
+	defer reader.Close() // nolint:errcheck
 
 	// Read all content
 	var buffer bytes.Buffer
