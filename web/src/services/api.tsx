@@ -3,7 +3,7 @@ import { UserListResponse, UserTwitterResponse, TwitterDetailResponse } from '@s
 import { useApi } from './api_class';
 
 const useMock = process.env.REACT_APP_USE_MOCK === 'true' || false;
-console.log('useMock', useMock);
+
 export const useUserApi = () => {
   const { request } = useApi();
 

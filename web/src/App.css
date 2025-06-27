@@ -4,9 +4,13 @@
 }
 
 .App-header {
-  background-color: #282c34;
-  padding: 20px;
+  background: linear-gradient(90deg, #2a2f4a, #3c4b6e);
+  padding: 15px 20px;
   color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 main {
@@ -27,6 +31,7 @@ button {
   padding: 8px 16px;
   cursor: pointer;
   border-radius: 4px;
+  transition: background-color 0.2s ease;
 }
 
 button:hover {
