@@ -3,6 +3,7 @@ package config
 import (
 	"time"
 
+	"github.com/ipfs-force-community/threadmirror/pkg/ipfs/ipfsfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/llm/llmfx"
 	"github.com/urfave/cli/v2"
 )
@@ -69,6 +70,13 @@ func LoadBotConfigFromCLI(c *cli.Context) *BotConfig {
 		Email:            c.String("bot-email"),
 		CheckInterval:    c.Duration("bot-check-interval"),
 		MaxMentionsCheck: c.Int("bot-max-mentions"),
+	}
+}
+
+func LoadIPFSConfigFromCLI(c *cli.Context) *ipfsfx.Config {
+	return &ipfsfx.Config{
+		Backend: c.String("ipfs-backend"),
+		NodeURL: c.String("ipfs-node-url"),
 	}
 }
 
@@ -190,6 +198,24 @@ func GetLLMCLIFlags() []cli.Flag {
 			Value:   "gpt-4o-mini",
 			Usage:   "OpenAI model name",
 			EnvVars: []string{"OPENAI_MODEL"},
+		},
+	}
+}
+
+// GetIPFSCLIFlags returns IPFS-related CLI flags
+func GetIPFSCLIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "ipfs-backend",
+			Value:   "kubo",
+			Usage:   "IPFS backend (kubo)",
+			EnvVars: []string{"IPFS_BACKEND"},
+		},
+		&cli.StringFlag{
+			Name:    "ipfs-node-url",
+			Value:   "/ip4/127.0.0.1/tcp/5001",
+			Usage:   "IPFS node URL/multiaddr",
+			EnvVars: []string{"IPFS_NODE_URL"},
 		},
 	}
 }

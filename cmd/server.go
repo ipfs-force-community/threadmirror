@@ -16,6 +16,7 @@ import (
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql/sqlfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/i18n/i18nfx"
+	"github.com/ipfs-force-community/threadmirror/pkg/ipfs/ipfsfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/llm/llmfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/log/logfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/util"
@@ -30,6 +31,7 @@ var ServerCommand = &cli.Command{
 		config.GetBotCLIFlags(),
 		config.GetAuth0CLIFlags(),
 		config.GetLLMCLIFlags(),
+		config.GetIPFSCLIFlags(),
 	),
 	Action: func(c *cli.Context) error {
 		serverConf := config.LoadServerConfigFromCLI(c)
@@ -38,12 +40,14 @@ var ServerCommand = &cli.Command{
 		debug := serverConf.Debug
 		auth0Conf := config.LoadAuth0ConfigFromCLI(c)
 		llmConf := config.LoadLLMConfigFromCLI(c)
+		ipfsConf := config.LoadIPFSConfigFromCLI(c)
 
 		fxApp := fx.New(
 			// Provide the configuration
 			fx.Supply(serverConf),
 			fx.Supply(botConf),
 			fx.Supply(llmConf),
+			fx.Supply(ipfsConf),
 			fx.Supply(&logfx.Config{
 				Level:      c.String("log-level"),
 				LogDevMode: debug,
@@ -60,6 +64,7 @@ var ServerCommand = &cli.Command{
 			authfx.ModuleAuth0(auth0Conf),
 			botfx.Module,
 			llmfx.Module,
+			ipfsfx.Module,
 			fx.Invoke(func(lc fx.Lifecycle, db *sql.DB) {
 				if debug {
 					lc.Append(fx.StartHook(migrateFn(db)))
