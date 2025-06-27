@@ -96,3 +96,46 @@
 .mediaImage:hover {
   transform: scale(1.02); /* 鼠标悬停时轻微放大 */
 }
+
+/* 错误处理样式 */
+.errorContainer {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 5px solid #ffc107;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.errorMessage {
+  margin: 0;
+  font-size: 16px;
+}
+
+.retryButton {
+  background-color: #ffc107;
+  color: #856404;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.retryButton:hover {
+  background-color: #e0a800;
+}
+
+/* 自定义Toast样式 */
+:global(.customToast) {
+  font-weight: 500 !important;
+  font-size: 15px !important;
+  background-color: rgba(255, 242, 242, 0.95) !important;
+  border-left: 4px solid #e74c3c !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
+}

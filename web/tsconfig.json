@@ -8,6 +8,8 @@
       "@pages/*": ["pages/*"],
       "@services/*": ["services/*"],
       "@utils/*": ["utils/*"],
+      "@assets/*": ["assets/*"], 
+      "@client/*": ["client/*"],
       "@src/*": ["*"]
     },
     "resolveJsonModule": true,
