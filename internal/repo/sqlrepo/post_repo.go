@@ -40,8 +40,7 @@ func (r *PostRepo) GetPosts(
 	var posts []model.Post
 	var total int64
 
-	query := r.db.Model(&model.Post{}).
-		Preload("User")
+	query := r.db.Model(&model.Post{})
 
 	// Filter by user if provided
 	if userID != "" {
@@ -71,7 +70,6 @@ func (r *PostRepo) GetPostsByUser(
 	var total int64
 
 	query := r.db.Model(&model.Post{}).
-		Preload("User").
 		Where("user_id = ?", userID)
 
 	// Count total records

@@ -96,7 +96,7 @@ func (m *MockLLM) Call(ctx context.Context, prompt string, options ...llms.CallO
 // MockIPFSStorage is a mock implementation for testing
 type MockIPFSStorage struct{}
 
-func (m *MockIPFSStorage) Add(ctx context.Context, content io.Reader) (cid.Cid, error) {
+func (m *MockIPFSStorage) Add(ctx context.Context, content io.ReadSeeker) (cid.Cid, error) {
 	// Return a fixed CID for testing
 	c, _ := cid.Parse("bafkreiabc123")
 	return c, nil
