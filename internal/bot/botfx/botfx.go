@@ -10,10 +10,17 @@ import (
 )
 
 // Module provides the bot dependency injection module
-var Module = fx.Module("bot",
-	fx.Provide(provideTwitterBot),
-	fx.Invoke(registerBotLifecycle),
-)
+func Module(startBot bool) fx.Option {
+	opts := []fx.Option{
+		fx.Provide(provideTwitterBot),
+	}
+
+	if startBot {
+		opts = append(opts, fx.Invoke(registerBotLifecycle))
+	}
+
+	return fx.Module("bot", opts...)
+}
 
 // provideTwitterBot provides a TwitterBot instance by extracting config fields
 func provideTwitterBot(
