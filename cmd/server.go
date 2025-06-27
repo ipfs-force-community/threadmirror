@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"github.com/urfave/cli/v2"
 	"go.uber.org/fx"
@@ -43,6 +44,7 @@ var ServerCommand = &cli.Command{
 		ipfsConf := config.LoadIPFSConfigFromCLI(c)
 
 		fxApp := fx.New(
+			fx.StartTimeout(60*time.Second),
 			// Provide the configuration
 			fx.Supply(serverConf),
 			fx.Supply(botConf),

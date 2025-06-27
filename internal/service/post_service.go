@@ -97,15 +97,15 @@ func (s *PostService) CreatePost(
 		return nil, fmt.Errorf("failed to marshal tweets: %w", err)
 	}
 
+	// Generate AI summary of the tweets
+	summary, err := s.generateTweetsSummary(ctx, string(jsonTweets))
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate AI summary: %w", err)
+	}
+
 	cid, err := s.storage.Add(ctx, bytes.NewReader(jsonTweets))
 	if err != nil {
 		return nil, fmt.Errorf("failed to add tweets to IPFS: %w", err)
-	}
-
-	// Generate AI summary of the tweets
-	summary, err := s.generateTweetsSummary(ctx, req.Tweets)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate AI summary: %w", err)
 	}
 
 	// Extract author information from the first tweet (main tweet)
@@ -220,28 +220,17 @@ func (s *PostService) buildPostSummary(
 }
 
 // generateTweetsSummary generates AI summary for tweets
-func (s *PostService) generateTweetsSummary(ctx context.Context, tweets []*xscraper.Tweet) (string, error) {
-	// Extract tweet content for summarization
-	var tweetTexts []string
-	for _, tweet := range tweets {
-		if tweet.Text != "" {
-			tweetTexts = append(tweetTexts, tweet.Text)
-		}
-	}
-
-	if len(tweetTexts) == 0 {
-		return "No content to summarize", nil
-	}
-
-	// Combine all tweet texts
-	allTweetText := strings.Join(tweetTexts, "\n\n")
+func (s *PostService) generateTweetsSummary(ctx context.Context, jsonTweets string) (string, error) {
 
 	// Create prompt for AI summarization
-	prompt := fmt.Sprintf(`Please provide a concise summary (maximum 200 characters) of the following tweets in Chinese:
+	prompt := fmt.Sprintf(`Please analyze the following JSON data containing Twitter/X posts and provide a concise summary (maximum 200 characters) in Chinese. 
 
+The JSON contains an array of tweet objects, each with fields like "text", "author", "created_at", etc. Focus on the main content and key themes from the "text" fields.
+
+JSON Data:
 %s
 
-Summary:`, allTweetText)
+Please provide a Chinese summary:`, jsonTweets)
 
 	// Generate summary using LLM
 	summary, err := llms.GenerateFromSinglePrompt(ctx, s.llm, prompt,

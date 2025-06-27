@@ -122,7 +122,7 @@ func (x *XScraper) SearchTweets(ctx context.Context, query string, maxTweets int
 	p.Features.ViewCountsEverywhereApiEnabled = true
 
 	var resp generated.SearchTimelineResponse
-	err := x.GetGraphQL(ctx, "/i/api/graphql/VhUd6vHVmLBcw0uX/SearchTimeline", &p, &resp)
+	err := x.GetGraphQL(ctx, "/i/api/graphql/VhUd6vHVmLBcw0uX-6jMLA/SearchTimeline", &p, &resp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tweet detail: %w", err)
 	}

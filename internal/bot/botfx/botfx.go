@@ -20,6 +20,7 @@ func provideTwitterBot(
 	botConfig *config.BotConfig,
 	processedMentionService *service.ProcessedMentionService,
 	botCookieService *service.BotCookieService,
+	postService *service.PostService,
 	logger *slog.Logger,
 ) *bot.TwitterBot {
 	return bot.NewTwitterBot(
@@ -30,6 +31,7 @@ func provideTwitterBot(
 		botConfig.MaxMentionsCheck,
 		processedMentionService,
 		botCookieService,
+		postService,
 		logger,
 	)
 }
