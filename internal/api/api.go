@@ -40,12 +40,12 @@ func NewServer(
 	engine.Use(i18n.Middleware(i18nBundle))
 	engine.Use(v1middleware.ErrorHandler())
 
-	if serverConfig.Debug {
-		c := cors.DefaultConfig()
-		c.AllowAllOrigins = true
-		c.AllowHeaders = append(c.AllowHeaders, "Authorization")
-		engine.Use(cors.New(c))
-	}
+	// config CORS，always allow cross-origin requests
+	c := cors.DefaultConfig()
+	c.AllowAllOrigins = true
+	c.AllowHeaders = append(c.AllowHeaders, "Authorization")
+	c.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	engine.Use(cors.New(c))
 
 	v1.RegisterHandlersWithOptions(
 		engine,
