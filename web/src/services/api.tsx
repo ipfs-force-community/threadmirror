@@ -42,12 +42,9 @@ const fetchPostDetail = async (request: PostsIdGetRequest) => {
 const fetchUserPostsMock = async (request: PostsGetRequest = {}) => {
   console.log('use mock data for fetchUserTwitter');
   const startIndex = (request?.offset || 0) * (request?.limit || 0);
-  const endIndex = startIndex + (request?.limit || 0);
+  const endIndex = Math.min(startIndex + (request?.limit || 0), mockPosts.length);
   const posts = mockPosts.slice(startIndex, endIndex);
-  console.log('request--------->', request);
-  posts.forEach(post => {
-    console.log('post--------->', post.id);
-  });
+  console.log('[mock]posts--------->', '[', startIndex, ',', endIndex, ']');
 
   return {
     meta: {

@@ -12,27 +12,37 @@ const UserPosts = () => {
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [apiErrorOccurred, setApiErrorOccurred] = useState(false);
-  const queryLimit = 3;
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const queryLimit = 10;
   const [pagination, setPagination] = useState({
     offset: 0,
     total: 0,
   });
   const observer = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
+  const postsContainerRef = useRef<HTMLDivElement>(null);
   const toastShownRef = useRef(false);
   const { fetchGetPosts } = useApiService();
 
-  // 检查用户是否已登录
   const isLoggedIn = isUserLoggedIn();
 
+  const calculateInitialLoadCount = useCallback(() => {
+    const viewportHeight = window.innerHeight;
+    const estimatedPostHeight = 200;
+    const postCount = Math.ceil(viewportHeight / estimatedPostHeight) + 2;
+    return Math.max(postCount, queryLimit);
+  }, []);
+
   const loadMorePosts = useCallback(async () => {
-    // 如果已经发生API错误，不再尝试加载
     if (loading || !hasMore || !isLoggedIn || apiErrorOccurred) return;
 
     setLoading(true);
     try {
+      const currentLimit = isInitialLoad ? calculateInitialLoadCount() : queryLimit;
+
       const response = await fetchGetPosts({
-        limit: queryLimit,
+        limit: currentLimit,
         offset: pagination.offset / queryLimit,
       });
 
@@ -54,23 +64,26 @@ const UserPosts = () => {
 
       setHasMore(
         responseData.length > 0 &&
-        responseData.length === queryLimit &&
+        responseData.length === currentLimit &&
         (
           response.meta?.total === undefined ||
           pagination.offset + responseData.length < response.meta.total
         )
       );
 
-      // 成功加载数据后重置错误状态
       setError(null);
       setApiErrorOccurred(false);
       toastShownRef.current = false;
+      
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+        setInitialLoadDone(true);
+      }
     } catch (err) {
       console.error('Failed to load posts:', err);
-      setError(err instanceof Error ? err : new Error('未知错误'));
+      setError(err instanceof Error ? err : new Error('unknown error'));
       setApiErrorOccurred(true);
 
-      // 确保只显示一次toast错误提示
       if (!toastShownRef.current) {
         toast.error("API service is unavailable", { duration: 5000 });
         toastShownRef.current = true;
@@ -78,12 +91,13 @@ const UserPosts = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchGetPosts, loading, hasMore, pagination, isLoggedIn, apiErrorOccurred]);
+  }, [fetchGetPosts, loading, hasMore, pagination, isLoggedIn, apiErrorOccurred, posts?.length, queryLimit, isInitialLoad, calculateInitialLoadCount]);
 
   const resetError = useCallback(() => {
     setError(null);
     setApiErrorOccurred(false);
     toastShownRef.current = false;
+    setIsInitialLoad(true);
     loadMorePosts();
   }, [loadMorePosts]);
 
@@ -115,18 +129,17 @@ const UserPosts = () => {
   }, [loading, hasMore, loadMorePosts, isLoggedIn, apiErrorOccurred]);
 
   useEffect(() => {
-    if (isLoggedIn && !apiErrorOccurred) {
+    if (isLoggedIn && !apiErrorOccurred && isInitialLoad && !initialLoadDone) {
       loadMorePosts();
     }
-  }, [isLoggedIn, loadMorePosts, apiErrorOccurred]);
+  }, [isLoggedIn, loadMorePosts, apiErrorOccurred, isInitialLoad, initialLoadDone]);
 
-  // 如果用户未登录，返回空白页面
   if (!isLoggedIn) {
     return <div className={styles.user_page}></div>;
   }
 
   return (
-    <div className={styles.user_page}>
+    <div className={styles.user_page} ref={postsContainerRef}>
       {error ? (
         <div className={styles.fallback_notice}>
           <p>API service is temporarily unavailable</p>
