@@ -15,43 +15,46 @@
 
 import * as runtime from '../runtime';
 import type {
-  BotStatsGet200Response,
+  HealthGet200Response,
+  HealthGet503Response,
 } from '../models/index';
 import {
-    BotStatsGet200ResponseFromJSON,
-    BotStatsGet200ResponseToJSON,
+    HealthGet200ResponseFromJSON,
+    HealthGet200ResponseToJSON,
+    HealthGet503ResponseFromJSON,
+    HealthGet503ResponseToJSON,
 } from '../models/index';
 
 /**
  * 
  */
-export class BotApi extends runtime.BaseAPI {
+export class HealthApi extends runtime.BaseAPI {
 
     /**
-     * Get current bot statistics and status
-     * Get bot statistics
+     * Check if the service is healthy and running
+     * Health check
      */
-    async botStatsGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BotStatsGet200Response>> {
+    async healthGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<HealthGet200Response>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/bot/stats`,
+            path: `/health`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => BotStatsGet200ResponseFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => HealthGet200ResponseFromJSON(jsonValue));
     }
 
     /**
-     * Get current bot statistics and status
-     * Get bot statistics
+     * Check if the service is healthy and running
+     * Health check
      */
-    async botStatsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BotStatsGet200Response> {
-        const response = await this.botStatsGetRaw(initOverrides);
+    async healthGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<HealthGet200Response> {
+        const response = await this.healthGetRaw(initOverrides);
         return await response.value();
     }
 
