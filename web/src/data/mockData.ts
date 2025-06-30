@@ -277,7 +277,7 @@ const originPosts: Post[] = [
   },
 ];
 
-export const generateData = (count: number, startId: number = 1000): Post[] => {
+const generateData = (count: number, startId: number = 1000): Post[] => {
   const result: Post[] = [];
   const templatePosts = originPosts;
 

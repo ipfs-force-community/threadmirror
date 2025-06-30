@@ -5,7 +5,7 @@ export const getDefaultCookieOptions = () => ({
     path: '/',
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax' as 'lax',
-    maxAge: 7 * 24 * 60 * 60, // 7天
+    maxAge: 24 * 60 * 60, // 1天
     domain: window.location.hostname
 });
 
