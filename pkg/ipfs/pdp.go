@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	commcid "github.com/filecoin-project/go-fil-commcid"
@@ -26,7 +27,14 @@ type PDP struct {
 }
 
 func NewPDP(serviceURL, serviceName, privateKey string) (*PDP, error) {
-	block, _ := pem.Decode([]byte(privateKey))
+	var privateKeyBytes []byte
+	if data, err := os.ReadFile(privateKey); err == nil {
+		privateKeyBytes = data
+	} else {
+		privateKeyBytes = bytes.ReplaceAll([]byte(privateKey), []byte("\\n"), []byte("\n"))
+	}
+
+	block, _ := pem.Decode(privateKeyBytes)
 	if block == nil {
 		return nil, fmt.Errorf("failed to parse private key PEM")
 	}
