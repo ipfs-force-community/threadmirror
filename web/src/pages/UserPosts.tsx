@@ -12,11 +12,10 @@ const UserPosts = () => {
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [apiErrorOccurred, setApiErrorOccurred] = useState(false);
+  const queryLimit = 3;
   const [pagination, setPagination] = useState({
     offset: 0,
-    limit: 3,
     total: 0,
-    currentPage: 0
   });
   const observer = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
@@ -33,8 +32,8 @@ const UserPosts = () => {
     setLoading(true);
     try {
       const response = await fetchGetPosts({
-        limit: pagination.limit,
-        offset: pagination.currentPage,
+        limit: queryLimit,
+        offset: pagination.offset / queryLimit,
       });
 
       const responseData = response.data || [];
@@ -49,20 +48,19 @@ const UserPosts = () => {
 
       setPagination(prev => ({
         ...prev,
-        offset: prev.offset + responseData.length,
-        currentPage: prev.currentPage + 1,
+        offset: posts?.length || 0,
         total: response.meta?.total || prev.total
       }));
 
       setHasMore(
         responseData.length > 0 &&
-        responseData.length === pagination.limit &&
+        responseData.length === queryLimit &&
         (
           response.meta?.total === undefined ||
           pagination.offset + responseData.length < response.meta.total
         )
       );
-      
+
       // 成功加载数据后重置错误状态
       setError(null);
       setApiErrorOccurred(false);
@@ -71,7 +69,7 @@ const UserPosts = () => {
       console.error('Failed to load posts:', err);
       setError(err instanceof Error ? err : new Error('未知错误'));
       setApiErrorOccurred(true);
-      
+
       // 确保只显示一次toast错误提示
       if (!toastShownRef.current) {
         toast.error("API service is unavailable", { duration: 5000 });
@@ -132,8 +130,8 @@ const UserPosts = () => {
       {error ? (
         <div className={styles.fallback_notice}>
           <p>API service is temporarily unavailable</p>
-          <button 
-            className={styles.retry_button} 
+          <button
+            className={styles.retry_button}
             onClick={resetError}
           >
             Retry

@@ -44,9 +44,11 @@ const fetchUserPostsMock = async (request: PostsGetRequest = {}) => {
   const startIndex = (request?.offset || 0) * (request?.limit || 0);
   const endIndex = startIndex + (request?.limit || 0);
   const posts = mockPosts.slice(startIndex, endIndex);
+  console.log('request--------->', request);
   posts.forEach(post => {
     console.log('post--------->', post.id);
   });
+
   return {
     meta: {
       total: mockPosts?.length || 0,

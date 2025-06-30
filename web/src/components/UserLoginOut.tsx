@@ -3,10 +3,10 @@ import { useAuth0, User } from "@auth0/auth0-react";
 import { UserIcon } from "./icons";
 import { toast } from 'sonner';
 import {
-    getAuthToken,
     getUserInfo,
     saveAuthCookies,
-    clearAuthCookies
+    clearAuthCookies,
+    isUserLoggedIn
 } from '@utils/cookie';
 import styles from "./UserLoginOut.module.css";
 
@@ -17,11 +17,10 @@ const UserLgoinOut = () => {
     const lastErrorRef = useRef<string | null>(null);
 
     const restoreUserFromCookies = useCallback(() => {
-        const token = getAuthToken();
-        if (!token) return false;
+        if (!isUserLoggedIn()) return false;
 
         const storedUser = getUserInfo<User>();
-        if (storedUser && storedUser.sub) {
+        if (storedUser) {
             setLocalUser(storedUser);
             return true;
         }
@@ -101,13 +100,12 @@ const UserLgoinOut = () => {
     };
 
     const handleAuthAction = () => {
-        if (localUser) {
+        if (isUserLoggedIn()) {
             handleLogout();
         } else {
             handleLogin();
         }
     };
-
 
     const handleLogoutClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -118,13 +116,12 @@ const UserLgoinOut = () => {
         return <div className="flex justify-center p-4">Loading...</div>;
     }
 
-    const isLoggedIn = !!localUser;
     const displayUser = localUser || user;
 
     return (
         <div className={styles.nav_container}>
             <div className={styles.user_container}>
-                {isLoggedIn && displayUser && (
+                {isUserLoggedIn() && displayUser && (
                     <div className={styles.user_profile} >
                         {displayUser.picture && (
                             <img
@@ -152,14 +149,14 @@ const UserLgoinOut = () => {
                         </span>
                     </div>
                 )}
-                {!isLoggedIn && (
+                {!isUserLoggedIn() && (
                     <div
                         role="button"
                         title="Login"
                         onClick={handleAuthAction}
                         className={styles.user_button}
                     >
-                        <UserIcon isLoggedIn={isLoggedIn} />
+                        <UserIcon isLoggedIn={false} />
                     </div>
                 )}
             </div>

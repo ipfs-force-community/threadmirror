@@ -9,12 +9,17 @@ import './App.css';
 
 function App() {
   return (
-    <Router>
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <div className="App">
-        <Toaster 
-          position="top-center" 
-          richColors={false} 
-          closeButton 
+        <Toaster
+          position="top-center"
+          richColors={false}
+          closeButton
           theme="light"
           toastOptions={{
             style: {
