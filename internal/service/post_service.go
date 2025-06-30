@@ -115,7 +115,7 @@ func (s *PostService) CreatePost(
 	var authorID, authorName, authorScreenName, authorProfileImageURL string
 	if req.Tweets[0].Author != nil {
 		author := req.Tweets[0].Author
-		authorID = author.ID
+		authorID = author.RestID
 		authorName = author.Name
 		authorScreenName = author.ScreenName
 		authorProfileImageURL = author.ProfileImageURL
