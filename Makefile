@@ -5,7 +5,7 @@
 SHELL = /usr/bin/env sh
 .SHELLFLAGS = -ec
 GO?=go
-GOFLAGS?=-gcflags="all=-N -l"
+GOFLAGS?=
 
 # Default target
 .PHONY: help
