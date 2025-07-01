@@ -59,6 +59,12 @@ export interface PostDetail {
      */
     createdAt: Date;
     /**
+     * Number of tweets in the thread
+     * @type {number}
+     * @memberof PostDetail
+     */
+    numTweets: number;
+    /**
      * Thread tweets associated with this post
      * @type {Array<Tweet>}
      * @memberof PostDetail
@@ -73,6 +79,7 @@ export function instanceOfPostDetail(value: object): value is PostDetail {
     if (!('id' in value) || value['id'] === undefined) return false;
     if (!('contentPreview' in value) || value['contentPreview'] === undefined) return false;
     if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
+    if (!('numTweets' in value) || value['numTweets'] === undefined) return false;
     if (!('threads' in value) || value['threads'] === undefined) return false;
     return true;
 }
@@ -91,6 +98,7 @@ export function PostDetailFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'contentPreview': json['content_preview'],
         'author': json['author'] == null ? undefined : PostAuthorFromJSON(json['author']),
         'createdAt': (new Date(json['created_at'])),
+        'numTweets': json['numTweets'],
         'threads': (json['threads'] == null ? null : (json['threads'] as Array<any>).map(TweetFromJSON)),
     };
 }
@@ -110,6 +118,7 @@ export function PostDetailToJSONTyped(value?: PostDetail | null, ignoreDiscrimin
         'content_preview': value['contentPreview'],
         'author': PostAuthorToJSON(value['author']),
         'created_at': ((value['createdAt']).toISOString()),
+        'numTweets': value['numTweets'],
         'threads': (value['threads'] == null ? null : (value['threads'] as Array<any>).map(TweetToJSON)),
     };
 }

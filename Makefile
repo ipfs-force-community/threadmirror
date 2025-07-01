@@ -19,7 +19,7 @@ generate:
 	$(GO) generate ./...
 
 # Generate code (including web client)
-.PHONY: generate
+.PHONY: generate-webclient
 generate-webclient:
 	@echo "Generating web client..."
 	rm -rf web/src/client/ && docker run --rm -v "$$(pwd):/local" openapitools/openapi-generator-cli generate \

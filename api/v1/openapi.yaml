@@ -188,10 +188,14 @@ components:
           type: string
           format: date-time
           description: Post creation timestamp
+        numTweets:
+          type: integer
+          description: Number of tweets in the thread
       required:
         - id
         - content_preview
         - created_at
+        - numTweets
 
     PostDetail:
       allOf:

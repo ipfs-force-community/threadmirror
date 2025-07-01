@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styles from './PostSummary.module.css';
-import { Post as PostData } from '@src/client/models';
+import { PostSummary as PostData } from '@src/client/models';
 
 const PostSummaryComponent: React.FC<{ post: PostData }> = ({ post }) => {
     const formatDate = (date: Date) => {
@@ -69,7 +69,7 @@ const PostSummaryComponent: React.FC<{ post: PostData }> = ({ post }) => {
                 {post.contentPreview}
             </div>
             <div className={styles.footer}>
-                <button className={styles.readMore}>Read {post?.threads?.length ? post.threads.length : 0} tweets</button>
+                <button className={styles.readMore}>Read {post?.numTweets} tweets</button>
             </div>
         </Link>
     );

@@ -26,7 +26,7 @@ func TestGetTweets(t *testing.T) {
 		},
 	}, slog.New(slog.NewTextHandler(os.Stdout, nil)))
 
-	tweets, err := scraper.GetTweets(context.Background(), "1938413168788967922")
+	tweets, err := scraper.GetTweets(context.Background(), "1939670365153657119")
 	if err != nil {
 		t.Fatal(err)
 		return

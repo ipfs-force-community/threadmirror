@@ -51,6 +51,12 @@ export interface PostSummary {
      * @memberof PostSummary
      */
     createdAt: Date;
+    /**
+     * Number of tweets in the thread
+     * @type {number}
+     * @memberof PostSummary
+     */
+    numTweets: number;
 }
 
 /**
@@ -60,6 +66,7 @@ export function instanceOfPostSummary(value: object): value is PostSummary {
     if (!('id' in value) || value['id'] === undefined) return false;
     if (!('contentPreview' in value) || value['contentPreview'] === undefined) return false;
     if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
+    if (!('numTweets' in value) || value['numTweets'] === undefined) return false;
     return true;
 }
 
@@ -77,6 +84,7 @@ export function PostSummaryFromJSONTyped(json: any, ignoreDiscriminator: boolean
         'contentPreview': json['content_preview'],
         'author': json['author'] == null ? undefined : PostAuthorFromJSON(json['author']),
         'createdAt': (new Date(json['created_at'])),
+        'numTweets': json['numTweets'],
     };
 }
 
@@ -95,6 +103,7 @@ export function PostSummaryToJSONTyped(value?: PostSummary | null, ignoreDiscrim
         'content_preview': value['contentPreview'],
         'author': PostAuthorToJSON(value['author']),
         'created_at': ((value['createdAt']).toISOString()),
+        'numTweets': value['numTweets'],
     };
 }
 

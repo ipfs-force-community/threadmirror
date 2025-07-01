@@ -13,6 +13,8 @@ type Thread struct {
 	AuthorScreenName      string `gorm:"size:50" json:"author_screen_name"`        // Screen name (without @)
 	AuthorProfileImageURL string `gorm:"size:500" json:"author_profile_image_url"` // Profile image URL
 
+	NumTweets int `gorm:"not null;default:0" json:"numTweets"` // Number of tweets in the thread
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

@@ -4,7 +4,7 @@ import { useApiService } from '@services/api';
 import UserProfileComponent from '@components/common/UserProfile';
 import { toast } from 'sonner';
 import styles from './PostDetail.module.css';
-import { Post as PostData } from '@src/client/models';
+import { PostDetail as PostData } from '@src/client/models';
 
 const PostDetail = () => {
   const { postData } = useLocation().state || {};

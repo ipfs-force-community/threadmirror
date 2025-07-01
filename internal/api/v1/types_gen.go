@@ -105,6 +105,9 @@ type PostDetail struct {
 	// Id Post unique identifier
 	Id string `json:"id"`
 
+	// NumTweets Number of tweets in the thread
+	NumTweets int `json:"numTweets"`
+
 	// Threads Thread tweets associated with this post
 	Threads *[]Tweet `json:"threads"`
 }
@@ -121,6 +124,9 @@ type PostSummary struct {
 
 	// Id Post unique identifier
 	Id string `json:"id"`
+
+	// NumTweets Number of tweets in the thread
+	NumTweets int `json:"numTweets"`
 }
 
 // Tweet defines model for Tweet.

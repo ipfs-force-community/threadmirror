@@ -48,6 +48,7 @@ type PostSummaryDetail struct {
 	ContentPreview string      `json:"content_preview"`
 	Author         *PostAuthor `json:"author"`
 	CreatedAt      time.Time   `json:"created_at"`
+	NumTweets      int         `json:"numTweets"`
 }
 
 // CreatePostRequest represents a request to create a new post
@@ -145,6 +146,7 @@ func (s *PostService) CreatePost(
 				AuthorName:            authorName,
 				AuthorScreenName:      authorScreenName,
 				AuthorProfileImageURL: authorProfileImageURL,
+				NumTweets:             len(req.Tweets) - 1,
 			})
 			if err != nil {
 				return fmt.Errorf("failed to create thread: %w", err)
@@ -274,11 +276,17 @@ func (s *PostService) buildPostSummary(
 		contentPreview = thread.Summary
 	}
 
+	NumTweets := 0
+	if thread != nil {
+		NumTweets = thread.NumTweets
+	}
+
 	return &PostSummaryDetail{
 		ID:             post.ID,
 		ContentPreview: contentPreview, // Use thread summary as content preview
 		Author:         author,
 		CreatedAt:      post.CreatedAt,
+		NumTweets:      NumTweets,
 	}
 }
 

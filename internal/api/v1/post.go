@@ -83,6 +83,7 @@ func (h *V1Handler) convertPostSummaryToAPI(post service.PostSummaryDetail) Post
 		ContentPreview: post.ContentPreview,
 		Author:         author,
 		CreatedAt:      post.CreatedAt,
+		NumTweets:      post.NumTweets,
 	}
 }
 
