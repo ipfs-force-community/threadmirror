@@ -43,7 +43,22 @@ func New(level string, devMode bool) (*Logger, error) {
 			EncodeCaller:   zapcore.ShortCallerEncoder, // 简短的调用者信息
 		}
 	} else {
+		// Use production defaults but render as human-readable console instead of JSON.
 		zapConfig = zap.NewProductionConfig()
+		zapConfig.Encoding = "console"
+		zapConfig.EncoderConfig = zapcore.EncoderConfig{
+			TimeKey:        "time",
+			LevelKey:       "level",
+			NameKey:        "logger",
+			CallerKey:      "caller",
+			MessageKey:     "msg",
+			StacktraceKey:  "stacktrace",
+			LineEnding:     zapcore.DefaultLineEnding,
+			EncodeLevel:    zapcore.CapitalLevelEncoder, // No color in production
+			EncodeTime:     zapcore.ISO8601TimeEncoder,
+			EncodeDuration: zapcore.StringDurationEncoder,
+			EncodeCaller:   zapcore.ShortCallerEncoder,
+		}
 	}
 
 	if err := zapLevel.UnmarshalText([]byte(level)); err != nil {
