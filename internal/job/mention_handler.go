@@ -1,0 +1,133 @@
+package job
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log/slog"
+	"time"
+
+	"github.com/ipfs-force-community/threadmirror/internal/service"
+	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
+	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
+)
+
+const (
+	TypeProcessMention = "process_mention"
+)
+
+// MentionPayload is the Asynq job payload for processing a Twitter mention.
+// It contains a single Tweet (the mention itself).
+type MentionPayload struct {
+	Tweet *xscraper.Tweet `json:"tweet"`
+}
+
+// MentionHandler is an Asynq worker that converts a Twitter mention into a Post.
+type MentionHandler struct {
+	processedMentionService service.ProcessedMentionService
+	postService             service.PostService
+	logger                  *slog.Logger
+}
+
+// NewMentionHandler constructs a MentionHandler.
+func NewMentionHandler(
+	processedMentionService service.ProcessedMentionService,
+	postService service.PostService,
+	logger *slog.Logger,
+) *MentionHandler {
+	return &MentionHandler{
+		processedMentionService: processedMentionService,
+		postService:             postService,
+		logger:                  logger.With("worker", "mention"),
+	}
+}
+
+// NewMentionJob creates a new generic job for processing a mention with appropriate options.
+func NewMentionJob(tweet *xscraper.Tweet) (*jobq.Job, error) {
+	payload, err := json.Marshal(MentionPayload{Tweet: tweet})
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal mention payload: %w", err)
+	}
+
+	// Configure job with retry policy and timeout
+	return jobq.NewJob(
+		TypeProcessMention,
+		payload,
+	), nil
+}
+
+// HandleJob implements the job.JobHandler interface.
+func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
+	var payload MentionPayload
+	if err := json.Unmarshal(j.Payload, &payload); err != nil {
+		// Use SkipRetry for unmarshal errors as they won't resolve with retries
+		return fmt.Errorf("json.Unmarshal failed: %v", err)
+	}
+
+	mention := payload.Tweet
+	if mention == nil {
+		// Use SkipRetry for nil tweet as this won't resolve with retries
+		return fmt.Errorf("tweet is nil")
+	}
+
+	// Validate required fields
+	if mention.Author == nil {
+		return fmt.Errorf("tweet author is nil")
+	}
+
+	mentionUserID := mention.Author.ID
+	if mentionUserID == "" {
+		return fmt.Errorf("mention user ID is empty")
+	}
+
+	log := w.logger.With(
+		"job_type", j.Type,
+		"mention_user_id", mentionUserID,
+		"tweet_id", mention.ID,
+		"author_screen_name", mention.Author.ScreenName,
+	)
+
+	// Check if already processed (idempotency check)
+	processed, err := w.processedMentionService.IsProcessed(ctx, mentionUserID, mention.ID)
+	if err != nil {
+		log.Error("Failed to check if mention is processed", "error", err)
+		// This is a transient error, allow retries
+		return fmt.Errorf("failed to check if mention is processed: %w", err)
+	}
+
+	if processed {
+		log.Debug("Mention already processed, skipping")
+		return nil // Success - idempotent operation
+	}
+
+	log.Info("🤖 Processing mention from queue",
+		"text", mention.Text,
+		"created_at", mention.CreatedAt.Format(time.RFC3339),
+	)
+
+	// Create post from mention
+	post, err := w.postService.CreatePost(ctx, mentionUserID, &service.CreatePostRequest{
+		Tweets: []*xscraper.Tweet{mention},
+	})
+	if err != nil {
+		log.Error("Failed to create post from mention", "error", err)
+		// This could be transient (network issues, db issues), allow retries
+		return fmt.Errorf("failed to create post from mention: %w", err)
+	}
+
+	// Mark as processed to prevent duplicate work
+	if err := w.processedMentionService.MarkProcessed(ctx, mentionUserID, mention.ID); err != nil {
+		log.Error("Failed to mark mention as processed",
+			"error", err,
+			"post_id", post.ID,
+		)
+		// This is serious but the post was created, so we should retry the marking
+		return fmt.Errorf("failed to mark mention as processed: %w", err)
+	}
+
+	log.Info("🤖 Mention processed successfully",
+		"post_id", post.ID,
+		"processing_time", time.Since(mention.CreatedAt),
+	)
+	return nil
+}

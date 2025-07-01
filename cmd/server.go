@@ -1,20 +1,20 @@
 package main
 
 import (
-	"context"
+	"log/slog"
 	"time"
 
 	"github.com/urfave/cli/v2"
 	"go.uber.org/fx"
+	"go.uber.org/fx/fxevent"
 
 	"github.com/ipfs-force-community/threadmirror/i18n"
 	"github.com/ipfs-force-community/threadmirror/internal/api/apifx"
 	"github.com/ipfs-force-community/threadmirror/internal/bot/botfx"
 	"github.com/ipfs-force-community/threadmirror/internal/config"
-	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/internal/service/servicefx"
 	"github.com/ipfs-force-community/threadmirror/pkg/auth/authfx"
-	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
+	"github.com/ipfs-force-community/threadmirror/pkg/database/redis/redisfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql/sqlfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/i18n/i18nfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/ipfs/ipfsfx"
@@ -29,6 +29,7 @@ var ServerCommand = &cli.Command{
 	Flags: util.MergeSlices(
 		config.GetServerCLIFlags(),
 		config.GetDatabaseCLIFlags(),
+		config.GetRedisCLIFlags(),
 		config.GetBotCLIFlags(),
 		config.GetAuth0CLIFlags(),
 		config.GetLLMCLIFlags(),
@@ -37,8 +38,9 @@ var ServerCommand = &cli.Command{
 	Action: func(c *cli.Context) error {
 		serverConf := config.LoadServerConfigFromCLI(c)
 		dbConf := config.LoadDatabaseConfigFromCLI(c)
+		redisConf := config.LoadRedisConfigFromCLI(c)
 		botConf := config.LoadBotConfigFromCLI(c)
-		debug := serverConf.Debug
+		debug := c.Bool("debug")
 		auth0Conf := config.LoadAuth0ConfigFromCLI(c)
 		llmConf := config.LoadLLMConfigFromCLI(c)
 		ipfsConf := config.LoadIPFSConfigFromCLI(c)
@@ -47,6 +49,11 @@ var ServerCommand = &cli.Command{
 			fx.StartTimeout(60*time.Second),
 			// Provide the configuration
 			fx.Supply(serverConf),
+			fx.Supply(&redisfx.RedisConfig{
+				Addr:     redisConf.Addr,
+				Password: redisConf.Password,
+				DB:       redisConf.DB,
+			}),
 			fx.Supply(botConf),
 			fx.Supply(llmConf),
 			fx.Supply(ipfsConf),
@@ -60,6 +67,7 @@ var ServerCommand = &cli.Command{
 			}),
 			logfx.Module,
 			sqlfx.Module,
+			redisfx.Module,
 			apifx.Module,
 			servicefx.Module,
 			i18nfx.Module(&i18n.LocaleFS),
@@ -67,19 +75,11 @@ var ServerCommand = &cli.Command{
 			botfx.Module(botConf.Enable),
 			llmfx.Module,
 			ipfsfx.Module,
-			fx.Invoke(func(lc fx.Lifecycle, db *sql.DB) {
-				if debug {
-					lc.Append(fx.StartHook(migrateFn(db)))
-				}
+			fx.WithLogger(func(logger *slog.Logger) fxevent.Logger {
+				return &fxevent.SlogLogger{Logger: logger}
 			}),
 		)
 		fxApp.Run()
 		return nil
 	},
-}
-
-func migrateFn(db *sql.DB) func(context.Context) error {
-	return func(ctx context.Context) error {
-		return db.Migrate(ctx, model.AllModels())
-	}
 }

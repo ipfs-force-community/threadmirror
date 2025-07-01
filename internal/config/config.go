@@ -22,6 +22,13 @@ type DatabaseConfig struct {
 	DSN    string
 }
 
+// RedisConfig holds Redis configuration for Asynq
+type RedisConfig struct {
+	Addr     string
+	Password string
+	DB       int
+}
+
 // Auth0Config holds Auth0-related configuration
 type Auth0Config struct {
 	Domain   string
@@ -54,6 +61,14 @@ func LoadDatabaseConfigFromCLI(c *cli.Context) *DatabaseConfig {
 	return &DatabaseConfig{
 		Driver: c.String("db-driver"),
 		DSN:    c.String("db-dsn"),
+	}
+}
+
+func LoadRedisConfigFromCLI(c *cli.Context) *RedisConfig {
+	return &RedisConfig{
+		Addr:     c.String("redis-addr"),
+		Password: c.String("redis-password"),
+		DB:       c.Int("redis-db"),
 	}
 }
 
@@ -143,6 +158,30 @@ func GetDatabaseCLIFlags() []cli.Flag {
 			Value:   "file::memory:?cache=shared",
 			Usage:   "Database connection string",
 			EnvVars: []string{"DB_DSN"},
+		},
+	}
+}
+
+// GetRedisCLIFlags returns Redis-related CLI flags
+func GetRedisCLIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "redis-addr",
+			Value:   "localhost:6379",
+			Usage:   "Redis server address",
+			EnvVars: []string{"REDIS_ADDR"},
+		},
+		&cli.StringFlag{
+			Name:    "redis-password",
+			Value:   "",
+			Usage:   "Redis password",
+			EnvVars: []string{"REDIS_PASSWORD"},
+		},
+		&cli.IntFlag{
+			Name:    "redis-db",
+			Value:   0,
+			Usage:   "Redis database number",
+			EnvVars: []string{"REDIS_DB"},
 		},
 	}
 }
