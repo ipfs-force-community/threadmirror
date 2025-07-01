@@ -59,13 +59,14 @@ type CreatePostRequest struct {
 // PostRepoInterface defines the interface for post repo operations
 type PostRepoInterface interface {
 	// Post CRUD
-	GetPostByID(id string) (*model.Post, error)
-	CreatePost(post *model.Post) error
+	GetPostByID(ctx context.Context, id string) (*model.Post, error)
+	CreatePost(ctx context.Context, post *model.Post) error
 	GetPosts(
+		ctx context.Context,
 		userID string,
 		limit, offset int,
 	) ([]model.Post, int64, error)
-	GetPostsByUser(userID string, limit, offset int) ([]model.Post, int64, error)
+	GetPostsByUser(ctx context.Context, userID string, limit, offset int) ([]model.Post, int64, error)
 }
 
 // PostService provides business logic for post operations
@@ -102,15 +103,15 @@ func (s *PostService) CreatePost(
 ) (*PostDetail, error) {
 	var result *PostDetail
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		postRepo := sqlrepo.NewPostRepo(&sql.DB{DB: tx})
-		threadRepo := sqlrepo.NewThreadRepo(&sql.DB{DB: tx})
+		postRepo := sqlrepo.NewPostRepo()
+		threadRepo := sqlrepo.NewThreadRepo()
 
 		if len(req.Tweets) < 2 {
 			return fmt.Errorf("no tweets provided")
 		}
 
 		threadID := req.Tweets[len(req.Tweets)-2].RestID
-		_, err := threadRepo.GetThreadByID(threadID)
+		_, err := threadRepo.GetThreadByID(ctx, threadID)
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("failed to check thread existence: %w", err)
 		}
@@ -138,7 +139,7 @@ func (s *PostService) CreatePost(
 				authorScreenName = author.ScreenName
 				authorProfileImageURL = author.ProfileImageURL
 			}
-			err = threadRepo.CreateThread(&model.Thread{
+			err = threadRepo.CreateThread(ctx, &model.Thread{
 				ID:                    threadID,
 				Summary:               summary,
 				CID:                   cid.String(),
@@ -159,7 +160,7 @@ func (s *PostService) CreatePost(
 			ThreadID: threadID,
 		}
 
-		if err := postRepo.CreatePost(post); err != nil {
+		if err := postRepo.CreatePost(ctx, post); err != nil {
 			return fmt.Errorf("failed to create post: %w", err)
 		}
 
@@ -176,7 +177,8 @@ func (s *PostService) CreatePost(
 
 // GetPostByID retrieves a post by ID
 func (s *PostService) GetPostByID(ctx context.Context, postID string) (*PostDetail, error) {
-	post, err := s.postRepo.GetPostByID(postID)
+	postRepo := sqlrepo.NewPostRepo()
+	post, err := postRepo.GetPostByID(ctx, postID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrPostNotFound
@@ -192,7 +194,8 @@ func (s *PostService) GetPosts(
 	userID string,
 	limit, offset int,
 ) ([]PostSummaryDetail, int64, error) {
-	posts, total, err := s.postRepo.GetPosts(userID, limit, offset)
+	ctx := context.Background()
+	posts, total, err := s.postRepo.GetPosts(ctx, userID, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get posts: %w", err)
 	}
@@ -206,7 +209,7 @@ func (s *PostService) GetPosts(
 	}
 	threadsMap := map[string]*model.Thread{}
 	if len(threadIDs) > 0 && s.threadRepo != nil {
-		threadsMap, err = s.threadRepo.GetThreadsByIDs(threadIDs)
+		threadsMap, err = s.threadRepo.GetThreadsByIDs(ctx, threadIDs)
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to get threads: %w", err)
 		}
@@ -226,8 +229,8 @@ func (s *PostService) buildPostDetail(
 	ctx context.Context,
 	post *model.Post,
 ) (*PostDetail, error) {
-	// Fetch thread info
-	thread, err := s.threadRepo.GetThreadByID(post.ThreadID)
+	threadRepo := sqlrepo.NewThreadRepo()
+	thread, err := threadRepo.GetThreadByID(ctx, post.ThreadID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get thread: %w", err)
 	}
@@ -354,4 +357,85 @@ func (s *PostService) loadThreadsFromIPFS(ctx context.Context, cidStr string) ([
 	}
 
 	return tweets, nil
+}
+
+// CreateThreadPost creates a new post
+func (s *PostService) CreateThreadPost(
+	ctx context.Context,
+	userID string,
+	req *CreatePostRequest,
+) (*PostDetail, error) {
+	var result *PostDetail
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		ctx := sql.WithDBToContext(ctx, &sql.DB{DB: tx})
+		postRepo := s.postRepo
+		threadRepo := s.threadRepo
+
+		if len(req.Tweets) < 2 {
+			return fmt.Errorf("no tweets provided")
+		}
+
+		threadID := req.Tweets[len(req.Tweets)-2].RestID
+		_, err := threadRepo.GetThreadByID(ctx, threadID)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("failed to check thread existence: %w", err)
+		}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			jsonThread, err := json.Marshal(req.Tweets[:len(req.Tweets)-1])
+			if err != nil {
+				return fmt.Errorf("failed to marshal tweets: %w", err)
+			}
+
+			summary, err := s.generateTweetsSummary(ctx, string(jsonThread))
+			if err != nil {
+				return fmt.Errorf("failed to generate AI summary: %w", err)
+			}
+
+			cid, err := s.storage.Add(ctx, bytes.NewReader(jsonThread))
+			if err != nil {
+				return fmt.Errorf("failed to add tweets to IPFS: %w", err)
+			}
+
+			var authorID, authorName, authorScreenName, authorProfileImageURL string
+			if req.Tweets[len(req.Tweets)-2].Author != nil {
+				author := req.Tweets[len(req.Tweets)-2].Author
+				authorID = author.RestID
+				authorName = author.Name
+				authorScreenName = author.ScreenName
+				authorProfileImageURL = author.ProfileImageURL
+			}
+			err = threadRepo.CreateThread(ctx, &model.Thread{
+				ID:                    threadID,
+				Summary:               summary,
+				CID:                   cid.String(),
+				AuthorID:              authorID,
+				AuthorName:            authorName,
+				AuthorScreenName:      authorScreenName,
+				AuthorProfileImageURL: authorProfileImageURL,
+				NumTweets:             len(req.Tweets) - 1,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to create thread: %w", err)
+			}
+		}
+
+		post := &model.Post{
+			ID:       req.Tweets[len(req.Tweets)-1].RestID,
+			UserID:   userID,
+			ThreadID: threadID,
+		}
+
+		if err := postRepo.CreatePost(ctx, post); err != nil {
+			return fmt.Errorf("failed to create post: %w", err)
+		}
+
+		// 事务内查详情，cctx 保证用事务 repo
+		pd, err := s.GetPostByID(ctx, post.ID)
+		if err != nil {
+			return err
+		}
+		result = pd
+		return nil
+	})
+	return result, err
 }

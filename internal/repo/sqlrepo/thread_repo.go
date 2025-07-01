@@ -1,38 +1,41 @@
 package sqlrepo
 
 import (
+	"context"
+
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 )
 
 // ThreadRepo 提供 Thread 的基本数据库操作
-type ThreadRepo struct {
-	db *sql.DB
+type ThreadRepo struct{}
+
+func NewThreadRepo() *ThreadRepo {
+	return &ThreadRepo{}
 }
 
-func NewThreadRepo(db *sql.DB) *ThreadRepo {
-	return &ThreadRepo{db: db}
-}
-
-func (r *ThreadRepo) GetThreadByID(id string) (*model.Thread, error) {
+func (r *ThreadRepo) GetThreadByID(ctx context.Context, id string) (*model.Thread, error) {
+	db := sql.MustDBFromContext(ctx)
 	var thread model.Thread
-	err := r.db.Where("id = ?", id).First(&thread).Error
+	err := db.Where("id = ?", id).First(&thread).Error
 	if err != nil {
 		return nil, err
 	}
 	return &thread, nil
 }
 
-func (r *ThreadRepo) CreateThread(thread *model.Thread) error {
-	return r.db.Create(thread).Error
+func (r *ThreadRepo) CreateThread(ctx context.Context, thread *model.Thread) error {
+	db := sql.MustDBFromContext(ctx)
+	return db.Create(thread).Error
 }
 
-func (r *ThreadRepo) GetThreadsByIDs(ids []string) (map[string]*model.Thread, error) {
+func (r *ThreadRepo) GetThreadsByIDs(ctx context.Context, ids []string) (map[string]*model.Thread, error) {
 	if len(ids) == 0 {
 		return map[string]*model.Thread{}, nil
 	}
+	db := sql.MustDBFromContext(ctx)
 	var threads []model.Thread
-	err := r.db.Where("id IN ?", ids).Find(&threads).Error
+	err := db.Where("id IN ?", ids).Find(&threads).Error
 	if err != nil {
 		return nil, err
 	}

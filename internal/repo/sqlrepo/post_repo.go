@@ -1,26 +1,27 @@
 package sqlrepo
 
 import (
+	"context"
+
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 )
 
 // PostRepo implements PostRepoInterface
-type PostRepo struct {
-	db *sql.DB
-}
+type PostRepo struct{}
 
 // NewPostRepo creates a new post repo
-func NewPostRepo(db *sql.DB) *PostRepo {
-	return &PostRepo{db: db}
+func NewPostRepo() *PostRepo {
+	return &PostRepo{}
 }
 
 // Post CRUD operations
 
 // GetPostByID retrieves a post by ID
-func (r *PostRepo) GetPostByID(id string) (*model.Post, error) {
+func (r *PostRepo) GetPostByID(ctx context.Context, id string) (*model.Post, error) {
+	db := sql.MustDBFromContext(ctx)
 	var post model.Post
-	err := r.db.Where("id = ?", id).First(&post).Error
+	err := db.Where("id = ?", id).First(&post).Error
 	if err != nil {
 		return nil, err
 	}
@@ -28,19 +29,22 @@ func (r *PostRepo) GetPostByID(id string) (*model.Post, error) {
 }
 
 // CreatePost creates a new post
-func (r *PostRepo) CreatePost(post *model.Post) error {
-	return r.db.Create(post).Error
+func (r *PostRepo) CreatePost(ctx context.Context, post *model.Post) error {
+	db := sql.MustDBFromContext(ctx)
+	return db.Create(post).Error
 }
 
 // GetPosts retrieves posts based on feed type with optional filtering
 func (r *PostRepo) GetPosts(
+	ctx context.Context,
 	userID string,
 	limit, offset int,
 ) ([]model.Post, int64, error) {
+	db := sql.MustDBFromContext(ctx)
 	var posts []model.Post
 	var total int64
 
-	query := r.db.Model(&model.Post{})
+	query := db.Model(&model.Post{})
 
 	// Filter by user if provided
 	if userID != "" {
@@ -63,13 +67,15 @@ func (r *PostRepo) GetPosts(
 
 // GetPostsByUser retrieves posts created by a specific user with pagination
 func (r *PostRepo) GetPostsByUser(
+	ctx context.Context,
 	userID string,
 	limit, offset int,
 ) ([]model.Post, int64, error) {
+	db := sql.MustDBFromContext(ctx)
 	var posts []model.Post
 	var total int64
 
-	query := r.db.Model(&model.Post{}).
+	query := db.Model(&model.Post{}).
 		Where("user_id = ?", userID)
 
 	// Count total records

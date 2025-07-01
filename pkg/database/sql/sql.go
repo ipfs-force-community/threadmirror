@@ -16,6 +16,34 @@ type DB struct {
 	*gorm.DB
 }
 
+// contextKey is a private type for context keys in this package
+// to avoid collisions.
+type contextKey struct{}
+
+var dbContextKey = &contextKey{}
+
+// WithDBToContext returns a new context with the given *DB attached.
+func WithDBToContext(ctx context.Context, db *DB) context.Context {
+	return context.WithValue(ctx, dbContextKey, db)
+}
+
+// GetDBFromContext retrieves the *DB from context. Returns (*DB, bool).
+func GetDBFromContext(ctx context.Context) (*DB, bool) {
+	if db, ok := ctx.Value(dbContextKey).(*DB); ok {
+		return db, true
+	}
+	return nil, false
+}
+
+// MustDBFromContext retrieves the *DB from context or panics if not found.
+func MustDBFromContext(ctx context.Context) *DB {
+	db, ok := GetDBFromContext(ctx)
+	if !ok {
+		panic("db not found in context")
+	}
+	return db
+}
+
 // New creates a new database connection
 func New(driver string, dsn string, logger *slog.Logger) (*DB, error) {
 	// Configure GORM logger

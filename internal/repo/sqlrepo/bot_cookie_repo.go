@@ -10,19 +10,18 @@ import (
 )
 
 // BotCookieRepo provides database operations for bot cookies
-type BotCookieRepo struct {
-	db *sql.DB
-}
+type BotCookieRepo struct{}
 
 // NewBotCookieRepo creates a new bot cookie repository
-func NewBotCookieRepo(db *sql.DB) *BotCookieRepo {
-	return &BotCookieRepo{db: db}
+func NewBotCookieRepo() *BotCookieRepo {
+	return &BotCookieRepo{}
 }
 
 // GetCookies retrieves cookies for the bot
 func (r *BotCookieRepo) GetCookies(ctx context.Context, email, username string) (datatypes.JSON, error) {
+	db := sql.MustDBFromContext(ctx)
 	var botCookie model.BotCookie
-	err := r.db.WithContext(ctx).
+	err := db.WithContext(ctx).
 		Where("email = ? AND username = ?", email, username).
 		First(&botCookie).Error
 
@@ -35,6 +34,7 @@ func (r *BotCookieRepo) GetCookies(ctx context.Context, email, username string) 
 
 // SaveCookies saves or updates cookies for the bot
 func (r *BotCookieRepo) SaveCookies(ctx context.Context, email, username string, cookiesData interface{}) error {
+	db := sql.MustDBFromContext(ctx)
 	// Convert cookies data to JSON
 	jsonData, err := json.Marshal(cookiesData)
 	if err != nil {
@@ -45,7 +45,7 @@ func (r *BotCookieRepo) SaveCookies(ctx context.Context, email, username string,
 
 	// Try to find existing record
 	var existingCookie model.BotCookie
-	err = r.db.WithContext(ctx).
+	err = db.WithContext(ctx).
 		Where("email = ? AND username = ?", email, username).
 		First(&existingCookie).Error
 
@@ -56,11 +56,11 @@ func (r *BotCookieRepo) SaveCookies(ctx context.Context, email, username string,
 			Username:    username,
 			CookiesData: cookiesJSON,
 		}
-		return r.db.WithContext(ctx).Create(newCookie).Error
+		return db.WithContext(ctx).Create(newCookie).Error
 	}
 
 	// Update existing record
-	return r.db.WithContext(ctx).
+	return db.WithContext(ctx).
 		Model(&existingCookie).
 		Update("cookies_data", cookiesJSON).Error
 }

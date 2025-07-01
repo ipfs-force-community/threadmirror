@@ -37,8 +37,8 @@ func SetupDBTestSuite(t *testing.T) *DBTestSuite {
 	db := SetupTestDB(t)
 
 	// Create repositories
-	postRepo := sqlrepo.NewPostRepo(db)
-	threadRepo := sqlrepo.NewThreadRepo(db)
+	postRepo := sqlrepo.NewPostRepo()
+	threadRepo := sqlrepo.NewThreadRepo()
 
 	// Create mock dependencies
 	mockLLM := &MockLLM{}
