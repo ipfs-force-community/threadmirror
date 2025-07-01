@@ -8,6 +8,7 @@ func AllModels() []any {
 		&ProcessedMention{},
 		&BotCookie{},
 		&Post{},
+		&Thread{},
 		// Add new models here as they are created
 	}
 }

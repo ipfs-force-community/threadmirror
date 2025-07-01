@@ -2,28 +2,40 @@ package bot
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
+	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/assert"
+	"github.com/tmc/langchaingo/llms"
 	"gorm.io/datatypes"
 )
 
+// mockJobQueueClient implements jobq.JobQueueClient for testing
+type mockJobQueueClient struct{}
+
+func (m *mockJobQueueClient) Enqueue(ctx context.Context, job *jobq.Job) (string, error) {
+	return "mock-job-id", nil
+}
+
 // MockProcessedMentionRepo is a mock implementation for testing
+// userID:tweetID -> bool
 type MockProcessedMentionRepo struct {
-	processed map[string]bool // userID:tweetID -> bool
+	processedMentions map[string]bool
 }
 
 func NewMockProcessedMentionRepo() *MockProcessedMentionRepo {
 	return &MockProcessedMentionRepo{
-		processed: make(map[string]bool),
+		processedMentions: make(map[string]bool),
 	}
 }
 
@@ -33,60 +45,126 @@ func (m *MockProcessedMentionRepo) makeKey(userID string, tweetID string) string
 
 func (m *MockProcessedMentionRepo) IsProcessed(ctx context.Context, userID string, tweetID string) (bool, error) {
 	key := m.makeKey(userID, tweetID)
-	return m.processed[key], nil
+	return m.processedMentions[key], nil
 }
 
 func (m *MockProcessedMentionRepo) MarkProcessed(ctx context.Context, userID string, tweetID string) error {
 	key := m.makeKey(userID, tweetID)
-	m.processed[key] = true
+	m.processedMentions[key] = true
 	return nil
 }
 
 func (m *MockProcessedMentionRepo) BatchMarkProcessed(ctx context.Context, userID string, tweetIDs []string) error {
 	for _, tweetID := range tweetIDs {
 		key := m.makeKey(userID, tweetID)
-		m.processed[key] = true
+		m.processedMentions[key] = true
 	}
 	return nil
 }
 
 // MockBotCookieRepo is a mock implementation for testing
+// email:username -> JSON data
 type MockBotCookieRepo struct {
-	cookies []*http.Cookie // Directly store http.Cookie slice
+	cookies map[string][]byte
 }
 
 func NewMockBotCookieRepo() *MockBotCookieRepo {
 	return &MockBotCookieRepo{
-		cookies: nil,
+		cookies: make(map[string][]byte),
 	}
+}
+
+func (m *MockBotCookieRepo) makeKey(email, username string) string {
+	return email + ":" + username
 }
 
 func (m *MockBotCookieRepo) GetCookies(ctx context.Context, email, username string) (datatypes.JSON, error) {
-	if m.cookies == nil {
+	key := m.makeKey(email, username)
+	cookies, exists := m.cookies[key]
+	if !exists {
 		return nil, nil // Simulate no cookies found
 	}
-	// Marshal cookies to JSON for return
-	jsonData, err := json.Marshal(m.cookies)
-	if err != nil {
-		return nil, err
-	}
-	return datatypes.JSON(jsonData), nil
+	return datatypes.JSON(cookies), nil
 }
 
 func (m *MockBotCookieRepo) SaveCookies(ctx context.Context, email, username string, cookiesData interface{}) error {
-	// Convert cookiesData to []*http.Cookie
-	if cookies, ok := cookiesData.([]*http.Cookie); ok {
-		m.cookies = cookies
-		return nil
-	}
-	return fmt.Errorf("invalid cookie data type")
+	key := m.makeKey(email, username)
+	m.cookies[key] = []byte(`[]`) // Store empty JSON for testing
+	return nil
 }
 
-// mockJobQueueClient implements jobq.JobQueueClient for testing
-type mockJobQueueClient struct{}
+// MockPostRepo is a mock implementation for PostRepoInterface
+// Stores posts in memory for testing
+type MockPostRepo struct {
+	posts map[string]*model.Post
+}
 
-func (m *mockJobQueueClient) Enqueue(ctx context.Context, job *jobq.Job) (string, error) {
-	return "mock-job-id", nil
+func NewMockPostRepo() *MockPostRepo {
+	return &MockPostRepo{
+		posts: make(map[string]*model.Post),
+	}
+}
+
+func (m *MockPostRepo) GetPostByID(id string) (*model.Post, error) {
+	post, ok := m.posts[id]
+	if !ok {
+		return nil, fmt.Errorf("post not found")
+	}
+	return post, nil
+}
+
+func (m *MockPostRepo) CreatePost(post *model.Post) error {
+	m.posts[post.ID] = post
+	return nil
+}
+
+func (m *MockPostRepo) GetPosts(userID string, limit, offset int) ([]model.Post, int64, error) {
+	var result []model.Post
+	for _, post := range m.posts {
+		if userID == "" || post.UserID == userID {
+			result = append(result, *post)
+		}
+	}
+	total := int64(len(result))
+	if offset > len(result) {
+		offset = len(result)
+	}
+	end := offset + limit
+	if end > len(result) {
+		end = len(result)
+	}
+	return result[offset:end], total, nil
+}
+
+func (m *MockPostRepo) GetPostsByUser(userID string, limit, offset int) ([]model.Post, int64, error) {
+	return m.GetPosts(userID, limit, offset)
+}
+
+// MockLLM is a mock implementation for testing
+// Implements llm.Model (alias of llms.Model)
+type MockLLM struct{}
+
+func (m *MockLLM) GenerateContent(ctx context.Context, messages []llms.MessageContent, options ...llms.CallOption) (*llms.ContentResponse, error) {
+	return &llms.ContentResponse{
+		Choices: []*llms.ContentChoice{{Content: "Mock AI summary for testing"}},
+	}, nil
+}
+
+func (m *MockLLM) Call(ctx context.Context, prompt string, options ...llms.CallOption) (string, error) {
+	return "Mock AI summary for testing", nil
+}
+
+// MockIPFSStorage is a mock implementation for testing
+// Implements ipfs.Storage
+type MockIPFSStorage struct{}
+
+func (m *MockIPFSStorage) Add(ctx context.Context, content io.ReadSeeker) (cid.Cid, error) {
+	c, _ := cid.Parse("bafkreiabc123")
+	return c, nil
+}
+
+func (m *MockIPFSStorage) Get(ctx context.Context, c cid.Cid) (io.ReadCloser, error) {
+	return io.NopCloser(strings.NewReader("mock content")), nil
 }
 
 func createTestBot(_ *testing.T) *TwitterBot {
@@ -99,9 +177,13 @@ func createTestBot(_ *testing.T) *TwitterBot {
 	mockBotCookieRepo := NewMockBotCookieRepo()
 	botCookieService := service.NewBotCookieService(mockBotCookieRepo)
 
-	// Create mock post service - create a real PostService with nil dependencies for testing
-	// For the bot test, we can pass nil dependencies since we're mainly testing bot initialization
-	mockPostService := service.NewPostService(nil, nil, nil)
+	// Use new mocks for PostService
+	mockPostRepo := NewMockPostRepo()
+	mockLLM := &MockLLM{}
+	mockIPFS := &MockIPFSStorage{}
+
+	// Pass nil for threadRepo and db (not used in these tests)
+	mockPostService := service.NewPostService(mockPostRepo, mockLLM, mockIPFS, nil, nil)
 
 	// Mock JobQueueClient
 	jobQueueClient := &mockJobQueueClient{}

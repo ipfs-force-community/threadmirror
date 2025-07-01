@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { Post } from './Post';
+import type { PostDetail } from './PostDetail';
 import {
-    PostFromJSON,
-    PostFromJSONTyped,
-    PostToJSON,
-    PostToJSONTyped,
-} from './Post';
+    PostDetailFromJSON,
+    PostDetailFromJSONTyped,
+    PostDetailToJSON,
+    PostDetailToJSONTyped,
+} from './PostDetail';
 
 /**
  * 
@@ -29,10 +29,10 @@ import {
 export interface PostsIdGet200Response {
     /**
      * 
-     * @type {Post}
+     * @type {PostDetail}
      * @memberof PostsIdGet200Response
      */
-    data?: Post;
+    data?: PostDetail;
 }
 
 /**
@@ -52,7 +52,7 @@ export function PostsIdGet200ResponseFromJSONTyped(json: any, ignoreDiscriminato
     }
     return {
         
-        'data': json['data'] == null ? undefined : PostFromJSON(json['data']),
+        'data': json['data'] == null ? undefined : PostDetailFromJSON(json['data']),
     };
 }
 
@@ -67,7 +67,7 @@ export function PostsIdGet200ResponseToJSONTyped(value?: PostsIdGet200Response |
 
     return {
         
-        'data': PostToJSON(value['data']),
+        'data': PostDetailToJSON(value['data']),
     };
 }
 

@@ -13,14 +13,14 @@ help: ## Display this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # Generate Go code only
-.PHONY: generate-go
-generate-go:
+.PHONY: generate
+generate:
 	@echo "Generating Go code..."
 	$(GO) generate ./...
 
 # Generate code (including web client)
 .PHONY: generate
-generate-webclient: generate-go
+generate-webclient:
 	@echo "Generating web client..."
 	rm -rf web/src/client/ && docker run --rm -v "$$(pwd):/local" openapitools/openapi-generator-cli generate \
 		-i /local/api/v1/openapi.yaml \

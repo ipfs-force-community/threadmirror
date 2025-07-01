@@ -47,7 +47,7 @@ const PostDetail = () => {
   }, [loadData]);
 
   useEffect(() => {
-    if (postData) {
+    if (postData?.threads?.length > 0) {
       setDetail(postData);
     } else {
       loadData();

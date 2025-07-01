@@ -12,8 +12,9 @@ models/Image.ts
 models/MediaInfo.ts
 models/ModelError.ts
 models/PaginationMeta.ts
-models/Post.ts
 models/PostAuthor.ts
+models/PostDetail.ts
+models/PostSummary.ts
 models/PostsGet200Response.ts
 models/PostsIdGet200Response.ts
 models/Tweet.ts

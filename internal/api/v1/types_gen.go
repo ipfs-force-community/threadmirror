@@ -77,8 +77,23 @@ type PaginationMeta struct {
 	Total int `json:"total"`
 }
 
-// Post defines model for Post.
-type Post struct {
+// PostAuthor defines model for PostAuthor.
+type PostAuthor struct {
+	// Id Author's unique identifier (Twitter user ID)
+	Id string `json:"id"`
+
+	// Name Author's display name
+	Name string `json:"name"`
+
+	// ProfileImageUrl Author's profile image URL
+	ProfileImageUrl string `json:"profile_image_url"`
+
+	// ScreenName Author's screen name (without @)
+	ScreenName string `json:"screen_name"`
+}
+
+// PostDetail defines model for PostDetail.
+type PostDetail struct {
 	Author *PostAuthor `json:"author,omitempty"`
 
 	// ContentPreview Post content preview/summary
@@ -94,19 +109,18 @@ type Post struct {
 	Threads *[]Tweet `json:"threads"`
 }
 
-// PostAuthor defines model for PostAuthor.
-type PostAuthor struct {
-	// Id Author's unique identifier (Twitter user ID)
+// PostSummary defines model for PostSummary.
+type PostSummary struct {
+	Author *PostAuthor `json:"author,omitempty"`
+
+	// ContentPreview Post content preview/summary
+	ContentPreview string `json:"content_preview"`
+
+	// CreatedAt Post creation timestamp
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id Post unique identifier
 	Id string `json:"id"`
-
-	// Name Author's display name
-	Name string `json:"name"`
-
-	// ProfileImageUrl Author's profile image URL
-	ProfileImageUrl string `json:"profile_image_url"`
-
-	// ScreenName Author's screen name (without @)
-	ScreenName string `json:"screen_name"`
 }
 
 // Tweet defines model for Tweet.

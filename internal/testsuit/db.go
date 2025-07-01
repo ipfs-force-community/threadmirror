@@ -38,13 +38,14 @@ func SetupDBTestSuite(t *testing.T) *DBTestSuite {
 
 	// Create repositories
 	postRepo := sqlrepo.NewPostRepo(db)
+	threadRepo := sqlrepo.NewThreadRepo(db)
 
 	// Create mock dependencies
 	mockLLM := &MockLLM{}
 	mockIPFS := &MockIPFSStorage{}
 
 	// Create services
-	postService := service.NewPostService(postRepo, llm.Model(mockLLM), ipfs.Storage(mockIPFS))
+	postService := service.NewPostService(postRepo, llm.Model(mockLLM), ipfs.Storage(mockIPFS), threadRepo, db)
 
 	return &DBTestSuite{
 		DB:          db,

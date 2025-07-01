@@ -20,67 +20,54 @@ import {
     PostAuthorToJSON,
     PostAuthorToJSONTyped,
 } from './PostAuthor';
-import type { Tweet } from './Tweet';
-import {
-    TweetFromJSON,
-    TweetFromJSONTyped,
-    TweetToJSON,
-    TweetToJSONTyped,
-} from './Tweet';
 
 /**
  * 
  * @export
- * @interface Post
+ * @interface PostSummary
  */
-export interface Post {
+export interface PostSummary {
     /**
      * Post unique identifier
      * @type {string}
-     * @memberof Post
+     * @memberof PostSummary
      */
     id: string;
     /**
      * Post content preview/summary
      * @type {string}
-     * @memberof Post
+     * @memberof PostSummary
      */
     contentPreview: string;
     /**
      * 
      * @type {PostAuthor}
-     * @memberof Post
+     * @memberof PostSummary
      */
     author?: PostAuthor;
     /**
      * Post creation timestamp
      * @type {Date}
-     * @memberof Post
+     * @memberof PostSummary
      */
     createdAt: Date;
-    /**
-     * Thread tweets associated with this post
-     * @type {Array<Tweet>}
-     * @memberof Post
-     */
-    threads?: Array<Tweet> | null;
 }
 
 /**
- * Check if a given object implements the Post interface.
+ * Check if a given object implements the PostSummary interface.
  */
-export function instanceOfPost(value: object): value is Post {
+export function instanceOfPostSummary(value: object): value is PostSummary {
     if (!('id' in value) || value['id'] === undefined) return false;
     if (!('contentPreview' in value) || value['contentPreview'] === undefined) return false;
     if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
     return true;
 }
 
-export function PostFromJSON(json: any): Post {
-    return PostFromJSONTyped(json, false);
+export function PostSummaryFromJSON(json: any): PostSummary {
+    return PostSummaryFromJSONTyped(json, false);
 }
 
-export function PostFromJSONTyped(json: any, ignoreDiscriminator: boolean): Post {
+export function PostSummaryFromJSONTyped(json: any, ignoreDiscriminator: boolean): PostSummary {
     if (json == null) {
         return json;
     }
@@ -90,15 +77,14 @@ export function PostFromJSONTyped(json: any, ignoreDiscriminator: boolean): Post
         'contentPreview': json['content_preview'],
         'author': json['author'] == null ? undefined : PostAuthorFromJSON(json['author']),
         'createdAt': (new Date(json['created_at'])),
-        'threads': json['threads'] == null ? undefined : ((json['threads'] as Array<any>).map(TweetFromJSON)),
     };
 }
 
-export function PostToJSON(json: any): Post {
-    return PostToJSONTyped(json, false);
+export function PostSummaryToJSON(json: any): PostSummary {
+    return PostSummaryToJSONTyped(json, false);
 }
 
-export function PostToJSONTyped(value?: Post | null, ignoreDiscriminator: boolean = false): any {
+export function PostSummaryToJSONTyped(value?: PostSummary | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
@@ -109,7 +95,6 @@ export function PostToJSONTyped(value?: Post | null, ignoreDiscriminator: boolea
         'content_preview': value['contentPreview'],
         'author': PostAuthorToJSON(value['author']),
         'created_at': ((value['createdAt']).toISOString()),
-        'threads': value['threads'] == null ? undefined : ((value['threads'] as Array<any>).map(TweetToJSON)),
     };
 }
 

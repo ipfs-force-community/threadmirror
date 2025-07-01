@@ -2,9 +2,11 @@ package testsuit
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"strings"
 
+	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs/go-cid"
 	"github.com/tmc/langchaingo/llms"
 	"gorm.io/datatypes"
@@ -104,4 +106,51 @@ func (m *MockIPFSStorage) Add(ctx context.Context, content io.ReadSeeker) (cid.C
 
 func (m *MockIPFSStorage) Get(ctx context.Context, cid cid.Cid) (io.ReadCloser, error) {
 	return io.NopCloser(strings.NewReader("mock content")), nil
+}
+
+// MockPostRepo is a mock implementation for PostRepoInterface
+// Stores posts in memory for testing
+type MockPostRepo struct {
+	posts map[string]*model.Post
+}
+
+func NewMockPostRepo() *MockPostRepo {
+	return &MockPostRepo{
+		posts: make(map[string]*model.Post),
+	}
+}
+
+func (m *MockPostRepo) GetPostByID(id string) (*model.Post, error) {
+	post, ok := m.posts[id]
+	if !ok {
+		return nil, fmt.Errorf("post not found")
+	}
+	return post, nil
+}
+
+func (m *MockPostRepo) CreatePost(post *model.Post) error {
+	m.posts[post.ID] = post
+	return nil
+}
+
+func (m *MockPostRepo) GetPosts(userID string, limit, offset int) ([]model.Post, int64, error) {
+	var result []model.Post
+	for _, post := range m.posts {
+		if userID == "" || post.UserID == userID {
+			result = append(result, *post)
+		}
+	}
+	total := int64(len(result))
+	if offset > len(result) {
+		offset = len(result)
+	}
+	end := offset + limit
+	if end > len(result) {
+		end = len(result)
+	}
+	return result[offset:end], total, nil
+}
+
+func (m *MockPostRepo) GetPostsByUser(userID string, limit, offset int) ([]model.Post, int64, error) {
+	return m.GetPosts(userID, limit, offset)
 }

@@ -39,8 +39,7 @@ func (h *V1Handler) GetPosts(c *gin.Context, params GetPostsParams) {
 		return
 	}
 
-	// Convert to API response format using lo.Map
-	apiPosts := lo.Map(posts, func(post service.PostSummaryDetail, _ int) Post {
+	apiPosts := lo.Map(posts, func(post service.PostSummaryDetail, _ int) PostSummary {
 		return h.convertPostSummaryToAPI(post)
 	})
 
@@ -49,7 +48,7 @@ func (h *V1Handler) GetPosts(c *gin.Context, params GetPostsParams) {
 
 // GetPostsId handles GET /posts/{id}
 func (h *V1Handler) GetPostsId(c *gin.Context, id string) {
-	post, err := h.postService.GetPostByID(c, id)
+	thread, err := h.postService.GetPostByID(c, id)
 	if err != nil {
 		if errors.Is(err, service.ErrPostNotFound) {
 			_ = c.Error(v1errors.NotFound(err).WithCode(ErrCodePostNotFound))
@@ -60,7 +59,7 @@ func (h *V1Handler) GetPostsId(c *gin.Context, id string) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data": h.convertPostDetailToAPI(*post),
+		"data": h.convertPostDetailToAPI(*thread),
 	})
 }
 
@@ -68,7 +67,7 @@ func (h *V1Handler) GetPostsId(c *gin.Context, id string) {
 
 // Conversion functions from service types to API types
 
-func (h *V1Handler) convertPostSummaryToAPI(post service.PostSummaryDetail) Post {
+func (h *V1Handler) convertPostSummaryToAPI(post service.PostSummaryDetail) PostSummary {
 	var author *PostAuthor
 	if post.Author != nil {
 		author = &PostAuthor{
@@ -79,16 +78,15 @@ func (h *V1Handler) convertPostSummaryToAPI(post service.PostSummaryDetail) Post
 		}
 	}
 
-	return Post{
+	return PostSummary{
 		Id:             post.ID,
 		ContentPreview: post.ContentPreview,
 		Author:         author,
 		CreatedAt:      post.CreatedAt,
-		Threads:        nil, // 列表接口不返回 threads
 	}
 }
 
-func (h *V1Handler) convertPostDetailToAPI(post service.PostDetail) Post {
+func (h *V1Handler) convertPostDetailToAPI(post service.PostDetail) PostDetail {
 	var author *PostAuthor
 	if post.Author != nil {
 		author = &PostAuthor{
@@ -99,21 +97,18 @@ func (h *V1Handler) convertPostDetailToAPI(post service.PostDetail) Post {
 		}
 	}
 
-	// Convert threads to API format for detail response
-	var apiThreads *[]Tweet
+	var apiThreads []Tweet
 	if len(post.Threads) > 0 {
-		threads := lo.Map(post.Threads, func(tweet *xscraper.Tweet, _ int) Tweet {
+		apiThreads = lo.Map(post.Threads, func(tweet *xscraper.Tweet, _ int) Tweet {
 			return h.convertXScraperTweetToAPI(tweet)
 		})
-		apiThreads = &threads
 	}
 
-	return Post{
-		Id:             post.ID,
-		ContentPreview: "", // Detail API doesn't need content preview
-		Author:         author,
-		CreatedAt:      post.CreatedAt,
-		Threads:        apiThreads,
+	return PostDetail{
+		Id:        post.ID,
+		Author:    author,
+		CreatedAt: post.CreatedAt,
+		Threads:   &apiThreads,
 	}
 }
 

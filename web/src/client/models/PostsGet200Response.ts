@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { PostSummary } from './PostSummary';
+import {
+    PostSummaryFromJSON,
+    PostSummaryFromJSONTyped,
+    PostSummaryToJSON,
+    PostSummaryToJSONTyped,
+} from './PostSummary';
 import type { PaginationMeta } from './PaginationMeta';
 import {
     PaginationMetaFromJSON,
@@ -20,13 +27,6 @@ import {
     PaginationMetaToJSON,
     PaginationMetaToJSONTyped,
 } from './PaginationMeta';
-import type { Post } from './Post';
-import {
-    PostFromJSON,
-    PostFromJSONTyped,
-    PostToJSON,
-    PostToJSONTyped,
-} from './Post';
 
 /**
  * 
@@ -36,10 +36,10 @@ import {
 export interface PostsGet200Response {
     /**
      * 
-     * @type {Array<Post>}
+     * @type {Array<PostSummary>}
      * @memberof PostsGet200Response
      */
-    data?: Array<Post>;
+    data?: Array<PostSummary>;
     /**
      * 
      * @type {PaginationMeta}
@@ -65,7 +65,7 @@ export function PostsGet200ResponseFromJSONTyped(json: any, ignoreDiscriminator:
     }
     return {
         
-        'data': json['data'] == null ? undefined : ((json['data'] as Array<any>).map(PostFromJSON)),
+        'data': json['data'] == null ? undefined : ((json['data'] as Array<any>).map(PostSummaryFromJSON)),
         'meta': json['meta'] == null ? undefined : PaginationMetaFromJSON(json['meta']),
     };
 }
@@ -81,7 +81,7 @@ export function PostsGet200ResponseToJSONTyped(value?: PostsGet200Response | nul
 
     return {
         
-        'data': value['data'] == null ? undefined : ((value['data'] as Array<any>).map(PostToJSON)),
+        'data': value['data'] == null ? undefined : ((value['data'] as Array<any>).map(PostSummaryToJSON)),
         'meta': PaginationMetaToJSON(value['meta']),
     };
 }

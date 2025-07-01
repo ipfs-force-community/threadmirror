@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/ipfs-force-community/threadmirror/internal/model"
+	"github.com/ipfs-force-community/threadmirror/internal/repo/sqlrepo"
+	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"github.com/ipfs-force-community/threadmirror/pkg/ipfs"
 	"github.com/ipfs-force-community/threadmirror/pkg/llm"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
@@ -67,9 +69,11 @@ type PostRepoInterface interface {
 
 // PostService provides business logic for post operations
 type PostService struct {
-	postRepo PostRepoInterface
-	llm      llm.Model
-	storage  ipfs.Storage
+	postRepo   PostRepoInterface
+	llm        llm.Model
+	storage    ipfs.Storage
+	threadRepo *sqlrepo.ThreadRepo
+	db         *sql.DB
 }
 
 // NewPostService creates a new post service
@@ -77,11 +81,15 @@ func NewPostService(
 	postRepo PostRepoInterface,
 	llm llm.Model,
 	storage ipfs.Storage,
+	threadRepo *sqlrepo.ThreadRepo,
+	db *sql.DB,
 ) *PostService {
 	return &PostService{
-		postRepo: postRepo,
-		llm:      llm,
-		storage:  storage,
+		postRepo:   postRepo,
+		llm:        llm,
+		storage:    storage,
+		threadRepo: threadRepo,
+		db:         db,
 	}
 }
 
@@ -91,54 +99,77 @@ func (s *PostService) CreatePost(
 	userID string,
 	req *CreatePostRequest,
 ) (*PostDetail, error) {
-	if len(req.Tweets) == 0 {
-		return nil, fmt.Errorf("no tweets provided")
-	}
+	var result *PostDetail
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		postRepo := sqlrepo.NewPostRepo(&sql.DB{DB: tx})
+		threadRepo := sqlrepo.NewThreadRepo(&sql.DB{DB: tx})
 
-	jsonTweets, err := json.Marshal(req.Tweets)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal tweets: %w", err)
-	}
+		if len(req.Tweets) < 2 {
+			return fmt.Errorf("no tweets provided")
+		}
 
-	// Generate AI summary of the tweets
-	summary, err := s.generateTweetsSummary(ctx, string(jsonTweets))
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate AI summary: %w", err)
-	}
+		threadID := req.Tweets[len(req.Tweets)-1].RestID
+		_, err := threadRepo.GetThreadByID(threadID)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("failed to check thread existence: %w", err)
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			jsonThread, err := json.Marshal(req.Tweets[:len(req.Tweets)-1])
+			if err != nil {
+				return fmt.Errorf("failed to marshal tweets: %w", err)
+			}
 
-	cid, err := s.storage.Add(ctx, bytes.NewReader(jsonTweets))
-	if err != nil {
-		return nil, fmt.Errorf("failed to add tweets to IPFS: %w", err)
-	}
+			summary, err := s.generateTweetsSummary(ctx, string(jsonThread))
+			if err != nil {
+				return fmt.Errorf("failed to generate AI summary: %w", err)
+			}
 
-	// Extract author information from the first tweet (main tweet)
-	var authorID, authorName, authorScreenName, authorProfileImageURL string
-	if req.Tweets[0].Author != nil {
-		author := req.Tweets[0].Author
-		authorID = author.RestID
-		authorName = author.Name
-		authorScreenName = author.ScreenName
-		authorProfileImageURL = author.ProfileImageURL
-	}
+			cid, err := s.storage.Add(ctx, bytes.NewReader(jsonThread))
+			if err != nil {
+				return fmt.Errorf("failed to add tweets to IPFS: %w", err)
+			}
 
-	// Create post record
-	post := &model.Post{
-		ID:                    req.Tweets[0].ID,
-		UserID:                userID,
-		AuthorID:              authorID,
-		CID:                   cid.String(),
-		Summary:               summary,
-		AuthorName:            authorName,
-		AuthorScreenName:      authorScreenName,
-		AuthorProfileImageURL: authorProfileImageURL,
-	}
+			var authorID, authorName, authorScreenName, authorProfileImageURL string
+			if req.Tweets[len(req.Tweets)-1].Author != nil {
+				author := req.Tweets[len(req.Tweets)-1].Author
+				authorID = author.RestID
+				authorName = author.Name
+				authorScreenName = author.ScreenName
+				authorProfileImageURL = author.ProfileImageURL
+			}
+			err = threadRepo.CreateThread(&model.Thread{
+				ID:                    threadID,
+				Summary:               summary,
+				CID:                   cid.String(),
+				AuthorID:              authorID,
+				AuthorName:            authorName,
+				AuthorScreenName:      authorScreenName,
+				AuthorProfileImageURL: authorProfileImageURL,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to create thread: %w", err)
+			}
+		}
 
-	if err := s.postRepo.CreatePost(post); err != nil {
-		return nil, fmt.Errorf("failed to create post: %w", err)
-	}
+		post := &model.Post{
+			ID:       req.Tweets[len(req.Tweets)].RestID,
+			UserID:   userID,
+			ThreadID: threadID,
+		}
 
-	// Return the created post details
-	return s.GetPostByID(ctx, post.ID)
+		if err := postRepo.CreatePost(post); err != nil {
+			return fmt.Errorf("failed to create post: %w", err)
+		}
+
+		// 事务内查详情
+		pd, err := s.GetPostByID(ctx, post.ID)
+		if err != nil {
+			return err
+		}
+		result = pd
+		return nil
+	})
+	return result, err
 }
 
 // GetPostByID retrieves a post by ID
@@ -164,9 +195,25 @@ func (s *PostService) GetPosts(
 		return nil, 0, fmt.Errorf("failed to get posts: %w", err)
 	}
 
+	// 批量查 thread
+	threadIDs := make([]string, 0, len(posts))
+	for _, post := range posts {
+		if post.ThreadID != "" {
+			threadIDs = append(threadIDs, post.ThreadID)
+		}
+	}
+	threadsMap := map[string]*model.Thread{}
+	if len(threadIDs) > 0 && s.threadRepo != nil {
+		threadsMap, err = s.threadRepo.GetThreadsByIDs(threadIDs)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to get threads: %w", err)
+		}
+	}
+
 	postSummaries := make([]PostSummaryDetail, 0, len(posts))
 	for _, post := range posts {
-		postSummaries = append(postSummaries, *s.buildPostSummary(&post))
+		thread := threadsMap[post.ThreadID]
+		postSummaries = append(postSummaries, *s.buildPostSummary(&post, thread))
 	}
 
 	return postSummaries, total, nil
@@ -177,19 +224,25 @@ func (s *PostService) buildPostDetail(
 	ctx context.Context,
 	post *model.Post,
 ) (*PostDetail, error) {
+	// Fetch thread info
+	thread, err := s.threadRepo.GetThreadByID(post.ThreadID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get thread: %w", err)
+	}
+
 	// Build author information
 	var author *PostAuthor
-	if post.AuthorID != "" {
+	if thread.AuthorID != "" {
 		author = &PostAuthor{
-			ID:              post.AuthorID,
-			Name:            post.AuthorName,
-			ScreenName:      post.AuthorScreenName,
-			ProfileImageURL: post.AuthorProfileImageURL,
+			ID:              thread.AuthorID,
+			Name:            thread.AuthorName,
+			ScreenName:      thread.AuthorScreenName,
+			ProfileImageURL: thread.AuthorProfileImageURL,
 		}
 	}
 
 	// Load threads from IPFS
-	threads, _ := s.loadThreadsFromIPFS(ctx, post.CID)
+	threads, _ := s.loadThreadsFromIPFS(ctx, thread.CID)
 
 	return &PostDetail{
 		ID:        post.ID,
@@ -203,21 +256,27 @@ func (s *PostService) buildPostDetail(
 // buildPostSummary builds a PostSummaryDetail from a model.Post
 func (s *PostService) buildPostSummary(
 	post *model.Post,
+	thread *model.Thread,
 ) *PostSummaryDetail {
 	// Build author information
 	var author *PostAuthor
-	if post.AuthorID != "" {
+	if thread != nil && thread.AuthorID != "" {
 		author = &PostAuthor{
-			ID:              post.AuthorID,
-			Name:            post.AuthorName,
-			ScreenName:      post.AuthorScreenName,
-			ProfileImageURL: post.AuthorProfileImageURL,
+			ID:              thread.AuthorID,
+			Name:            thread.AuthorName,
+			ScreenName:      thread.AuthorScreenName,
+			ProfileImageURL: thread.AuthorProfileImageURL,
 		}
+	}
+
+	contentPreview := ""
+	if thread != nil {
+		contentPreview = thread.Summary
 	}
 
 	return &PostSummaryDetail{
 		ID:             post.ID,
-		ContentPreview: post.Summary, // Use summary as content preview
+		ContentPreview: contentPreview, // Use thread summary as content preview
 		Author:         author,
 		CreatedAt:      post.CreatedAt,
 	}

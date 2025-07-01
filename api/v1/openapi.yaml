@@ -85,7 +85,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Post'
+                      $ref: '#/components/schemas/PostSummary'
                   meta:
                     $ref: "#/components/schemas/PaginationMeta"
         '401':
@@ -116,7 +116,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Post'
+                    $ref: '#/components/schemas/PostDetail'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -172,7 +172,7 @@ components:
         default: 0
 
   schemas:
-    Post:
+    PostSummary:
       type: object
       properties:
         id:
@@ -188,16 +188,24 @@ components:
           type: string
           format: date-time
           description: Post creation timestamp
-        threads:
-          type: array
-          items:
-            $ref: '#/components/schemas/Tweet'
-          description: Thread tweets associated with this post
-          nullable: true
       required:
         - id
         - content_preview
         - created_at
+
+    PostDetail:
+      allOf:
+        - $ref: '#/components/schemas/PostSummary'
+        - type: object
+          properties:
+            threads:
+              type: array
+              items:
+                $ref: '#/components/schemas/Tweet'
+              description: Thread tweets associated with this post
+              nullable: true
+          required:
+            - threads
 
     PostAuthor:
       type: object
