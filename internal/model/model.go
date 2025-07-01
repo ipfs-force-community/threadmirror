@@ -7,7 +7,7 @@ func AllModels() []any {
 		// First create base tables without foreign keys
 		&ProcessedMention{},
 		&BotCookie{},
-		&Post{},
+		&Mention{},
 		&Thread{},
 		// Add new models here as they are created
 	}

@@ -65,18 +65,18 @@ paths:
                   - timestamp
                   - message
 
-  /posts:
+  /mentions:
     get:
-      summary: Get posts feed
-      description: Get a paginated list of posts from followed users or public posts
+      summary: Get mentions feed
+      description: Get a paginated list of mentions from followed users or public mentions
       tags:
-        - Posts
+        - Mentions
       parameters:
         - $ref: '#/components/parameters/PageLimit'
         - $ref: '#/components/parameters/PageOffset'
       responses:
         '200':
-          description: List of posts
+          description: List of mentions
           content:
             application/json:
               schema:
@@ -85,7 +85,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/PostSummary'
+                      $ref: '#/components/schemas/MentionSummary'
                   meta:
                     $ref: "#/components/schemas/PaginationMeta"
         '401':
@@ -93,30 +93,30 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /posts/{id}:
+  /mentions/{id}:
     get:
-      summary: Get post details
-      description: Get detailed information about a specific post
+      summary: Get mention details
+      description: Get detailed information about a specific mention
       tags:
-        - Posts
+        - Mentions
       security: []
       parameters:
         - name: id
           in: path
           required: true
-          description: Post ID
+          description: Mention ID
           schema:
             type: string
       responses:
         '200':
-          description: Post details
+          description: Mention details
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PostDetail'
+                    $ref: '#/components/schemas/MentionDetail'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -172,25 +172,25 @@ components:
         default: 0
 
   schemas:
-    PostSummary:
+    MentionSummary:
       type: object
       properties:
         id:
           type: string
-          description: Post unique identifier
+          description: Mention unique identifier
         cid:
           type: string
           description: Content identifier (CID)
         content_preview:
           type: string
-          description: Post content preview/summary
+          description: Mention content preview/summary
           maxLength: 500
         author:
-          $ref: '#/components/schemas/PostAuthor'
+          $ref: '#/components/schemas/MentionAuthor'
         created_at:
           type: string
           format: date-time
-          description: Post creation timestamp
+          description: Mention creation timestamp
         numTweets:
           type: integer
           description: Number of tweets in the thread
@@ -201,21 +201,21 @@ components:
         - created_at
         - numTweets
 
-    PostDetail:
+    MentionDetail:
       allOf:
-        - $ref: '#/components/schemas/PostSummary'
+        - $ref: '#/components/schemas/MentionSummary'
         - type: object
           properties:
             tweets:
               type: array
               items:
                 $ref: '#/components/schemas/Tweet'
-              description: Tweets associated with this post
+              description: Tweets associated with this mention
               nullable: true
           required:
             - tweets
 
-    PostAuthor:
+    MentionAuthor:
       type: object
       properties:
         id:

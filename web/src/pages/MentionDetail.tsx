@@ -3,17 +3,17 @@ import { useLocation, useParams } from 'react-router-dom';
 import { useApiService } from '@services/api';
 import UserProfileComponent from '@components/common/UserProfile';
 import { toast } from 'sonner';
-import styles from './PostDetail.module.css';
-import { PostDetail as PostData } from '@src/client/models';
+import styles from './MentionDetail.module.css';
+import { MentionDetail as MentionData } from '@src/client/models';
 
-const PostDetail = () => {
-  const { postData } = useLocation().state || {};
+const MentionDetail = () => {
+  const { mentionData } = useLocation().state || {};
   const { id } = useParams<{ id: string }>();
-  const [detail, setDetail] = useState<PostData | null>(null);
+  const [detail, setDetail] = useState<MentionData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const toastShownRef = useRef(false);
-  const { fetchGetPostsId } = useApiService();
+  const { fetchGetMentionsId } = useApiService();
 
   const loadData = useCallback(async (showToast = true) => {
     if (!id) {
@@ -23,7 +23,7 @@ const PostDetail = () => {
 
     setLoading(true);
     try {
-      const detailData = await fetchGetPostsId({
+      const detailData = await fetchGetMentionsId({
         id,
       });
       setDetail(detailData?.data || null);
@@ -34,25 +34,25 @@ const PostDetail = () => {
       setError(errorMessage);
 
       if (showToast && !toastShownRef.current) {
-        toast.error("Failed to load post details", { duration: 5000 });
+        toast.error("Failed to load mention details", { duration: 5000 });
         toastShownRef.current = true;
       }
     } finally {
       setLoading(false);
     }
-  }, [id, fetchGetPostsId]);
+  }, [id, fetchGetMentionsId]);
 
   const handleRetry = useCallback(() => {
     loadData(false);
   }, [loadData]);
 
   useEffect(() => {
-    if (postData?.tweets?.length > 0) {
-      setDetail(postData);
+    if (mentionData?.tweets?.length > 0) {
+      setDetail(mentionData);
     } else {
       loadData();
     }
-  }, [postData, loadData]);
+  }, [mentionData, loadData]);
 
   if (loading) return <div className={styles.container}>Loading...</div>;
   
@@ -116,4 +116,4 @@ const PostDetail = () => {
   );
 };
 
-export default PostDetail;
+export default MentionDetail;

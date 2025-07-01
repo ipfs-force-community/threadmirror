@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-type Post struct {
+type Mention struct {
 	ID       string `gorm:"primaryKey;type:varchar(36)" json:"id"`
 	UserID   string `gorm:"not null;uniqueIndex:idx_user_id_thread_id;type:varchar(36)" json:"user_id"`
 	ThreadID string `gorm:"not null;uniqueIndex:idx_user_id_thread_id;type:varchar(36)" json:"thread_id"`
@@ -13,7 +13,7 @@ type Post struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// TableName returns the table name for the Post model
-func (Post) TableName() string {
-	return "posts"
+// TableName returns the table name for the Mention model
+func (Mention) TableName() string {
+	return "mentions"
 }

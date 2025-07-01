@@ -20,91 +20,91 @@ import (
 	"gorm.io/gorm"
 )
 
-// Post Service Errors
+// Mention Service Errors
 var (
-	ErrPostNotFound = errors.New("post not found")
+	ErrMentionNotFound = errors.New("mention not found")
 )
 
-// PostAuthor represents the author information in posts
-type PostAuthor struct {
+// MentionAuthor represents the author information in mentions
+type MentionAuthor struct {
 	ID              string `json:"id"`
 	Name            string `json:"name"`
 	ScreenName      string `json:"screen_name"`
 	ProfileImageURL string `json:"profile_image_url"`
 }
 
-// PostDetail represents a complete post with all details
-type PostDetail struct {
+// MentionDetail represents a complete mention with all details
+type MentionDetail struct {
 	ID        string            `json:"id"`
 	CID       string            `json:"cid"`
 	Tweets    []*xscraper.Tweet `json:"tweets,omitempty"`
-	Author    *PostAuthor       `json:"author"`
+	Author    *MentionAuthor    `json:"author"`
 	CreatedAt time.Time         `json:"created_at"`
 	UpdatedAt time.Time         `json:"updated_at"`
 }
 
-// PostSummary represents a post summary for list views
-type PostSummary struct {
-	ID             string      `json:"id"`
-	CID            string      `json:"cid"`
-	ContentPreview string      `json:"content_preview"`
-	Author         *PostAuthor `json:"author"`
-	CreatedAt      time.Time   `json:"created_at"`
-	NumTweets      int         `json:"numTweets"`
+// MentionSummary represents a mention summary for list views
+type MentionSummary struct {
+	ID             string         `json:"id"`
+	CID            string         `json:"cid"`
+	ContentPreview string         `json:"content_preview"`
+	Author         *MentionAuthor `json:"author"`
+	CreatedAt      time.Time      `json:"created_at"`
+	NumTweets      int            `json:"numTweets"`
 }
 
-// CreatePostRequest represents a request to create a new post
-type CreatePostRequest struct {
+// CreateMentionRequest represents a request to create a new mention
+type CreateMentionRequest struct {
 	Tweets []*xscraper.Tweet
 }
 
-// PostRepoInterface defines the interface for post repo operations
-type PostRepoInterface interface {
-	// Post CRUD
-	GetPostByID(ctx context.Context, id string) (*model.Post, error)
-	GetPostByUserIDAndThreadID(ctx context.Context, userID, threadID string) (*model.Post, error)
-	CreatePost(ctx context.Context, post *model.Post) error
-	GetPosts(
+// MentionRepoInterface defines the interface for mention repo operations
+type MentionRepoInterface interface {
+	// Mention CRUD
+	GetMentionByID(ctx context.Context, id string) (*model.Mention, error)
+	GetMentionByUserIDAndThreadID(ctx context.Context, userID, threadID string) (*model.Mention, error)
+	CreateMention(ctx context.Context, mention *model.Mention) error
+	GetMentions(
 		ctx context.Context,
 		userID string,
 		limit, offset int,
-	) ([]model.Post, int64, error)
-	GetPostsByUser(ctx context.Context, userID string, limit, offset int) ([]model.Post, int64, error)
+	) ([]model.Mention, int64, error)
+	GetMentionsByUser(ctx context.Context, userID string, limit, offset int) ([]model.Mention, int64, error)
 }
 
-// PostService provides business logic for post operations
-type PostService struct {
-	postRepo   PostRepoInterface
-	llm        llm.Model
-	storage    ipfs.Storage
-	threadRepo *sqlrepo.ThreadRepo
-	db         *sql.DB
+// MentionService provides business logic for mention operations
+type MentionService struct {
+	mentionRepo MentionRepoInterface
+	llm         llm.Model
+	storage     ipfs.Storage
+	threadRepo  *sqlrepo.ThreadRepo
+	db          *sql.DB
 }
 
-// NewPostService creates a new post service
-func NewPostService(
-	postRepo PostRepoInterface,
+// NewMentionService creates a new mention service
+func NewMentionService(
+	mentionRepo MentionRepoInterface,
 	llm llm.Model,
 	storage ipfs.Storage,
 	threadRepo *sqlrepo.ThreadRepo,
-) *PostService {
-	return &PostService{
-		postRepo:   postRepo,
-		llm:        llm,
-		storage:    storage,
-		threadRepo: threadRepo,
+) *MentionService {
+	return &MentionService{
+		mentionRepo: mentionRepo,
+		llm:         llm,
+		storage:     storage,
+		threadRepo:  threadRepo,
 	}
 }
 
-// CreatePost creates a new post
-func (s *PostService) CreatePost(
+// CreateMention creates a new mention
+func (s *MentionService) CreateMention(
 	ctx context.Context,
-	req *CreatePostRequest,
-) (*PostDetail, error) {
-	var result *PostDetail
+	req *CreateMentionRequest,
+) (*MentionDetail, error) {
+	var result *MentionDetail
 	db := sql.MustDBFromContext(ctx)
 	return result, db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		postRepo := s.postRepo
+		mentionRepo := s.mentionRepo
 		threadRepo := s.threadRepo
 
 		if len(req.Tweets) < 2 {
@@ -115,12 +115,12 @@ func (s *PostService) CreatePost(
 		mentionTweet := req.Tweets[len(req.Tweets)-1]
 
 		// 去重逻辑：如已存在则直接返回
-		post, err := postRepo.GetPostByUserIDAndThreadID(ctx, mentionTweet.Author.RestID, threadID)
+		mention, err := mentionRepo.GetMentionByUserIDAndThreadID(ctx, mentionTweet.Author.RestID, threadID)
 		if err != nil {
 			return err
 		}
-		if post != nil {
-			result, err = s.buildPostDetail(ctx, post)
+		if mention != nil {
+			result, err = s.buildMentionDetail(ctx, mention)
 			if err != nil {
 				return err
 			}
@@ -169,55 +169,54 @@ func (s *PostService) CreatePost(
 			return fmt.Errorf("failed to create thread: %w", err)
 		}
 
-		post = &model.Post{
+		mention = &model.Mention{
 			ID:       mentionTweet.RestID,
 			UserID:   mentionTweet.Author.RestID,
 			ThreadID: threadID,
 		}
 
-		if err := postRepo.CreatePost(ctx, post); err != nil {
-			return fmt.Errorf("failed to create post: %w", err)
+		if err := mentionRepo.CreateMention(ctx, mention); err != nil {
+			return fmt.Errorf("failed to create mention: %w", err)
 		}
 
 		// 事务内查详情
-		pd, err := s.GetPostByID(ctx, post.ID)
+		md, err := s.GetMentionByID(ctx, mention.ID)
 		if err != nil {
 			return err
 		}
-		result = pd
+		result = md
 		return nil
 	})
 }
 
-// GetPostByID retrieves a post by ID
-func (s *PostService) GetPostByID(ctx context.Context, postID string) (*PostDetail, error) {
-	postRepo := sqlrepo.NewPostRepo()
-	post, err := postRepo.GetPostByID(ctx, postID)
+// GetMentionByID retrieves a mention by ID
+func (s *MentionService) GetMentionByID(ctx context.Context, mentionID string) (*MentionDetail, error) {
+	mention, err := s.mentionRepo.GetMentionByID(ctx, mentionID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get post: %w", err)
+		return nil, fmt.Errorf("failed to get mention: %w", err)
 	}
-	if post == nil {
-		return nil, ErrPostNotFound
+	if mention == nil {
+		return nil, ErrMentionNotFound
 	}
-	return s.buildPostDetail(ctx, post)
+	return s.buildMentionDetail(ctx, mention)
 }
 
-// GetPosts retrieves posts based on feed type
-func (s *PostService) GetPosts(
+// GetMentions retrieves mentions based on feed type
+func (s *MentionService) GetMentions(
 	ctx context.Context,
 	userID string,
 	limit, offset int,
-) ([]PostSummary, int64, error) {
-	posts, total, err := s.postRepo.GetPosts(ctx, userID, limit, offset)
+) ([]MentionSummary, int64, error) {
+	mentions, total, err := s.mentionRepo.GetMentions(ctx, userID, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get tweets: %w", err)
 	}
 
 	// 批量查 thread
-	threadIDs := make([]string, 0, len(posts))
-	for _, post := range posts {
-		if post.ThreadID != "" {
-			threadIDs = append(threadIDs, post.ThreadID)
+	threadIDs := make([]string, 0, len(mentions))
+	for _, mention := range mentions {
+		if mention.ThreadID != "" {
+			threadIDs = append(threadIDs, mention.ThreadID)
 		}
 	}
 	tweetsMap := map[string]*model.Thread{}
@@ -228,22 +227,22 @@ func (s *PostService) GetPosts(
 		}
 	}
 
-	postSummaries := make([]PostSummary, 0, len(posts))
-	for _, post := range posts {
-		thread := tweetsMap[post.ThreadID]
-		postSummaries = append(postSummaries, *s.buildPostSummary(&post, thread))
+	mentionSummaries := make([]MentionSummary, 0, len(mentions))
+	for _, mention := range mentions {
+		thread := tweetsMap[mention.ThreadID]
+		mentionSummaries = append(mentionSummaries, *s.buildMentionSummary(&mention, thread))
 	}
 
-	return postSummaries, total, nil
+	return mentionSummaries, total, nil
 }
 
-// buildPostDetail builds a PostDetail from a model.Post
-func (s *PostService) buildPostDetail(
+// buildMentionDetail builds a MentionDetail from a model.Mention
+func (s *MentionService) buildMentionDetail(
 	ctx context.Context,
-	post *model.Post,
-) (*PostDetail, error) {
+	mention *model.Mention,
+) (*MentionDetail, error) {
 	threadRepo := sqlrepo.NewThreadRepo()
-	thread, err := threadRepo.GetThreadByID(ctx, post.ThreadID)
+	thread, err := threadRepo.GetThreadByID(ctx, mention.ThreadID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get thread: %w", err)
 	}
@@ -252,9 +251,9 @@ func (s *PostService) buildPostDetail(
 	}
 
 	// Build author information
-	var author *PostAuthor
+	var author *MentionAuthor
 	if thread.AuthorID != "" {
-		author = &PostAuthor{
+		author = &MentionAuthor{
 			ID:              thread.AuthorID,
 			Name:            thread.AuthorName,
 			ScreenName:      thread.AuthorScreenName,
@@ -265,25 +264,25 @@ func (s *PostService) buildPostDetail(
 	// Load tweets from IPFS
 	tweets, _ := s.loadTweetsFromIPFS(ctx, thread.CID)
 
-	return &PostDetail{
-		ID:        post.ID,
+	return &MentionDetail{
+		ID:        mention.ID,
 		CID:       thread.CID,
 		Tweets:    tweets,
 		Author:    author,
-		CreatedAt: post.CreatedAt,
-		UpdatedAt: post.UpdatedAt,
+		CreatedAt: mention.CreatedAt,
+		UpdatedAt: mention.UpdatedAt,
 	}, nil
 }
 
-// buildPostSummary builds a PostSummaryDetail from a model.Post
-func (s *PostService) buildPostSummary(
-	post *model.Post,
+// buildMentionSummary builds a MentionSummary from a model.Mention
+func (s *MentionService) buildMentionSummary(
+	mention *model.Mention,
 	thread *model.Thread,
-) *PostSummary {
+) *MentionSummary {
 	// Build author information
-	var author *PostAuthor
+	var author *MentionAuthor
 	if thread != nil && thread.AuthorID != "" {
-		author = &PostAuthor{
+		author = &MentionAuthor{
 			ID:              thread.AuthorID,
 			Name:            thread.AuthorName,
 			ScreenName:      thread.AuthorScreenName,
@@ -301,8 +300,8 @@ func (s *PostService) buildPostSummary(
 		NumTweets = thread.NumTweets
 	}
 
-	return &PostSummary{
-		ID: post.ID,
+	return &MentionSummary{
+		ID: mention.ID,
 		CID: func() string {
 			if thread != nil {
 				return thread.CID
@@ -311,13 +310,13 @@ func (s *PostService) buildPostSummary(
 		}(),
 		ContentPreview: contentPreview, // Use thread summary as content preview
 		Author:         author,
-		CreatedAt:      post.CreatedAt,
+		CreatedAt:      mention.CreatedAt,
 		NumTweets:      NumTweets,
 	}
 }
 
 // generateTweetsSummary generates AI summary for tweets
-func (s *PostService) generateTweetsSummary(ctx context.Context, jsonTweets string) (string, error) {
+func (s *MentionService) generateTweetsSummary(ctx context.Context, jsonTweets string) (string, error) {
 
 	// Create prompt for AI summarization
 	prompt := fmt.Sprintf(`Please analyze the following JSON data containing Twitter/X posts and provide a concise summary (maximum 200 characters) in Chinese. 
@@ -349,7 +348,7 @@ Please provide a Chinese summary:`, jsonTweets)
 }
 
 // loadTweetsFromIPFS loads tweets from IPFS using the CID
-func (s *PostService) loadTweetsFromIPFS(ctx context.Context, cidStr string) ([]*xscraper.Tweet, error) {
+func (s *MentionService) loadTweetsFromIPFS(ctx context.Context, cidStr string) ([]*xscraper.Tweet, error) {
 	if cidStr == "" {
 		return nil, nil
 	}
@@ -384,16 +383,16 @@ func (s *PostService) loadTweetsFromIPFS(ctx context.Context, cidStr string) ([]
 	return tweets, nil
 }
 
-// CreateThreadPost creates a new post
-func (s *PostService) CreateThreadPost(
+// CreateThreadMention creates a new mention
+func (s *MentionService) CreateThreadMention(
 	ctx context.Context,
 	userID string,
-	req *CreatePostRequest,
-) (*PostDetail, error) {
-	var result *PostDetail
+	req *CreateMentionRequest,
+) (*MentionDetail, error) {
+	var result *MentionDetail
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		ctx := sql.WithDBToContext(ctx, &sql.DB{DB: tx})
-		postRepo := s.postRepo
+		mentionRepo := s.mentionRepo
 		threadRepo := s.threadRepo
 
 		if len(req.Tweets) < 2 {
@@ -444,22 +443,22 @@ func (s *PostService) CreateThreadPost(
 			return fmt.Errorf("failed to create thread: %w", err)
 		}
 
-		post := &model.Post{
+		mention := &model.Mention{
 			ID:       req.Tweets[len(req.Tweets)-1].RestID,
 			UserID:   userID,
 			ThreadID: threadID,
 		}
 
-		if err := postRepo.CreatePost(ctx, post); err != nil {
-			return fmt.Errorf("failed to create post: %w", err)
+		if err := mentionRepo.CreateMention(ctx, mention); err != nil {
+			return fmt.Errorf("failed to create mention: %w", err)
 		}
 
 		// 事务内查详情，cctx 保证用事务 repo
-		pd, err := s.GetPostByID(ctx, post.ID)
+		md, err := s.GetMentionByID(ctx, mention.ID)
 		if err != nil {
 			return err
 		}
-		result = pd
+		result = md
 		return nil
 	})
 	return result, err

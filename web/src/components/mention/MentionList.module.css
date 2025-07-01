@@ -1,4 +1,4 @@
-.postListContainer {
+.mentionListContainer {
     max-width: 1200px;
     margin: 20px auto;
     display: grid;
@@ -9,21 +9,21 @@
 }
 
 @media (max-width: 1200px) {
-    .postListContainer {
+    .mentionListContainer {
         grid-template-columns: repeat(3, 1fr);
         gap: 25px;
     }
 }
   
 @media (max-width: 900px) {
-    .postListContainer {
+    .mentionListContainer {
         grid-template-columns: repeat(2, 1fr);
         gap: 20px;
     }
 }
   
 @media (max-width: 600px) {
-    .postListContainer {
+    .mentionListContainer {
         grid-template-columns: 1fr;
         gap: 15px;
     }

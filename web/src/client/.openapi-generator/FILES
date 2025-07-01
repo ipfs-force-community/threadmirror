@@ -1,7 +1,7 @@
 .openapi-generator-ignore
 apis/BotApi.ts
 apis/HealthApi.ts
-apis/PostsApi.ts
+apis/MentionsApi.ts
 apis/index.ts
 index.ts
 models/BotStats.ts
@@ -10,13 +10,13 @@ models/HealthGet200Response.ts
 models/HealthGet503Response.ts
 models/Image.ts
 models/MediaInfo.ts
+models/MentionAuthor.ts
+models/MentionDetail.ts
+models/MentionSummary.ts
+models/MentionsGet200Response.ts
+models/MentionsIdGet200Response.ts
 models/ModelError.ts
 models/PaginationMeta.ts
-models/PostAuthor.ts
-models/PostDetail.ts
-models/PostSummary.ts
-models/PostsGet200Response.ts
-models/PostsIdGet200Response.ts
 models/Tweet.ts
 models/TweetEntities.ts
 models/TweetStats.ts

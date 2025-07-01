@@ -98,36 +98,36 @@ func (m *MockBotCookieRepo) SaveCookies(ctx context.Context, email, username str
 	return nil
 }
 
-// MockPostRepo is a mock implementation for PostRepoInterface
-// Stores posts in memory for testing
-type MockPostRepo struct {
-	posts map[string]*model.Post
+// MockMentionRepo is a mock implementation for MentionRepoInterface
+// Stores mentions in memory for testing
+type MockMentionRepo struct {
+	mentions map[string]*model.Mention
 }
 
-func NewMockPostRepo() *MockPostRepo {
-	return &MockPostRepo{
-		posts: make(map[string]*model.Post),
+func NewMockMentionRepo() *MockMentionRepo {
+	return &MockMentionRepo{
+		mentions: make(map[string]*model.Mention),
 	}
 }
 
-func (m *MockPostRepo) GetPostByID(ctx context.Context, id string) (*model.Post, error) {
-	post, ok := m.posts[id]
+func (m *MockMentionRepo) GetMentionByID(ctx context.Context, id string) (*model.Mention, error) {
+	mention, ok := m.mentions[id]
 	if !ok {
-		return nil, fmt.Errorf("post not found")
+		return nil, fmt.Errorf("mention not found")
 	}
-	return post, nil
+	return mention, nil
 }
 
-func (m *MockPostRepo) CreatePost(ctx context.Context, post *model.Post) error {
-	m.posts[post.ID] = post
+func (m *MockMentionRepo) CreateMention(ctx context.Context, mention *model.Mention) error {
+	m.mentions[mention.ID] = mention
 	return nil
 }
 
-func (m *MockPostRepo) GetPosts(ctx context.Context, userID string, limit, offset int) ([]model.Post, int64, error) {
-	var result []model.Post
-	for _, post := range m.posts {
-		if userID == "" || post.UserID == userID {
-			result = append(result, *post)
+func (m *MockMentionRepo) GetMentions(ctx context.Context, userID string, limit, offset int) ([]model.Mention, int64, error) {
+	var result []model.Mention
+	for _, mention := range m.mentions {
+		if userID == "" || mention.UserID == userID {
+			result = append(result, *mention)
 		}
 	}
 	total := int64(len(result))
@@ -141,8 +141,8 @@ func (m *MockPostRepo) GetPosts(ctx context.Context, userID string, limit, offse
 	return result[offset:end], total, nil
 }
 
-func (m *MockPostRepo) GetPostsByUser(ctx context.Context, userID string, limit, offset int) ([]model.Post, int64, error) {
-	return m.GetPosts(ctx, userID, limit, offset)
+func (m *MockMentionRepo) GetMentionsByUser(ctx context.Context, userID string, limit, offset int) ([]model.Mention, int64, error) {
+	return m.GetMentions(ctx, userID, limit, offset)
 }
 
 // MockLLM is a mock implementation for testing

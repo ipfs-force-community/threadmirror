@@ -13,62 +13,62 @@
  */
 
 import { mapValues } from '../runtime';
-import type { PostAuthor } from './PostAuthor';
+import type { MentionAuthor } from './MentionAuthor';
 import {
-    PostAuthorFromJSON,
-    PostAuthorFromJSONTyped,
-    PostAuthorToJSON,
-    PostAuthorToJSONTyped,
-} from './PostAuthor';
+    MentionAuthorFromJSON,
+    MentionAuthorFromJSONTyped,
+    MentionAuthorToJSON,
+    MentionAuthorToJSONTyped,
+} from './MentionAuthor';
 
 /**
  * 
  * @export
- * @interface PostSummary
+ * @interface MentionSummary
  */
-export interface PostSummary {
+export interface MentionSummary {
     /**
-     * Post unique identifier
+     * Mention unique identifier
      * @type {string}
-     * @memberof PostSummary
+     * @memberof MentionSummary
      */
     id: string;
     /**
      * Content identifier (CID)
      * @type {string}
-     * @memberof PostSummary
+     * @memberof MentionSummary
      */
     cid: string;
     /**
-     * Post content preview/summary
+     * Mention content preview/summary
      * @type {string}
-     * @memberof PostSummary
+     * @memberof MentionSummary
      */
     contentPreview: string;
     /**
      * 
-     * @type {PostAuthor}
-     * @memberof PostSummary
+     * @type {MentionAuthor}
+     * @memberof MentionSummary
      */
-    author?: PostAuthor;
+    author?: MentionAuthor;
     /**
-     * Post creation timestamp
+     * Mention creation timestamp
      * @type {Date}
-     * @memberof PostSummary
+     * @memberof MentionSummary
      */
     createdAt: Date;
     /**
      * Number of tweets in the thread
      * @type {number}
-     * @memberof PostSummary
+     * @memberof MentionSummary
      */
     numTweets: number;
 }
 
 /**
- * Check if a given object implements the PostSummary interface.
+ * Check if a given object implements the MentionSummary interface.
  */
-export function instanceOfPostSummary(value: object): value is PostSummary {
+export function instanceOfMentionSummary(value: object): value is MentionSummary {
     if (!('id' in value) || value['id'] === undefined) return false;
     if (!('cid' in value) || value['cid'] === undefined) return false;
     if (!('contentPreview' in value) || value['contentPreview'] === undefined) return false;
@@ -77,11 +77,11 @@ export function instanceOfPostSummary(value: object): value is PostSummary {
     return true;
 }
 
-export function PostSummaryFromJSON(json: any): PostSummary {
-    return PostSummaryFromJSONTyped(json, false);
+export function MentionSummaryFromJSON(json: any): MentionSummary {
+    return MentionSummaryFromJSONTyped(json, false);
 }
 
-export function PostSummaryFromJSONTyped(json: any, ignoreDiscriminator: boolean): PostSummary {
+export function MentionSummaryFromJSONTyped(json: any, ignoreDiscriminator: boolean): MentionSummary {
     if (json == null) {
         return json;
     }
@@ -90,17 +90,17 @@ export function PostSummaryFromJSONTyped(json: any, ignoreDiscriminator: boolean
         'id': json['id'],
         'cid': json['cid'],
         'contentPreview': json['content_preview'],
-        'author': json['author'] == null ? undefined : PostAuthorFromJSON(json['author']),
+        'author': json['author'] == null ? undefined : MentionAuthorFromJSON(json['author']),
         'createdAt': (new Date(json['created_at'])),
         'numTweets': json['numTweets'],
     };
 }
 
-export function PostSummaryToJSON(json: any): PostSummary {
-    return PostSummaryToJSONTyped(json, false);
+export function MentionSummaryToJSON(json: any): MentionSummary {
+    return MentionSummaryToJSONTyped(json, false);
 }
 
-export function PostSummaryToJSONTyped(value?: PostSummary | null, ignoreDiscriminator: boolean = false): any {
+export function MentionSummaryToJSONTyped(value?: MentionSummary | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
@@ -110,7 +110,7 @@ export function PostSummaryToJSONTyped(value?: PostSummary | null, ignoreDiscrim
         'id': value['id'],
         'cid': value['cid'],
         'content_preview': value['contentPreview'],
-        'author': PostAuthorToJSON(value['author']),
+        'author': MentionAuthorToJSON(value['author']),
         'created_at': ((value['createdAt']).toISOString()),
         'numTweets': value['numTweets'],
     };

@@ -25,7 +25,7 @@ type MentionPayload struct {
 // MentionHandler is an Asynq worker that converts a Twitter mention into a Post.
 type MentionHandler struct {
 	processedMentionService *service.ProcessedMentionService
-	postService             *service.PostService
+	mentionService          *service.MentionService
 	scraper                 *xscraper.XScraper
 	logger                  *slog.Logger
 }
@@ -33,13 +33,13 @@ type MentionHandler struct {
 // NewMentionHandler constructs a MentionHandler.
 func NewMentionHandler(
 	processedMentionService *service.ProcessedMentionService,
-	postService *service.PostService,
+	mentionService *service.MentionService,
 	scraper *xscraper.XScraper,
 	logger *slog.Logger,
 ) *MentionHandler {
 	return &MentionHandler{
 		processedMentionService: processedMentionService,
-		postService:             postService,
+		mentionService:          mentionService,
 		scraper:                 scraper,
 		logger:                  logger.With("job_handler", "mention"),
 	}
@@ -114,28 +114,28 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 		return fmt.Errorf("failed to get tweets: %w", err)
 	}
 
-	// Create post from mention
-	post, err := w.postService.CreatePost(ctx, &service.CreatePostRequest{
+	// Create mention from tweets
+	mentionResult, err := w.mentionService.CreateMention(ctx, &service.CreateMentionRequest{
 		Tweets: tweets,
 	})
 	if err != nil {
-		log.Error("Failed to create post from mention", "error", err)
+		log.Error("Failed to create mention from tweets", "error", err)
 		// This could be transient (network issues, db issues), allow retries
-		return fmt.Errorf("failed to create post from mention: %w", err)
+		return fmt.Errorf("failed to create mention from tweets: %w", err)
 	}
 
 	// Mark as processed to prevent duplicate work
 	if err := w.processedMentionService.MarkProcessed(ctx, mentionUserID, mention.RestID); err != nil {
 		log.Error("Failed to mark mention as processed",
 			"error", err,
-			"post_id", post.ID,
+			"mention_id", mentionResult.ID,
 		)
-		// This is serious but the post was created, so we should retry the marking
+		// This is serious but the mention was created, so we should retry the marking
 		return fmt.Errorf("failed to mark mention as processed: %w", err)
 	}
 
 	log.Info("🤖 Mention processed successfully",
-		"post_id", post.ID,
+		"mention_id", mentionResult.ID,
 		"processing_time", time.Since(mention.CreatedAt),
 	)
 	return nil

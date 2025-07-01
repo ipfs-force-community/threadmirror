@@ -13,13 +13,6 @@
  */
 
 import { mapValues } from '../runtime';
-import type { PostAuthor } from './PostAuthor';
-import {
-    PostAuthorFromJSON,
-    PostAuthorFromJSONTyped,
-    PostAuthorToJSON,
-    PostAuthorToJSONTyped,
-} from './PostAuthor';
 import type { Tweet } from './Tweet';
 import {
     TweetFromJSON,
@@ -27,61 +20,68 @@ import {
     TweetToJSON,
     TweetToJSONTyped,
 } from './Tweet';
+import type { MentionAuthor } from './MentionAuthor';
+import {
+    MentionAuthorFromJSON,
+    MentionAuthorFromJSONTyped,
+    MentionAuthorToJSON,
+    MentionAuthorToJSONTyped,
+} from './MentionAuthor';
 
 /**
  * 
  * @export
- * @interface PostDetail
+ * @interface MentionDetail
  */
-export interface PostDetail {
+export interface MentionDetail {
     /**
-     * Post unique identifier
+     * Mention unique identifier
      * @type {string}
-     * @memberof PostDetail
+     * @memberof MentionDetail
      */
     id: string;
     /**
      * Content identifier (CID)
      * @type {string}
-     * @memberof PostDetail
+     * @memberof MentionDetail
      */
     cid: string;
     /**
-     * Post content preview/summary
+     * Mention content preview/summary
      * @type {string}
-     * @memberof PostDetail
+     * @memberof MentionDetail
      */
     contentPreview: string;
     /**
      * 
-     * @type {PostAuthor}
-     * @memberof PostDetail
+     * @type {MentionAuthor}
+     * @memberof MentionDetail
      */
-    author?: PostAuthor;
+    author?: MentionAuthor;
     /**
-     * Post creation timestamp
+     * Mention creation timestamp
      * @type {Date}
-     * @memberof PostDetail
+     * @memberof MentionDetail
      */
     createdAt: Date;
     /**
      * Number of tweets in the thread
      * @type {number}
-     * @memberof PostDetail
+     * @memberof MentionDetail
      */
     numTweets: number;
     /**
-     * Tweets associated with this post
+     * Tweets associated with this mention
      * @type {Array<Tweet>}
-     * @memberof PostDetail
+     * @memberof MentionDetail
      */
     tweets: Array<Tweet> | null;
 }
 
 /**
- * Check if a given object implements the PostDetail interface.
+ * Check if a given object implements the MentionDetail interface.
  */
-export function instanceOfPostDetail(value: object): value is PostDetail {
+export function instanceOfMentionDetail(value: object): value is MentionDetail {
     if (!('id' in value) || value['id'] === undefined) return false;
     if (!('cid' in value) || value['cid'] === undefined) return false;
     if (!('contentPreview' in value) || value['contentPreview'] === undefined) return false;
@@ -91,11 +91,11 @@ export function instanceOfPostDetail(value: object): value is PostDetail {
     return true;
 }
 
-export function PostDetailFromJSON(json: any): PostDetail {
-    return PostDetailFromJSONTyped(json, false);
+export function MentionDetailFromJSON(json: any): MentionDetail {
+    return MentionDetailFromJSONTyped(json, false);
 }
 
-export function PostDetailFromJSONTyped(json: any, ignoreDiscriminator: boolean): PostDetail {
+export function MentionDetailFromJSONTyped(json: any, ignoreDiscriminator: boolean): MentionDetail {
     if (json == null) {
         return json;
     }
@@ -104,18 +104,18 @@ export function PostDetailFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'id': json['id'],
         'cid': json['cid'],
         'contentPreview': json['content_preview'],
-        'author': json['author'] == null ? undefined : PostAuthorFromJSON(json['author']),
+        'author': json['author'] == null ? undefined : MentionAuthorFromJSON(json['author']),
         'createdAt': (new Date(json['created_at'])),
         'numTweets': json['numTweets'],
         'tweets': (json['tweets'] == null ? null : (json['tweets'] as Array<any>).map(TweetFromJSON)),
     };
 }
 
-export function PostDetailToJSON(json: any): PostDetail {
-    return PostDetailToJSONTyped(json, false);
+export function MentionDetailToJSON(json: any): MentionDetail {
+    return MentionDetailToJSONTyped(json, false);
 }
 
-export function PostDetailToJSONTyped(value?: PostDetail | null, ignoreDiscriminator: boolean = false): any {
+export function MentionDetailToJSONTyped(value?: MentionDetail | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
@@ -125,7 +125,7 @@ export function PostDetailToJSONTyped(value?: PostDetail | null, ignoreDiscrimin
         'id': value['id'],
         'cid': value['cid'],
         'content_preview': value['contentPreview'],
-        'author': PostAuthorToJSON(value['author']),
+        'author': MentionAuthorToJSON(value['author']),
         'created_at': ((value['createdAt']).toISOString()),
         'numTweets': value['numTweets'],
         'tweets': (value['tweets'] == null ? null : (value['tweets'] as Array<any>).map(TweetToJSON)),

@@ -1,9 +1,9 @@
-import { PostDetail as Post } from '@src/client/models';
+import { MentionDetail as Mention } from '@src/client/models';
 
-// 模拟Post数据
-const originPosts: Post[] = [
+// 模拟Mention数据
+const originMentions: Mention[] = [
   {
-    id: "post_001",
+    id: "mention_001",
     cid: "bafkreig4666666666666666666666666666666666666666666666666666666666666666",
     contentPreview: "最近研究了区块链的零知识证明技术，这里分享一些关于ZK-SNARKs和ZK-STARKs的见解...",
     author: {
@@ -106,7 +106,7 @@ const originPosts: Post[] = [
     numTweets: 2,
   },
   {
-    id: "post_002",
+    id: "mention_002",
     cid: "bafkreig4666666666666666666666666666666666666666666666666666666666666666",
     contentPreview: "今日比特币分析：市场情绪指数显示我们可能正处在恐慌区域，这往往是长期投资者的良好买入时机...",
     author: {
@@ -164,7 +164,7 @@ const originPosts: Post[] = [
     numTweets: 1,
   },
   {
-    id: "post_003",
+    id: "mention_003",
     cid: "bafkreig4666666666666666666666666666666666666666666666666666666666666666",
     contentPreview: "分享一个我正在使用的交易策略：结合RSI和MACD的背离信号，配合成交量确认，这在最近的市场环境中效果不错...",
     author: {
@@ -283,49 +283,49 @@ const originPosts: Post[] = [
   },
 ];
 
-const generateData = (count: number, startId: number = 1000): Post[] => {
-  const result: Post[] = [];
-  const templatePosts = originPosts;
+const generateData = (count: number, startId: number = 1000): Mention[] => {
+  const result: Mention[] = [];
+  const templateMentions = originMentions;
 
   for (let i = 0; i < count; i++) {
-    // 从模板中随机选择一个帖子作为基础
-    const templateIndex = i % templatePosts.length;
-    const template = templatePosts[templateIndex];
+    // 从模板中随机选择一个mention作为基础
+    const templateIndex = i % templateMentions.length;
+    const template = templateMentions[templateIndex];
 
-    // 创建新帖子，复制模板并修改部分属性
-    const newPost: Post = {
+    // 创建新mention，复制模板并修改部分属性
+    const newMention: Mention = {
       ...template,
-      id: `post_${startId + i}`,
+      id: `mention_${startId + i}`,
       createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // 随机设置在过去30天内的时间
     };
 
-    // 为每个帖子生成新的tweets，确保ID唯一
-    if (newPost.tweets && newPost.tweets.length > 0) {
-      newPost.tweets = newPost.tweets.map((tweet, idx) => {
-        const tweetDate = new Date(newPost.createdAt.getTime());
+    // 为每个mention生成新的tweets，确保ID唯一
+    if (newMention.tweets && newMention.tweets.length > 0) {
+      newMention.tweets = newMention.tweets.map((tweet, idx) => {
+        const tweetDate = new Date(newMention.createdAt.getTime());
         return {
           ...tweet,
           id: `tweet_${startId + i}_${idx}`,
           restId: `tweet_${startId + i}_${idx}`,
           createdAt: tweetDate,
-          // 确保回复的时间稍晚于原帖
+          // 确保回复的时间稍晚于原mention
           ...(idx > 0 ? { createdAt: new Date(tweetDate.getTime() + idx * 60000) } : {})
         };
       });
 
       // 更新contentPreview以反映第一个tweet的内容
-      if (newPost.tweets[0]) {
-        const firstTweetText = newPost.tweets[0].text;
-        newPost.contentPreview = firstTweetText.length > 100
+      if (newMention.tweets[0]) {
+        const firstTweetText = newMention.tweets[0].text;
+        newMention.contentPreview = firstTweetText.length > 100
           ? firstTweetText.substring(0, 97) + '...'
           : firstTweetText;
       }
     }
 
-    result.push(newPost);
+    result.push(newMention);
   }
 
   return result;
 };
 
-export const mockPosts: Post[] = generateData(17);
+export const mockMentions: Mention[] = generateData(17);

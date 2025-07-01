@@ -12,20 +12,20 @@ import (
 var _ ServerInterface = (*V1Handler)(nil)
 
 type V1Handler struct {
-	logger      *slog.Logger
-	postService *service.PostService
-	twitterBot  *bot.TwitterBot
+	logger         *slog.Logger
+	mentionService *service.MentionService
+	twitterBot     *bot.TwitterBot
 }
 
 func NewV1Handler(
-	postService *service.PostService,
+	mentionService *service.MentionService,
 	logger *slog.Logger,
 	twitterBot *bot.TwitterBot,
 ) *V1Handler {
 	return &V1Handler{
-		postService: postService,
-		twitterBot:  twitterBot,
-		logger:      logger.With("api", "v1"),
+		mentionService: mentionService,
+		twitterBot:     twitterBot,
+		logger:         logger.With("api", "v1"),
 	}
 }
 

@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Toaster } from 'sonner';
-import UserPosts from '@pages/UserPosts';
-import PostDetail from '@pages/PostDetail';
+import UserMentions from '@pages/UserMentions';
+import MentionDetail from '@pages/MentionDetail';
 import UserLgoinOut from '@components/UserLoginOut';
 import './App.css';
 
@@ -36,8 +36,8 @@ function App() {
           <UserLgoinOut />
         </header>
         <Routes>
-          <Route path="/" element={<UserPosts />} />
-          <Route path="/posts/:id" element={<PostDetail />} />
+          <Route path="/" element={<UserMentions />} />
+          <Route path="/mentions/:id" element={<MentionDetail />} />
         </Routes>
       </div>
     </Router>

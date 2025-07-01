@@ -1,11 +1,11 @@
-import { mockPosts } from '@data/mockData';
+import { mockMentions } from '@data/mockData';
 import {
-  PostsApi,
+  MentionsApi,
   Configuration,
-  PostsGetRequest,
-  PostsIdGetRequest,
-  PostsGet200Response as PostsGetResponse,
-  PostsIdGet200Response as PostsIdGetResponse,
+  MentionsGetRequest,
+  MentionsIdGetRequest,
+  MentionsGet200Response as MentionsGetResponse,
+  MentionsIdGet200Response as MentionsIdGetResponse,
 } from '@client/index';
 import { getAuthToken } from '@utils/cookie';
 
@@ -27,46 +27,46 @@ const config = new Configuration({
   ]
 });
 
-const postsApi = new PostsApi(config);
+const mentionsApi = new MentionsApi(config);
 
-const fetchUserPosts = async (request: PostsGetRequest = {}) => {
-  return await postsApi.postsGet(request);
+const fetchUserMentions = async (request: MentionsGetRequest = {}) => {
+  return await mentionsApi.mentionsGet(request);
 };
 
 
-const fetchPostDetail = async (request: PostsIdGetRequest) => {
-  return await postsApi.postsIdGet(request);
+const fetchMentionDetail = async (request: MentionsIdGetRequest) => {
+  return await mentionsApi.mentionsIdGet(request);
 };
 
 
-const fetchUserPostsMock = async (request: PostsGetRequest = {}) => {
+const fetchUserMentionsMock = async (request: MentionsGetRequest = {}) => {
   console.log('use mock data for fetchUserTwitter');
   const startIndex = (request?.offset || 0) * (request?.limit || 0);
-  const endIndex = Math.min(startIndex + (request?.limit || 0), mockPosts.length);
-  const posts = mockPosts.slice(startIndex, endIndex);
-  console.log('[mock]posts--------->', '[', startIndex, ',', endIndex, ']');
+  const endIndex = Math.min(startIndex + (request?.limit || 0), mockMentions.length);
+  const mentions = mockMentions.slice(startIndex, endIndex);
+  console.log('[mock]mentions--------->', '[', startIndex, ',', endIndex, ']');
 
   return {
     meta: {
-      total: mockPosts?.length || 0,
+      total: mockMentions?.length || 0,
       limit: request.limit,
       offset: request.offset,
     },
-    data: posts,
-  } as PostsGetResponse;
+    data: mentions,
+  } as MentionsGetResponse;
 };
 
-const fetchPostDetailMock = async (request: PostsIdGetRequest) => {
+const fetchMentionDetailMock = async (request: MentionsIdGetRequest) => {
   console.log('use mock data for fetchTwitterDetail');
   return {
-    data: mockPosts.find(post => post.id === request.id),
-  } as PostsIdGetResponse;
+    data: mockMentions.find(mention => mention.id === request.id),
+  } as MentionsIdGetResponse;
 };
 
 // 导出兼容 mock 模式的函数
 export const useApiService = () => {
   return {
-    fetchGetPosts: useMock ? fetchUserPostsMock : fetchUserPosts,
-    fetchGetPostsId: useMock ? fetchPostDetailMock : fetchPostDetail
+    fetchGetMentions: useMock ? fetchUserMentionsMock : fetchUserMentions,
+    fetchGetMentionsId: useMock ? fetchMentionDetailMock : fetchMentionDetail
   };
 };

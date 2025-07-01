@@ -16,39 +16,39 @@ import { mapValues } from '../runtime';
 /**
  * 
  * @export
- * @interface PostAuthor
+ * @interface MentionAuthor
  */
-export interface PostAuthor {
+export interface MentionAuthor {
     /**
      * Author's unique identifier (Twitter user ID)
      * @type {string}
-     * @memberof PostAuthor
+     * @memberof MentionAuthor
      */
     id: string;
     /**
      * Author's display name
      * @type {string}
-     * @memberof PostAuthor
+     * @memberof MentionAuthor
      */
     name: string;
     /**
      * Author's screen name (without @)
      * @type {string}
-     * @memberof PostAuthor
+     * @memberof MentionAuthor
      */
     screenName: string;
     /**
      * Author's profile image URL
      * @type {string}
-     * @memberof PostAuthor
+     * @memberof MentionAuthor
      */
     profileImageUrl: string;
 }
 
 /**
- * Check if a given object implements the PostAuthor interface.
+ * Check if a given object implements the MentionAuthor interface.
  */
-export function instanceOfPostAuthor(value: object): value is PostAuthor {
+export function instanceOfMentionAuthor(value: object): value is MentionAuthor {
     if (!('id' in value) || value['id'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
     if (!('screenName' in value) || value['screenName'] === undefined) return false;
@@ -56,11 +56,11 @@ export function instanceOfPostAuthor(value: object): value is PostAuthor {
     return true;
 }
 
-export function PostAuthorFromJSON(json: any): PostAuthor {
-    return PostAuthorFromJSONTyped(json, false);
+export function MentionAuthorFromJSON(json: any): MentionAuthor {
+    return MentionAuthorFromJSONTyped(json, false);
 }
 
-export function PostAuthorFromJSONTyped(json: any, ignoreDiscriminator: boolean): PostAuthor {
+export function MentionAuthorFromJSONTyped(json: any, ignoreDiscriminator: boolean): MentionAuthor {
     if (json == null) {
         return json;
     }
@@ -73,11 +73,11 @@ export function PostAuthorFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     };
 }
 
-export function PostAuthorToJSON(json: any): PostAuthor {
-    return PostAuthorToJSONTyped(json, false);
+export function MentionAuthorToJSON(json: any): MentionAuthor {
+    return MentionAuthorToJSONTyped(json, false);
 }
 
-export function PostAuthorToJSONTyped(value?: PostAuthor | null, ignoreDiscriminator: boolean = false): any {
+export function MentionAuthorToJSONTyped(value?: MentionAuthor | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

@@ -65,20 +65,8 @@ type MediaInfo struct {
 	Width *int `json:"width"`
 }
 
-// PaginationMeta defines model for PaginationMeta.
-type PaginationMeta struct {
-	// Limit Maximum number of items returned
-	Limit int `json:"limit"`
-
-	// Offset Number of items skipped
-	Offset int `json:"offset"`
-
-	// Total Total number of items
-	Total int `json:"total"`
-}
-
-// PostAuthor defines model for PostAuthor.
-type PostAuthor struct {
+// MentionAuthor defines model for MentionAuthor.
+type MentionAuthor struct {
 	// Id Author's unique identifier (Twitter user ID)
 	Id string `json:"id"`
 
@@ -92,47 +80,59 @@ type PostAuthor struct {
 	ScreenName string `json:"screen_name"`
 }
 
-// PostDetail defines model for PostDetail.
-type PostDetail struct {
-	Author *PostAuthor `json:"author,omitempty"`
+// MentionDetail defines model for MentionDetail.
+type MentionDetail struct {
+	Author *MentionAuthor `json:"author,omitempty"`
 
 	// Cid Content identifier (CID)
 	Cid string `json:"cid"`
 
-	// ContentPreview Post content preview/summary
+	// ContentPreview Mention content preview/summary
 	ContentPreview string `json:"content_preview"`
 
-	// CreatedAt Post creation timestamp
+	// CreatedAt Mention creation timestamp
 	CreatedAt time.Time `json:"created_at"`
 
-	// Id Post unique identifier
+	// Id Mention unique identifier
 	Id string `json:"id"`
 
 	// NumTweets Number of tweets in the thread
 	NumTweets int `json:"numTweets"`
 
-	// Tweets Tweets associated with this post
+	// Tweets Tweets associated with this mention
 	Tweets *[]Tweet `json:"tweets"`
 }
 
-// PostSummary defines model for PostSummary.
-type PostSummary struct {
-	Author *PostAuthor `json:"author,omitempty"`
+// MentionSummary defines model for MentionSummary.
+type MentionSummary struct {
+	Author *MentionAuthor `json:"author,omitempty"`
 
 	// Cid Content identifier (CID)
 	Cid string `json:"cid"`
 
-	// ContentPreview Post content preview/summary
+	// ContentPreview Mention content preview/summary
 	ContentPreview string `json:"content_preview"`
 
-	// CreatedAt Post creation timestamp
+	// CreatedAt Mention creation timestamp
 	CreatedAt time.Time `json:"created_at"`
 
-	// Id Post unique identifier
+	// Id Mention unique identifier
 	Id string `json:"id"`
 
 	// NumTweets Number of tweets in the thread
 	NumTweets int `json:"numTweets"`
+}
+
+// PaginationMeta defines model for PaginationMeta.
+type PaginationMeta struct {
+	// Limit Maximum number of items returned
+	Limit int `json:"limit"`
+
+	// Offset Number of items skipped
+	Offset int `json:"offset"`
+
+	// Total Total number of items
+	Total int `json:"total"`
 }
 
 // Tweet defines model for Tweet.
@@ -284,8 +284,8 @@ type NotFound = Error
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
 
-// GetPostsParams defines parameters for GetPosts.
-type GetPostsParams struct {
+// GetMentionsParams defines parameters for GetMentions.
+type GetMentionsParams struct {
 	// Limit Maximum number of items to return
 	Limit *PageLimit `form:"limit,omitempty" json:"limit,omitempty"`
 
@@ -293,5 +293,5 @@ type GetPostsParams struct {
 	Offset *PageOffset `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
-func (p *GetPostsParams) GetLimit() *PageLimit   { return p.Limit }
-func (p *GetPostsParams) GetOffset() *PageOffset { return p.Offset }
+func (p *GetMentionsParams) GetLimit() *PageLimit   { return p.Limit }
+func (p *GetMentionsParams) GetOffset() *PageOffset { return p.Offset }

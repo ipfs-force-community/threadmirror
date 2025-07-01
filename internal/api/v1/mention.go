@@ -13,105 +13,105 @@ import (
 )
 
 var (
-	// Post module error codes: 13000-13999
-	ErrCodePost = v1errors.NewErrorCode(v1errors.CheckCode(13000), "Post error")
+	// Mention module error codes: 13000-13999
+	ErrCodeMention = v1errors.NewErrorCode(v1errors.CheckCode(13000), "Mention error")
 
-	// Post operation errors
-	ErrCodeFailedToGetPosts = v1errors.NewErrorCode(13001, "failed to get posts")
-	ErrCodeFailedToGetPost  = v1errors.NewErrorCode(13003, "failed to get post")
+	// Mention operation errors
+	ErrCodeFailedToGetMentions = v1errors.NewErrorCode(13001, "failed to get mentions")
+	ErrCodeFailedToGetMention  = v1errors.NewErrorCode(13003, "failed to get mention")
 
-	// Post access errors
-	ErrCodePostNotFound = v1errors.NewErrorCode(13006, "post not found")
+	// Mention access errors
+	ErrCodeMentionNotFound = v1errors.NewErrorCode(13006, "mention not found")
 )
 
-// Post-related methods for V1Handler
+// Mention-related methods for V1Handler
 
-// GetPosts handles GET /posts
-func (h *V1Handler) GetPosts(c *gin.Context, params GetPostsParams) {
+// GetMentions handles GET /mentions
+func (h *V1Handler) GetMentions(c *gin.Context, params GetMentionsParams) {
 	currentUserID := auth.CurrentUserID(c)
 
 	limit, offset := ExtractPaginationParams(&params)
 
-	// Get posts
-	posts, total, err := h.postService.GetPosts(c.Request.Context(), currentUserID, limit, offset)
+	// Get mentions
+	mentions, total, err := h.mentionService.GetMentions(c.Request.Context(), currentUserID, limit, offset)
 	if err != nil {
-		_ = c.Error(v1errors.InternalServerError(err).WithCode(ErrCodeFailedToGetPosts))
+		_ = c.Error(v1errors.InternalServerError(err).WithCode(ErrCodeFailedToGetMentions))
 		return
 	}
 
-	apiPosts := lo.Map(posts, func(post service.PostSummary, _ int) PostSummary {
-		return h.convertPostSummaryToAPI(post)
+	apiMentions := lo.Map(mentions, func(mention service.MentionSummary, _ int) MentionSummary {
+		return h.convertMentionSummaryToAPI(mention)
 	})
 
-	PaginatedJSON(c, apiPosts, total, limit, offset)
+	PaginatedJSON(c, apiMentions, total, limit, offset)
 }
 
-// GetPostsId handles GET /posts/{id}
-func (h *V1Handler) GetPostsId(c *gin.Context, id string) {
-	thread, err := h.postService.GetPostByID(c.Request.Context(), id)
+// GetMentionsId handles GET /mentions/{id}
+func (h *V1Handler) GetMentionsId(c *gin.Context, id string) {
+	thread, err := h.mentionService.GetMentionByID(c.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, service.ErrPostNotFound) {
-			_ = c.Error(v1errors.NotFound(err).WithCode(ErrCodePostNotFound))
+		if errors.Is(err, service.ErrMentionNotFound) {
+			_ = c.Error(v1errors.NotFound(err).WithCode(ErrCodeMentionNotFound))
 			return
 		}
-		_ = c.Error(v1errors.InternalServerError(err).WithCode(ErrCodeFailedToGetPost))
+		_ = c.Error(v1errors.InternalServerError(err).WithCode(ErrCodeFailedToGetMention))
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data": h.convertPostDetailToAPI(*thread),
+		"data": h.convertMentionDetailToAPI(*thread),
 	})
 }
 
-// Post Helper functions
+// Mention Helper functions
 
 // Conversion functions from service types to API types
 
-func (h *V1Handler) convertPostSummaryToAPI(post service.PostSummary) PostSummary {
-	var author *PostAuthor
-	if post.Author != nil {
-		author = &PostAuthor{
-			Id:              post.Author.ID,
-			Name:            post.Author.Name,
-			ScreenName:      post.Author.ScreenName,
-			ProfileImageUrl: post.Author.ProfileImageURL,
+func (h *V1Handler) convertMentionSummaryToAPI(mention service.MentionSummary) MentionSummary {
+	var author *MentionAuthor
+	if mention.Author != nil {
+		author = &MentionAuthor{
+			Id:              mention.Author.ID,
+			Name:            mention.Author.Name,
+			ScreenName:      mention.Author.ScreenName,
+			ProfileImageUrl: mention.Author.ProfileImageURL,
 		}
 	}
 
-	return PostSummary{
-		Id:             post.ID,
-		Cid:            post.CID,
-		ContentPreview: post.ContentPreview,
+	return MentionSummary{
+		Id:             mention.ID,
+		Cid:            mention.CID,
+		ContentPreview: mention.ContentPreview,
 		Author:         author,
-		CreatedAt:      post.CreatedAt,
-		NumTweets:      post.NumTweets,
+		CreatedAt:      mention.CreatedAt,
+		NumTweets:      mention.NumTweets,
 	}
 }
 
-func (h *V1Handler) convertPostDetailToAPI(post service.PostDetail) PostDetail {
-	var author *PostAuthor
-	if post.Author != nil {
-		author = &PostAuthor{
-			Id:              post.Author.ID,
-			Name:            post.Author.Name,
-			ScreenName:      post.Author.ScreenName,
-			ProfileImageUrl: post.Author.ProfileImageURL,
+func (h *V1Handler) convertMentionDetailToAPI(mention service.MentionDetail) MentionDetail {
+	var author *MentionAuthor
+	if mention.Author != nil {
+		author = &MentionAuthor{
+			Id:              mention.Author.ID,
+			Name:            mention.Author.Name,
+			ScreenName:      mention.Author.ScreenName,
+			ProfileImageUrl: mention.Author.ProfileImageURL,
 		}
 	}
 
 	var apiTweets []Tweet
-	if len(post.Tweets) > 0 {
-		apiTweets = lo.Map(post.Tweets, func(tweet *xscraper.Tweet, _ int) Tweet {
+	if len(mention.Tweets) > 0 {
+		apiTweets = lo.Map(mention.Tweets, func(tweet *xscraper.Tweet, _ int) Tweet {
 			return h.convertXScraperTweetToAPI(tweet)
 		})
 	}
 
-	return PostDetail{
-		Id:        post.ID,
-		Cid:       post.CID,
-		NumTweets: len(post.Tweets),
+	return MentionDetail{
+		Id:        mention.ID,
+		Cid:       mention.CID,
+		NumTweets: len(mention.Tweets),
 		Author:    author,
-		CreatedAt: post.CreatedAt,
+		CreatedAt: mention.CreatedAt,
 		Tweets:    &apiTweets,
 	}
 }

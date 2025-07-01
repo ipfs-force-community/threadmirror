@@ -2,4 +2,4 @@
 /* eslint-disable */
 export * from './BotApi';
 export * from './HealthApi';
-export * from './PostsApi';
+export * from './MentionsApi';

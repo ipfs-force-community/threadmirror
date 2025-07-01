@@ -41,7 +41,7 @@ const UserProfileComponent = ({ profile, sample }: UserProfileProps) => {
                             <span style={{ fontWeight: 'bold', color: 'gray', margin: '0 5px 0 10px' }}>friends:</span>
                             <span style={{ color: '#b0b0b0' }}>{profile.friendsCount}</span>
 
-                            <span style={{ fontWeight: 'bold', color: 'gray', margin: '0 5px 0 10px' }}>posts:</span>
+                            <span style={{ fontWeight: 'bold', color: 'gray', margin: '0 5px 0 10px' }}>mentions:</span>
                             <span style={{ color: '#b0b0b0' }}>{profile.statusesCount}</span>
                         </div>
                         <div>

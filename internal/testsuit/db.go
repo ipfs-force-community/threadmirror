@@ -26,9 +26,9 @@ func SetupTestDB(t *testing.T) *sql.DB {
 
 // DBTestSuite provides a test suite based on real database instead of mocks
 type DBTestSuite struct {
-	DB          *sql.DB
-	PostRepo    *sqlrepo.PostRepo
-	PostService *service.PostService
+	DB             *sql.DB
+	MentionRepo    *sqlrepo.MentionRepo
+	MentionService *service.MentionService
 }
 
 // SetupDBTestSuite creates a new database test suite with all dependencies
@@ -37,7 +37,7 @@ func SetupDBTestSuite(t *testing.T) *DBTestSuite {
 	db := SetupTestDB(t)
 
 	// Create repositories
-	postRepo := sqlrepo.NewPostRepo()
+	mentionRepo := sqlrepo.NewMentionRepo()
 	threadRepo := sqlrepo.NewThreadRepo()
 
 	// Create mock dependencies
@@ -45,11 +45,11 @@ func SetupDBTestSuite(t *testing.T) *DBTestSuite {
 	mockIPFS := &MockIPFSStorage{}
 
 	// Create services
-	postService := service.NewPostService(postRepo, llm.Model(mockLLM), ipfs.Storage(mockIPFS), threadRepo)
+	mentionService := service.NewMentionService(mentionRepo, llm.Model(mockLLM), ipfs.Storage(mockIPFS), threadRepo)
 
 	return &DBTestSuite{
-		DB:          db,
-		PostRepo:    postRepo,
-		PostService: postService,
+		DB:             db,
+		MentionRepo:    mentionRepo,
+		MentionService: mentionService,
 	}
 }
