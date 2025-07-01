@@ -40,18 +40,15 @@ func (s *BotCookieService) SaveCookies(ctx context.Context, email, username stri
 func (s *BotCookieService) LoadCookies(ctx context.Context, email, username string) ([]*http.Cookie, error) {
 	cookiesJSON, err := s.repo.GetCookies(ctx, email, username)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
-
 	if cookiesJSON == nil {
 		return nil, nil
 	}
-
 	var cookies []*http.Cookie
 	err = json.Unmarshal(cookiesJSON, &cookies)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal cookies: %w", err)
 	}
-
 	return cookies, nil
 }

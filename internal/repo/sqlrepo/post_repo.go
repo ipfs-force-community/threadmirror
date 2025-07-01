@@ -2,9 +2,11 @@ package sqlrepo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
+	"gorm.io/gorm"
 )
 
 // PostRepo implements PostRepoInterface
@@ -23,6 +25,22 @@ func (r *PostRepo) GetPostByID(ctx context.Context, id string) (*model.Post, err
 	var post model.Post
 	err := db.Where("id = ?", id).First(&post).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &post, nil
+}
+
+func (r *PostRepo) GetPostByUserIDAndThreadID(ctx context.Context, userID, threadID string) (*model.Post, error) {
+	db := sql.MustDBFromContext(ctx)
+	var post model.Post
+	err := db.Where("user_id = ? AND thread_id = ?", userID, threadID).First(&post).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &post, nil

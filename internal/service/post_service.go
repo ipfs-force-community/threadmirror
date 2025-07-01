@@ -60,6 +60,7 @@ type CreatePostRequest struct {
 type PostRepoInterface interface {
 	// Post CRUD
 	GetPostByID(ctx context.Context, id string) (*model.Post, error)
+	GetPostByUserIDAndThreadID(ctx context.Context, userID, threadID string) (*model.Post, error)
 	CreatePost(ctx context.Context, post *model.Post) error
 	GetPosts(
 		ctx context.Context,
@@ -101,59 +102,72 @@ func (s *PostService) CreatePost(
 ) (*PostDetail, error) {
 	var result *PostDetail
 	db := sql.MustDBFromContext(ctx)
-	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		postRepo := sqlrepo.NewPostRepo()
-		threadRepo := sqlrepo.NewThreadRepo()
+	return result, db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		postRepo := s.postRepo
+		threadRepo := s.threadRepo
 
 		if len(req.Tweets) < 2 {
 			return fmt.Errorf("no tweets provided")
 		}
 
 		threadID := req.Tweets[len(req.Tweets)-2].RestID
-		_, err := threadRepo.GetThreadByID(ctx, threadID)
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+
+		// 去重逻辑：如已存在则直接返回
+		post, err := postRepo.GetPostByUserIDAndThreadID(ctx, userID, threadID)
+		if err != nil {
+			return err
+		}
+		if post != nil {
+			result, err = s.buildPostDetail(ctx, post)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+
+		_, err = threadRepo.GetThreadByID(ctx, threadID)
+		if err != nil {
 			return fmt.Errorf("failed to check thread existence: %w", err)
 		}
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			jsonThread, err := json.Marshal(req.Tweets[:len(req.Tweets)-1])
-			if err != nil {
-				return fmt.Errorf("failed to marshal tweets: %w", err)
-			}
 
-			summary, err := s.generateTweetsSummary(ctx, string(jsonThread))
-			if err != nil {
-				return fmt.Errorf("failed to generate AI summary: %w", err)
-			}
-
-			cid, err := s.storage.Add(ctx, bytes.NewReader(jsonThread))
-			if err != nil {
-				return fmt.Errorf("failed to add tweets to IPFS: %w", err)
-			}
-
-			var authorID, authorName, authorScreenName, authorProfileImageURL string
-			if req.Tweets[len(req.Tweets)-2].Author != nil {
-				author := req.Tweets[len(req.Tweets)-2].Author
-				authorID = author.RestID
-				authorName = author.Name
-				authorScreenName = author.ScreenName
-				authorProfileImageURL = author.ProfileImageURL
-			}
-			err = threadRepo.CreateThread(ctx, &model.Thread{
-				ID:                    threadID,
-				Summary:               summary,
-				CID:                   cid.String(),
-				AuthorID:              authorID,
-				AuthorName:            authorName,
-				AuthorScreenName:      authorScreenName,
-				AuthorProfileImageURL: authorProfileImageURL,
-				NumTweets:             len(req.Tweets) - 1,
-			})
-			if err != nil {
-				return fmt.Errorf("failed to create thread: %w", err)
-			}
+		jsonThread, err := json.Marshal(req.Tweets[:len(req.Tweets)-1])
+		if err != nil {
+			return fmt.Errorf("failed to marshal tweets: %w", err)
 		}
 
-		post := &model.Post{
+		summary, err := s.generateTweetsSummary(ctx, string(jsonThread))
+		if err != nil {
+			return fmt.Errorf("failed to generate AI summary: %w", err)
+		}
+
+		cid, err := s.storage.Add(ctx, bytes.NewReader(jsonThread))
+		if err != nil {
+			return fmt.Errorf("failed to add tweets to IPFS: %w", err)
+		}
+
+		var authorID, authorName, authorScreenName, authorProfileImageURL string
+		if req.Tweets[len(req.Tweets)-2].Author != nil {
+			author := req.Tweets[len(req.Tweets)-2].Author
+			authorID = author.RestID
+			authorName = author.Name
+			authorScreenName = author.ScreenName
+			authorProfileImageURL = author.ProfileImageURL
+		}
+		err = threadRepo.CreateThread(ctx, &model.Thread{
+			ID:                    threadID,
+			Summary:               summary,
+			CID:                   cid.String(),
+			AuthorID:              authorID,
+			AuthorName:            authorName,
+			AuthorScreenName:      authorScreenName,
+			AuthorProfileImageURL: authorProfileImageURL,
+			NumTweets:             len(req.Tweets) - 1,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create thread: %w", err)
+		}
+
+		post = &model.Post{
 			ID:       req.Tweets[len(req.Tweets)-1].RestID,
 			UserID:   userID,
 			ThreadID: threadID,
@@ -171,7 +185,6 @@ func (s *PostService) CreatePost(
 		result = pd
 		return nil
 	})
-	return result, err
 }
 
 // GetPostByID retrieves a post by ID
@@ -179,12 +192,11 @@ func (s *PostService) GetPostByID(ctx context.Context, postID string) (*PostDeta
 	postRepo := sqlrepo.NewPostRepo()
 	post, err := postRepo.GetPostByID(ctx, postID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrPostNotFound
-		}
 		return nil, fmt.Errorf("failed to get post: %w", err)
 	}
-
+	if post == nil {
+		return nil, ErrPostNotFound
+	}
 	return s.buildPostDetail(ctx, post)
 }
 
@@ -232,6 +244,9 @@ func (s *PostService) buildPostDetail(
 	thread, err := threadRepo.GetThreadByID(ctx, post.ThreadID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get thread: %w", err)
+	}
+	if thread == nil {
+		return nil, fmt.Errorf("thread not found")
 	}
 
 	// Build author information
@@ -375,47 +390,47 @@ func (s *PostService) CreateThreadPost(
 		}
 
 		threadID := req.Tweets[len(req.Tweets)-2].RestID
-		_, err := threadRepo.GetThreadByID(ctx, threadID)
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		var err error
+		_, err = threadRepo.GetThreadByID(ctx, threadID)
+		if err != nil {
 			return fmt.Errorf("failed to check thread existence: %w", err)
 		}
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			jsonThread, err := json.Marshal(req.Tweets[:len(req.Tweets)-1])
-			if err != nil {
-				return fmt.Errorf("failed to marshal tweets: %w", err)
-			}
 
-			summary, err := s.generateTweetsSummary(ctx, string(jsonThread))
-			if err != nil {
-				return fmt.Errorf("failed to generate AI summary: %w", err)
-			}
+		jsonThread, err := json.Marshal(req.Tweets[:len(req.Tweets)-1])
+		if err != nil {
+			return fmt.Errorf("failed to marshal tweets: %w", err)
+		}
 
-			cid, err := s.storage.Add(ctx, bytes.NewReader(jsonThread))
-			if err != nil {
-				return fmt.Errorf("failed to add tweets to IPFS: %w", err)
-			}
+		summary, err := s.generateTweetsSummary(ctx, string(jsonThread))
+		if err != nil {
+			return fmt.Errorf("failed to generate AI summary: %w", err)
+		}
 
-			var authorID, authorName, authorScreenName, authorProfileImageURL string
-			if req.Tweets[len(req.Tweets)-2].Author != nil {
-				author := req.Tweets[len(req.Tweets)-2].Author
-				authorID = author.RestID
-				authorName = author.Name
-				authorScreenName = author.ScreenName
-				authorProfileImageURL = author.ProfileImageURL
-			}
-			err = threadRepo.CreateThread(ctx, &model.Thread{
-				ID:                    threadID,
-				Summary:               summary,
-				CID:                   cid.String(),
-				AuthorID:              authorID,
-				AuthorName:            authorName,
-				AuthorScreenName:      authorScreenName,
-				AuthorProfileImageURL: authorProfileImageURL,
-				NumTweets:             len(req.Tweets) - 1,
-			})
-			if err != nil {
-				return fmt.Errorf("failed to create thread: %w", err)
-			}
+		cid, err := s.storage.Add(ctx, bytes.NewReader(jsonThread))
+		if err != nil {
+			return fmt.Errorf("failed to add tweets to IPFS: %w", err)
+		}
+
+		var authorID, authorName, authorScreenName, authorProfileImageURL string
+		if req.Tweets[len(req.Tweets)-2].Author != nil {
+			author := req.Tweets[len(req.Tweets)-2].Author
+			authorID = author.RestID
+			authorName = author.Name
+			authorScreenName = author.ScreenName
+			authorProfileImageURL = author.ProfileImageURL
+		}
+		err = threadRepo.CreateThread(ctx, &model.Thread{
+			ID:                    threadID,
+			Summary:               summary,
+			CID:                   cid.String(),
+			AuthorID:              authorID,
+			AuthorName:            authorName,
+			AuthorScreenName:      authorScreenName,
+			AuthorProfileImageURL: authorProfileImageURL,
+			NumTweets:             len(req.Tweets) - 1,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create thread: %w", err)
 		}
 
 		post := &model.Post{

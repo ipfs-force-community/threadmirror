@@ -3,10 +3,12 @@ package sqlrepo
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 // BotCookieRepo provides database operations for bot cookies
@@ -26,6 +28,9 @@ func (r *BotCookieRepo) GetCookies(ctx context.Context, email, username string) 
 		First(&botCookie).Error
 
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 

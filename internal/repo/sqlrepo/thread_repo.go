@@ -2,9 +2,11 @@ package sqlrepo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
+	"gorm.io/gorm"
 )
 
 // ThreadRepo 提供 Thread 的基本数据库操作
@@ -19,6 +21,9 @@ func (r *ThreadRepo) GetThreadByID(ctx context.Context, id string) (*model.Threa
 	var thread model.Thread
 	err := db.Where("id = ?", id).First(&thread).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &thread, nil
