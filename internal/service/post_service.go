@@ -109,7 +109,7 @@ func (s *PostService) CreatePost(
 			return fmt.Errorf("no tweets provided")
 		}
 
-		threadID := req.Tweets[len(req.Tweets)-1].RestID
+		threadID := req.Tweets[len(req.Tweets)-2].RestID
 		_, err := threadRepo.GetThreadByID(threadID)
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("failed to check thread existence: %w", err)
@@ -131,8 +131,8 @@ func (s *PostService) CreatePost(
 			}
 
 			var authorID, authorName, authorScreenName, authorProfileImageURL string
-			if req.Tweets[len(req.Tweets)-1].Author != nil {
-				author := req.Tweets[len(req.Tweets)-1].Author
+			if req.Tweets[len(req.Tweets)-2].Author != nil {
+				author := req.Tweets[len(req.Tweets)-2].Author
 				authorID = author.RestID
 				authorName = author.Name
 				authorScreenName = author.ScreenName
@@ -154,7 +154,7 @@ func (s *PostService) CreatePost(
 		}
 
 		post := &model.Post{
-			ID:       req.Tweets[len(req.Tweets)].RestID,
+			ID:       req.Tweets[len(req.Tweets)-1].RestID,
 			UserID:   userID,
 			ThreadID: threadID,
 		}
