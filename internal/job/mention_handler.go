@@ -26,6 +26,7 @@ type MentionPayload struct {
 type MentionHandler struct {
 	processedMentionService *service.ProcessedMentionService
 	postService             *service.PostService
+	scraper                 *xscraper.XScraper
 	logger                  *slog.Logger
 }
 
@@ -33,12 +34,14 @@ type MentionHandler struct {
 func NewMentionHandler(
 	processedMentionService *service.ProcessedMentionService,
 	postService *service.PostService,
+	scraper *xscraper.XScraper,
 	logger *slog.Logger,
 ) *MentionHandler {
 	return &MentionHandler{
 		processedMentionService: processedMentionService,
 		postService:             postService,
-		logger:                  logger.With("worker", "mention"),
+		scraper:                 scraper,
+		logger:                  logger.With("job_handler", "mention"),
 	}
 }
 
@@ -75,7 +78,7 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 		return fmt.Errorf("tweet author is nil")
 	}
 
-	mentionUserID := mention.Author.ID
+	mentionUserID := mention.Author.RestID
 	if mentionUserID == "" {
 		return fmt.Errorf("mention user ID is empty")
 	}
@@ -83,12 +86,12 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 	log := w.logger.With(
 		"job_type", j.Type,
 		"mention_user_id", mentionUserID,
-		"tweet_id", mention.ID,
+		"tweet_id", mention.RestID,
 		"author_screen_name", mention.Author.ScreenName,
 	)
 
 	// Check if already processed (idempotency check)
-	processed, err := w.processedMentionService.IsProcessed(ctx, mentionUserID, mention.ID)
+	processed, err := w.processedMentionService.IsProcessed(ctx, mentionUserID, mention.RestID)
 	if err != nil {
 		log.Error("Failed to check if mention is processed", "error", err)
 		// This is a transient error, allow retries
@@ -105,9 +108,15 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 		"created_at", mention.CreatedAt.Format(time.RFC3339),
 	)
 
+	tweets, err := w.scraper.GetTweets(ctx, mention.RestID)
+	if err != nil {
+		log.Error("Failed to get tweets", "error", err)
+		return fmt.Errorf("failed to get tweets: %w", err)
+	}
+
 	// Create post from mention
 	post, err := w.postService.CreatePost(ctx, mentionUserID, &service.CreatePostRequest{
-		Tweets: []*xscraper.Tweet{mention},
+		Tweets: tweets,
 	})
 	if err != nil {
 		log.Error("Failed to create post from mention", "error", err)
@@ -116,7 +125,7 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 	}
 
 	// Mark as processed to prevent duplicate work
-	if err := w.processedMentionService.MarkProcessed(ctx, mentionUserID, mention.ID); err != nil {
+	if err := w.processedMentionService.MarkProcessed(ctx, mentionUserID, mention.RestID); err != nil {
 		log.Error("Failed to mark mention as processed",
 			"error", err,
 			"post_id", post.ID,
