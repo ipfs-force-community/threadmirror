@@ -178,6 +178,9 @@ components:
         id:
           type: string
           description: Post unique identifier
+        cid:
+          type: string
+          description: Content identifier (CID)
         content_preview:
           type: string
           description: Post content preview/summary
@@ -193,6 +196,7 @@ components:
           description: Number of tweets in the thread
       required:
         - id
+        - cid
         - content_preview
         - created_at
         - numTweets
@@ -202,14 +206,14 @@ components:
         - $ref: '#/components/schemas/PostSummary'
         - type: object
           properties:
-            threads:
+            tweets:
               type: array
               items:
                 $ref: '#/components/schemas/Tweet'
-              description: Thread tweets associated with this post
+              description: Tweets associated with this post
               nullable: true
           required:
-            - threads
+            - tweets
 
     PostAuthor:
       type: object

@@ -96,6 +96,9 @@ type PostAuthor struct {
 type PostDetail struct {
 	Author *PostAuthor `json:"author,omitempty"`
 
+	// Cid Content identifier (CID)
+	Cid string `json:"cid"`
+
 	// ContentPreview Post content preview/summary
 	ContentPreview string `json:"content_preview"`
 
@@ -108,13 +111,16 @@ type PostDetail struct {
 	// NumTweets Number of tweets in the thread
 	NumTweets int `json:"numTweets"`
 
-	// Threads Thread tweets associated with this post
-	Threads *[]Tweet `json:"threads"`
+	// Tweets Tweets associated with this post
+	Tweets *[]Tweet `json:"tweets"`
 }
 
 // PostSummary defines model for PostSummary.
 type PostSummary struct {
 	Author *PostAuthor `json:"author,omitempty"`
+
+	// Cid Content identifier (CID)
+	Cid string `json:"cid"`
 
 	// ContentPreview Post content preview/summary
 	ContentPreview string `json:"content_preview"`

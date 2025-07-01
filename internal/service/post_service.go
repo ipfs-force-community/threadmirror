@@ -36,15 +36,17 @@ type PostAuthor struct {
 // PostDetail represents a complete post with all details
 type PostDetail struct {
 	ID        string            `json:"id"`
-	Threads   []*xscraper.Tweet `json:"threads,omitempty"`
+	CID       string            `json:"cid"`
+	Tweets    []*xscraper.Tweet `json:"tweets,omitempty"`
 	Author    *PostAuthor       `json:"author"`
 	CreatedAt time.Time         `json:"created_at"`
 	UpdatedAt time.Time         `json:"updated_at"`
 }
 
-// PostSummaryDetail represents a post summary for list views
-type PostSummaryDetail struct {
+// PostSummary represents a post summary for list views
+type PostSummary struct {
 	ID             string      `json:"id"`
+	CID            string      `json:"cid"`
 	ContentPreview string      `json:"content_preview"`
 	Author         *PostAuthor `json:"author"`
 	CreatedAt      time.Time   `json:"created_at"`
@@ -97,7 +99,6 @@ func NewPostService(
 // CreatePost creates a new post
 func (s *PostService) CreatePost(
 	ctx context.Context,
-	userID string,
 	req *CreatePostRequest,
 ) (*PostDetail, error) {
 	var result *PostDetail
@@ -111,9 +112,10 @@ func (s *PostService) CreatePost(
 		}
 
 		threadID := req.Tweets[len(req.Tweets)-2].RestID
+		mentionTweet := req.Tweets[len(req.Tweets)-1]
 
 		// 去重逻辑：如已存在则直接返回
-		post, err := postRepo.GetPostByUserIDAndThreadID(ctx, userID, threadID)
+		post, err := postRepo.GetPostByUserIDAndThreadID(ctx, mentionTweet.Author.RestID, threadID)
 		if err != nil {
 			return err
 		}
@@ -168,8 +170,8 @@ func (s *PostService) CreatePost(
 		}
 
 		post = &model.Post{
-			ID:       req.Tweets[len(req.Tweets)-1].RestID,
-			UserID:   userID,
+			ID:       mentionTweet.RestID,
+			UserID:   mentionTweet.Author.RestID,
 			ThreadID: threadID,
 		}
 
@@ -205,10 +207,10 @@ func (s *PostService) GetPosts(
 	ctx context.Context,
 	userID string,
 	limit, offset int,
-) ([]PostSummaryDetail, int64, error) {
+) ([]PostSummary, int64, error) {
 	posts, total, err := s.postRepo.GetPosts(ctx, userID, limit, offset)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to get posts: %w", err)
+		return nil, 0, fmt.Errorf("failed to get tweets: %w", err)
 	}
 
 	// 批量查 thread
@@ -218,17 +220,17 @@ func (s *PostService) GetPosts(
 			threadIDs = append(threadIDs, post.ThreadID)
 		}
 	}
-	threadsMap := map[string]*model.Thread{}
+	tweetsMap := map[string]*model.Thread{}
 	if len(threadIDs) > 0 && s.threadRepo != nil {
-		threadsMap, err = s.threadRepo.GetThreadsByIDs(ctx, threadIDs)
+		tweetsMap, err = s.threadRepo.GetTweetsByIDs(ctx, threadIDs)
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to get threads: %w", err)
 		}
 	}
 
-	postSummaries := make([]PostSummaryDetail, 0, len(posts))
+	postSummaries := make([]PostSummary, 0, len(posts))
 	for _, post := range posts {
-		thread := threadsMap[post.ThreadID]
+		thread := tweetsMap[post.ThreadID]
 		postSummaries = append(postSummaries, *s.buildPostSummary(&post, thread))
 	}
 
@@ -260,12 +262,13 @@ func (s *PostService) buildPostDetail(
 		}
 	}
 
-	// Load threads from IPFS
-	threads, _ := s.loadThreadsFromIPFS(ctx, thread.CID)
+	// Load tweets from IPFS
+	tweets, _ := s.loadTweetsFromIPFS(ctx, thread.CID)
 
 	return &PostDetail{
 		ID:        post.ID,
-		Threads:   threads,
+		CID:       thread.CID,
+		Tweets:    tweets,
 		Author:    author,
 		CreatedAt: post.CreatedAt,
 		UpdatedAt: post.UpdatedAt,
@@ -276,7 +279,7 @@ func (s *PostService) buildPostDetail(
 func (s *PostService) buildPostSummary(
 	post *model.Post,
 	thread *model.Thread,
-) *PostSummaryDetail {
+) *PostSummary {
 	// Build author information
 	var author *PostAuthor
 	if thread != nil && thread.AuthorID != "" {
@@ -298,8 +301,14 @@ func (s *PostService) buildPostSummary(
 		NumTweets = thread.NumTweets
 	}
 
-	return &PostSummaryDetail{
-		ID:             post.ID,
+	return &PostSummary{
+		ID: post.ID,
+		CID: func() string {
+			if thread != nil {
+				return thread.CID
+			}
+			return ""
+		}(),
 		ContentPreview: contentPreview, // Use thread summary as content preview
 		Author:         author,
 		CreatedAt:      post.CreatedAt,
@@ -328,17 +337,19 @@ Please provide a Chinese summary:`, jsonTweets)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate summary: %w", err)
 	}
+	summary = strings.TrimSpace(strings.ToValidUTF8(summary, ""))
 
 	// Ensure summary is not too long
-	if len(summary) > 200 {
-		summary = summary[:200] + "..."
+	if len([]rune(summary)) > 200 {
+		runes := []rune(summary)
+		summary = string(runes[:200]) + "..."
 	}
-
+	// Filter out invalid UTF-8 characters
 	return strings.TrimSpace(summary), nil
 }
 
-// loadThreadsFromIPFS loads threads from IPFS using the CID
-func (s *PostService) loadThreadsFromIPFS(ctx context.Context, cidStr string) ([]*xscraper.Tweet, error) {
+// loadTweetsFromIPFS loads tweets from IPFS using the CID
+func (s *PostService) loadTweetsFromIPFS(ctx context.Context, cidStr string) ([]*xscraper.Tweet, error) {
 	if cidStr == "" {
 		return nil, nil
 	}

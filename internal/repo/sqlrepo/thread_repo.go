@@ -34,19 +34,19 @@ func (r *ThreadRepo) CreateThread(ctx context.Context, thread *model.Thread) err
 	return db.Create(thread).Error
 }
 
-func (r *ThreadRepo) GetThreadsByIDs(ctx context.Context, ids []string) (map[string]*model.Thread, error) {
+func (r *ThreadRepo) GetTweetsByIDs(ctx context.Context, ids []string) (map[string]*model.Thread, error) {
 	if len(ids) == 0 {
 		return map[string]*model.Thread{}, nil
 	}
 	db := sql.MustDBFromContext(ctx)
-	var threads []model.Thread
-	err := db.Where("id IN ?", ids).Find(&threads).Error
+	var tweets []model.Thread
+	err := db.Where("id IN ?", ids).Find(&tweets).Error
 	if err != nil {
 		return nil, err
 	}
-	result := make(map[string]*model.Thread, len(threads))
-	for i := range threads {
-		result[threads[i].ID] = &threads[i]
+	result := make(map[string]*model.Thread, len(tweets))
+	for i := range tweets {
+		result[tweets[i].ID] = &tweets[i]
 	}
 	return result, nil
 }

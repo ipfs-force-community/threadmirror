@@ -115,7 +115,7 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 	}
 
 	// Create post from mention
-	post, err := w.postService.CreatePost(ctx, mentionUserID, &service.CreatePostRequest{
+	post, err := w.postService.CreatePost(ctx, &service.CreatePostRequest{
 		Tweets: tweets,
 	})
 	if err != nil {

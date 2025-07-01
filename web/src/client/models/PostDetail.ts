@@ -41,6 +41,12 @@ export interface PostDetail {
      */
     id: string;
     /**
+     * Content identifier (CID)
+     * @type {string}
+     * @memberof PostDetail
+     */
+    cid: string;
+    /**
      * Post content preview/summary
      * @type {string}
      * @memberof PostDetail
@@ -65,11 +71,11 @@ export interface PostDetail {
      */
     numTweets: number;
     /**
-     * Thread tweets associated with this post
+     * Tweets associated with this post
      * @type {Array<Tweet>}
      * @memberof PostDetail
      */
-    threads: Array<Tweet> | null;
+    tweets: Array<Tweet> | null;
 }
 
 /**
@@ -77,10 +83,11 @@ export interface PostDetail {
  */
 export function instanceOfPostDetail(value: object): value is PostDetail {
     if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('cid' in value) || value['cid'] === undefined) return false;
     if (!('contentPreview' in value) || value['contentPreview'] === undefined) return false;
     if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
     if (!('numTweets' in value) || value['numTweets'] === undefined) return false;
-    if (!('threads' in value) || value['threads'] === undefined) return false;
+    if (!('tweets' in value) || value['tweets'] === undefined) return false;
     return true;
 }
 
@@ -95,11 +102,12 @@ export function PostDetailFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     return {
         
         'id': json['id'],
+        'cid': json['cid'],
         'contentPreview': json['content_preview'],
         'author': json['author'] == null ? undefined : PostAuthorFromJSON(json['author']),
         'createdAt': (new Date(json['created_at'])),
         'numTweets': json['numTweets'],
-        'threads': (json['threads'] == null ? null : (json['threads'] as Array<any>).map(TweetFromJSON)),
+        'tweets': (json['tweets'] == null ? null : (json['tweets'] as Array<any>).map(TweetFromJSON)),
     };
 }
 
@@ -115,11 +123,12 @@ export function PostDetailToJSONTyped(value?: PostDetail | null, ignoreDiscrimin
     return {
         
         'id': value['id'],
+        'cid': value['cid'],
         'content_preview': value['contentPreview'],
         'author': PostAuthorToJSON(value['author']),
         'created_at': ((value['createdAt']).toISOString()),
         'numTweets': value['numTweets'],
-        'threads': (value['threads'] == null ? null : (value['threads'] as Array<any>).map(TweetToJSON)),
+        'tweets': (value['tweets'] == null ? null : (value['tweets'] as Array<any>).map(TweetToJSON)),
     };
 }
 

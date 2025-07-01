@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ipfs-force-community/threadmirror/internal/job"
+	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 )
@@ -23,6 +24,7 @@ type TwitterBot struct {
 	scraper        *xscraper.XScraper
 	jobQueueClient jobq.JobQueueClient
 	logger         *slog.Logger
+	db             *sql.DB
 
 	// Control channels
 	stopCh  chan struct{}
@@ -80,7 +82,7 @@ func (tb *TwitterBot) Start(ctx context.Context) error {
 		"max_mentions", tb.maxMentionsCheck,
 	)
 
-	go tb.run(context.Background())
+	go tb.run(sql.WithDBToContext(context.Background(), tb.db))
 	return nil
 }
 

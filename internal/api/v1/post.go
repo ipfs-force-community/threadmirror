@@ -39,7 +39,7 @@ func (h *V1Handler) GetPosts(c *gin.Context, params GetPostsParams) {
 		return
 	}
 
-	apiPosts := lo.Map(posts, func(post service.PostSummaryDetail, _ int) PostSummary {
+	apiPosts := lo.Map(posts, func(post service.PostSummary, _ int) PostSummary {
 		return h.convertPostSummaryToAPI(post)
 	})
 
@@ -67,7 +67,7 @@ func (h *V1Handler) GetPostsId(c *gin.Context, id string) {
 
 // Conversion functions from service types to API types
 
-func (h *V1Handler) convertPostSummaryToAPI(post service.PostSummaryDetail) PostSummary {
+func (h *V1Handler) convertPostSummaryToAPI(post service.PostSummary) PostSummary {
 	var author *PostAuthor
 	if post.Author != nil {
 		author = &PostAuthor{
@@ -80,6 +80,7 @@ func (h *V1Handler) convertPostSummaryToAPI(post service.PostSummaryDetail) Post
 
 	return PostSummary{
 		Id:             post.ID,
+		Cid:            post.CID,
 		ContentPreview: post.ContentPreview,
 		Author:         author,
 		CreatedAt:      post.CreatedAt,
@@ -98,18 +99,20 @@ func (h *V1Handler) convertPostDetailToAPI(post service.PostDetail) PostDetail {
 		}
 	}
 
-	var apiThreads []Tweet
-	if len(post.Threads) > 0 {
-		apiThreads = lo.Map(post.Threads, func(tweet *xscraper.Tweet, _ int) Tweet {
+	var apiTweets []Tweet
+	if len(post.Tweets) > 0 {
+		apiTweets = lo.Map(post.Tweets, func(tweet *xscraper.Tweet, _ int) Tweet {
 			return h.convertXScraperTweetToAPI(tweet)
 		})
 	}
 
 	return PostDetail{
 		Id:        post.ID,
+		Cid:       post.CID,
+		NumTweets: len(post.Tweets),
 		Author:    author,
 		CreatedAt: post.CreatedAt,
-		Threads:   &apiThreads,
+		Tweets:    &apiTweets,
 	}
 }
 

@@ -34,6 +34,12 @@ export interface PostSummary {
      */
     id: string;
     /**
+     * Content identifier (CID)
+     * @type {string}
+     * @memberof PostSummary
+     */
+    cid: string;
+    /**
      * Post content preview/summary
      * @type {string}
      * @memberof PostSummary
@@ -64,6 +70,7 @@ export interface PostSummary {
  */
 export function instanceOfPostSummary(value: object): value is PostSummary {
     if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('cid' in value) || value['cid'] === undefined) return false;
     if (!('contentPreview' in value) || value['contentPreview'] === undefined) return false;
     if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
     if (!('numTweets' in value) || value['numTweets'] === undefined) return false;
@@ -81,6 +88,7 @@ export function PostSummaryFromJSONTyped(json: any, ignoreDiscriminator: boolean
     return {
         
         'id': json['id'],
+        'cid': json['cid'],
         'contentPreview': json['content_preview'],
         'author': json['author'] == null ? undefined : PostAuthorFromJSON(json['author']),
         'createdAt': (new Date(json['created_at'])),
@@ -100,6 +108,7 @@ export function PostSummaryToJSONTyped(value?: PostSummary | null, ignoreDiscrim
     return {
         
         'id': value['id'],
+        'cid': value['cid'],
         'content_preview': value['contentPreview'],
         'author': PostAuthorToJSON(value['author']),
         'created_at': ((value['createdAt']).toISOString()),

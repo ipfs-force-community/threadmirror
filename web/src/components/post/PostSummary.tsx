@@ -68,6 +68,9 @@ const PostSummaryComponent: React.FC<{ post: PostData }> = ({ post }) => {
             <div className={styles.contentPreview}>
                 {post.contentPreview}
             </div>
+            <div style={{ fontSize: '0.8em', color: '#888', wordBreak: 'break-all', marginTop: 4 }}>
+                CID: {post.cid}
+            </div>
             <div className={styles.footer}>
                 <button className={styles.readMore}>Read {post?.numTweets} tweets</button>
             </div>

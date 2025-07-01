@@ -47,7 +47,7 @@ const PostDetail = () => {
   }, [loadData]);
 
   useEffect(() => {
-    if (postData?.threads?.length > 0) {
+    if (postData?.tweets?.length > 0) {
       setDetail(postData);
     } else {
       loadData();
@@ -72,7 +72,7 @@ const PostDetail = () => {
     );
   }
 
-  const author = detail?.threads?.[0]?.author;
+  const author = detail?.tweets?.[0]?.author;
   if (!author) {
     return <div className={styles.container}>Lose Author Info</div>;
   }
@@ -88,7 +88,7 @@ const PostDetail = () => {
     <div className={styles.container}>
       <UserProfileComponent profile={author} sample={true} />
       <div className={styles.tweetContent}>
-        {detail?.threads?.map((tweet, index) => (
+        {detail?.tweets?.map((tweet, index) => (
           <div
             key={tweet.id}
             className={styles.tweetItem}

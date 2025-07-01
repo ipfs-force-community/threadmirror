@@ -4,6 +4,7 @@ import { PostDetail as Post } from '@src/client/models';
 const originPosts: Post[] = [
   {
     id: "post_001",
+    cid: "bafkreig4666666666666666666666666666666666666666666666666666666666666666",
     contentPreview: "最近研究了区块链的零知识证明技术，这里分享一些关于ZK-SNARKs和ZK-STARKs的见解...",
     author: {
       id: "1403881130802225152",
@@ -12,7 +13,7 @@ const originPosts: Post[] = [
       profileImageUrl: "https://pbs.twimg.com/profile_images/1862767252400967680/mjEMe7kp_normal.jpg"
     },
     createdAt: new Date("2023-08-15T08:42:35Z"),
-    threads: [
+    tweets: [
       {
         id: "1691375479704870912",
         restId: "1691375479704870912",
@@ -106,6 +107,7 @@ const originPosts: Post[] = [
   },
   {
     id: "post_002",
+    cid: "bafkreig4666666666666666666666666666666666666666666666666666666666666666",
     contentPreview: "今日比特币分析：市场情绪指数显示我们可能正处在恐慌区域，这往往是长期投资者的良好买入时机...",
     author: {
       id: "1403881130802225152",
@@ -114,7 +116,7 @@ const originPosts: Post[] = [
       profileImageUrl: "https://pbs.twimg.com/profile_images/1862767252400967680/mjEMe7kp_normal.jpg"
     },
     createdAt: new Date("2023-09-22T15:28:10Z"),
-    threads: [
+    tweets: [
       {
         id: "1705231859417456993",
         restId: "1705231859417456993",
@@ -163,6 +165,7 @@ const originPosts: Post[] = [
   },
   {
     id: "post_003",
+    cid: "bafkreig4666666666666666666666666666666666666666666666666666666666666666",
     contentPreview: "分享一个我正在使用的交易策略：结合RSI和MACD的背离信号，配合成交量确认，这在最近的市场环境中效果不错...",
     author: {
       id: "1403881130802225152",
@@ -171,7 +174,7 @@ const originPosts: Post[] = [
       profileImageUrl: "https://pbs.twimg.com/profile_images/1862767252400967680/mjEMe7kp_normal.jpg"
     },
     createdAt: new Date("2023-10-05T12:15:42Z"),
-    threads: [
+    tweets: [
       {
         id: "1709912485720211816",
         restId: "1709912485720211816",
@@ -296,26 +299,26 @@ const generateData = (count: number, startId: number = 1000): Post[] => {
       createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // 随机设置在过去30天内的时间
     };
 
-    // 为每个帖子生成新的threads，确保ID唯一
-    if (newPost.threads && newPost.threads.length > 0) {
-      newPost.threads = newPost.threads.map((thread, idx) => {
-        const threadDate = new Date(newPost.createdAt.getTime());
+    // 为每个帖子生成新的tweets，确保ID唯一
+    if (newPost.tweets && newPost.tweets.length > 0) {
+      newPost.tweets = newPost.tweets.map((tweet, idx) => {
+        const tweetDate = new Date(newPost.createdAt.getTime());
         return {
-          ...thread,
-          id: `thread_${startId + i}_${idx}`,
-          restId: `thread_${startId + i}_${idx}`,
-          createdAt: threadDate,
+          ...tweet,
+          id: `tweet_${startId + i}_${idx}`,
+          restId: `tweet_${startId + i}_${idx}`,
+          createdAt: tweetDate,
           // 确保回复的时间稍晚于原帖
-          ...(idx > 0 ? { createdAt: new Date(threadDate.getTime() + idx * 60000) } : {})
+          ...(idx > 0 ? { createdAt: new Date(tweetDate.getTime() + idx * 60000) } : {})
         };
       });
 
-      // 更新contentPreview以反映第一个thread的内容
-      if (newPost.threads[0]) {
-        const firstThreadText = newPost.threads[0].text;
-        newPost.contentPreview = firstThreadText.length > 100
-          ? firstThreadText.substring(0, 97) + '...'
-          : firstThreadText;
+      // 更新contentPreview以反映第一个tweet的内容
+      if (newPost.tweets[0]) {
+        const firstTweetText = newPost.tweets[0].text;
+        newPost.contentPreview = firstTweetText.length > 100
+          ? firstTweetText.substring(0, 97) + '...'
+          : firstTweetText;
       }
     }
 
