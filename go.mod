@@ -8,6 +8,7 @@ tool (
 )
 
 require (
+	github.com/alicebob/miniredis/v2 v2.35.0
 	github.com/auth0/go-jwt-middleware/v2 v2.3.0
 	github.com/filecoin-project/go-fil-commcid v0.2.0
 	github.com/filecoin-project/go-fil-commp-hashhash v0.2.0
@@ -25,6 +26,7 @@ require (
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/pelletier/go-toml/v2 v2.2.4
+	github.com/redis/go-redis/v9 v9.7.0
 	github.com/samber/lo v1.50.0
 	github.com/samber/slog-gin v1.15.1
 	github.com/stretchr/testify v1.10.0
@@ -61,7 +63,6 @@ require (
 	github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b // indirect
 	github.com/alexkohler/nakedret/v2 v2.0.6 // indirect
 	github.com/alexkohler/prealloc v1.0.0 // indirect
-	github.com/alicebob/miniredis/v2 v2.35.0 // indirect
 	github.com/alingse/asasalint v0.0.11 // indirect
 	github.com/alingse/nilnesserr v0.2.0 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
@@ -325,7 +326,6 @@ require (
 	github.com/quic-go/quic-go v0.50.1 // indirect
 	github.com/quic-go/webtransport-go v0.8.1-0.20241018022711-4ac2c9250e66 // indirect
 	github.com/raeperd/recvcheck v0.2.0 // indirect
-	github.com/redis/go-redis/v9 v9.7.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect

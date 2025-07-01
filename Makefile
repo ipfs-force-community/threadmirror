@@ -44,13 +44,13 @@ deps: ## Download Go dependencies
 
 # Build the application
 .PHONY: build
-build: deps generate-go ## Build the application
+build: deps generate ## Build the application
 	@echo "Building application..."
 	$(GO) build $(GOFLAGS) -o bin/threadmirror ./cmd/*.go
 
 # Build for Docker (without web client generation)
 .PHONY: build-docker
-build-docker: deps generate-go ## Build application for Docker
+build-docker: deps generate ## Build application for Docker
 	@echo "Building application for Docker..."
 	$(GO) build -o bin/threadmirror ./cmd/*.go
 
