@@ -45,7 +45,7 @@ func SetupDBTestSuite(t *testing.T) *DBTestSuite {
 	mockIPFS := &MockIPFSStorage{}
 
 	// Create services
-	postService := service.NewPostService(postRepo, llm.Model(mockLLM), ipfs.Storage(mockIPFS), threadRepo, db)
+	postService := service.NewPostService(postRepo, llm.Model(mockLLM), ipfs.Storage(mockIPFS), threadRepo)
 
 	return &DBTestSuite{
 		DB:          db,

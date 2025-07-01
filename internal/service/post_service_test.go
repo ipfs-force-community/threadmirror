@@ -124,20 +124,13 @@ func (m *MockThreadRepo) GetThreadsByIDs(ids []string) (map[string]*model.Thread
 	return result, nil
 }
 
-type mockDB struct{}
-
-func (m *mockDB) WithContext(ctx context.Context) *mockDB { return m }
-func (m *mockDB) Transaction(fc func(tx *gorm.DB) error) error {
-	return fc(&gorm.DB{})
-}
-
 func TestPostService_CreatePost(t *testing.T) {
 	ctx := context.Background()
 	mockLLM := &MockLLM{}
 	mockIPFS := &MockIPFSStorage{}
 
 	const testDBFile = "test.db"
-	defer os.Remove(testDBFile)
+	defer os.Remove(testDBFile) //nolint:errcheck
 	mockDB, err := pkgsql.New("sqlite", testDBFile, slog.Default())
 	assert.NoError(t, err)
 	// 自动迁移表结构，先 threads 后 posts，避免外键依赖问题
@@ -158,7 +151,6 @@ func TestPostService_CreatePost(t *testing.T) {
 		mockLLM,
 		mockIPFS,
 		threadRepo,
-		mockDB,
 	)
 
 	// 构造 tweets

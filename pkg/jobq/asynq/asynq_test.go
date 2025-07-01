@@ -48,7 +48,7 @@ func TestAsynqClientServerWithMiniredis(t *testing.T) {
 	go func() {
 		require.NoError(t, server.Start())
 	}()
-	defer server.Server.Shutdown()
+	defer server.Shutdown()
 
 	// Give server a moment to start
 	time.Sleep(100 * time.Millisecond)

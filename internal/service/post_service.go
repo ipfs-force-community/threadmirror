@@ -84,14 +84,12 @@ func NewPostService(
 	llm llm.Model,
 	storage ipfs.Storage,
 	threadRepo *sqlrepo.ThreadRepo,
-	db *sql.DB,
 ) *PostService {
 	return &PostService{
 		postRepo:   postRepo,
 		llm:        llm,
 		storage:    storage,
 		threadRepo: threadRepo,
-		db:         db,
 	}
 }
 
@@ -102,7 +100,8 @@ func (s *PostService) CreatePost(
 	req *CreatePostRequest,
 ) (*PostDetail, error) {
 	var result *PostDetail
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	db := sql.MustDBFromContext(ctx)
+	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		postRepo := sqlrepo.NewPostRepo()
 		threadRepo := sqlrepo.NewThreadRepo()
 
@@ -191,10 +190,10 @@ func (s *PostService) GetPostByID(ctx context.Context, postID string) (*PostDeta
 
 // GetPosts retrieves posts based on feed type
 func (s *PostService) GetPosts(
+	ctx context.Context,
 	userID string,
 	limit, offset int,
 ) ([]PostSummaryDetail, int64, error) {
-	ctx := context.Background()
 	posts, total, err := s.postRepo.GetPosts(ctx, userID, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get posts: %w", err)

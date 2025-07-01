@@ -27,7 +27,7 @@ func NewAsynqClient(redisClient redis.UniversalClient, defaultOptions ...asynq.O
 // Enqueue enqueues a job to Asynq.
 func (c *AsynqClient) Enqueue(ctx context.Context, job *jobq.Job) (string, error) {
 	asynqTask := asynq.NewTask(job.Type, job.Payload)
-	taskInfo, err := c.Client.EnqueueContext(ctx, asynqTask, c.defaultOptions...)
+	taskInfo, err := c.EnqueueContext(ctx, asynqTask, c.defaultOptions...)
 	if err != nil {
 		return "", err
 	}

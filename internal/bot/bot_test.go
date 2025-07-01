@@ -188,7 +188,7 @@ func createTestBot(_ *testing.T) *TwitterBot {
 	mockIPFS := &MockIPFSStorage{}
 
 	// Pass nil for threadRepo and db (not used in these tests)
-	mockPostService := service.NewPostService(mockPostRepo, mockLLM, mockIPFS, nil, nil)
+	mockPostService := service.NewPostService(mockPostRepo, mockLLM, mockIPFS, nil)
 
 	// Mock JobQueueClient
 	jobQueueClient := &mockJobQueueClient{}

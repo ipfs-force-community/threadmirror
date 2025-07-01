@@ -33,7 +33,7 @@ func (h *V1Handler) GetPosts(c *gin.Context, params GetPostsParams) {
 	limit, offset := ExtractPaginationParams(&params)
 
 	// Get posts
-	posts, total, err := h.postService.GetPosts(currentUserID, limit, offset)
+	posts, total, err := h.postService.GetPosts(c.Request.Context(), currentUserID, limit, offset)
 	if err != nil {
 		_ = c.Error(v1errors.InternalServerError(err).WithCode(ErrCodeFailedToGetPosts))
 		return
@@ -48,7 +48,7 @@ func (h *V1Handler) GetPosts(c *gin.Context, params GetPostsParams) {
 
 // GetPostsId handles GET /posts/{id}
 func (h *V1Handler) GetPostsId(c *gin.Context, id string) {
-	thread, err := h.postService.GetPostByID(c, id)
+	thread, err := h.postService.GetPostByID(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, service.ErrPostNotFound) {
 			_ = c.Error(v1errors.NotFound(err).WithCode(ErrCodePostNotFound))

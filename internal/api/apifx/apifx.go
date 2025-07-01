@@ -7,7 +7,9 @@ import (
 )
 
 var Module = fx.Module("api",
-	fx.Provide(api.NewServer),
+	fx.Provide(
+		api.NewServer,
+	),
 	fx.Provide(v1.NewV1Handler),
 	fx.Invoke(func(lc fx.Lifecycle, server *api.Server) {
 		lc.Append(fx.StartStopHook(server.Start, server.Stop))
