@@ -24,15 +24,15 @@ type MentionPayload struct {
 
 // MentionHandler is an Asynq worker that converts a Twitter mention into a Post.
 type MentionHandler struct {
-	processedMentionService service.ProcessedMentionService
-	postService             service.PostService
+	processedMentionService *service.ProcessedMentionService
+	postService             *service.PostService
 	logger                  *slog.Logger
 }
 
 // NewMentionHandler constructs a MentionHandler.
 func NewMentionHandler(
-	processedMentionService service.ProcessedMentionService,
-	postService service.PostService,
+	processedMentionService *service.ProcessedMentionService,
+	postService *service.PostService,
 	logger *slog.Logger,
 ) *MentionHandler {
 	return &MentionHandler{

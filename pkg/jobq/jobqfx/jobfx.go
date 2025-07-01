@@ -10,7 +10,7 @@ import (
 )
 
 // Module provides job-related dependencies.
-var Module = fx.Module("jobfx",
+var Module = fx.Module("jobqfx",
 	fx.Provide(func(redisClient *redis.Client) *asynqjobq.AsynqClient {
 		return asynqjobq.NewAsynqClient(redisClient)
 	}),

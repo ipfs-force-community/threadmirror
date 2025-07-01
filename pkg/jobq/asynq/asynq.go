@@ -13,17 +13,21 @@ import (
 // AsynqClient implements job.JobQueueClient for Asynq.
 type AsynqClient struct {
 	*asynq.Client
+	defaultOptions []asynq.Option
 }
 
 // NewAsynqClient creates a new AsynqClient.
-func NewAsynqClient(redisClient redis.UniversalClient) *AsynqClient {
-	return &AsynqClient{asynq.NewClientFromRedisClient(redisClient)}
+func NewAsynqClient(redisClient redis.UniversalClient, defaultOptions ...asynq.Option) *AsynqClient {
+	return &AsynqClient{
+		Client:         asynq.NewClientFromRedisClient(redisClient),
+		defaultOptions: defaultOptions,
+	}
 }
 
 // Enqueue enqueues a job to Asynq.
-func (c *AsynqClient) Enqueue(job *jobq.Job) (string, error) {
+func (c *AsynqClient) Enqueue(ctx context.Context, job *jobq.Job) (string, error) {
 	asynqTask := asynq.NewTask(job.Type, job.Payload)
-	taskInfo, err := c.Client.Enqueue(asynqTask)
+	taskInfo, err := c.Client.EnqueueContext(ctx, asynqTask, c.defaultOptions...)
 	if err != nil {
 		return "", err
 	}
@@ -39,7 +43,6 @@ type AsynqServer struct {
 
 // NewAsynqServer creates a new AsynqServer.
 func NewAsynqServer(redisClient redis.UniversalClient, logger *slog.Logger) *AsynqServer {
-
 	mux := asynq.NewServeMux()
 	server := asynq.NewServerFromRedisClient(
 		redisClient,

@@ -26,7 +26,7 @@ type JobHandler interface {
 // JobQueueClient defines the interface for enqueuing generic jobs.
 type JobQueueClient interface {
 	// Enqueue takes a generic job.Job and options, and returns job info.
-	Enqueue(job *Job) (id string, err error)
+	Enqueue(ctx context.Context, job *Job) (id string, err error)
 }
 
 type JobHandlerRegistry interface {

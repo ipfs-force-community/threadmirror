@@ -12,8 +12,10 @@ import (
 	"github.com/ipfs-force-community/threadmirror/internal/api/apifx"
 	"github.com/ipfs-force-community/threadmirror/internal/bot/botfx"
 	"github.com/ipfs-force-community/threadmirror/internal/config"
+	"github.com/ipfs-force-community/threadmirror/internal/job/jobfx"
 	"github.com/ipfs-force-community/threadmirror/internal/service/servicefx"
 	"github.com/ipfs-force-community/threadmirror/pkg/auth/authfx"
+	"github.com/ipfs-force-community/threadmirror/pkg/database/redis"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/redis/redisfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql/sqlfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/i18n/i18nfx"
@@ -49,7 +51,7 @@ var ServerCommand = &cli.Command{
 			fx.StartTimeout(60*time.Second),
 			// Provide the configuration
 			fx.Supply(serverConf),
-			fx.Supply(&redisfx.RedisConfig{
+			fx.Supply(&redis.RedisConfig{
 				Addr:     redisConf.Addr,
 				Password: redisConf.Password,
 				DB:       redisConf.DB,
@@ -70,6 +72,7 @@ var ServerCommand = &cli.Command{
 			redisfx.Module,
 			apifx.Module,
 			servicefx.Module,
+			jobfx.Module,
 			i18nfx.Module(&i18n.LocaleFS),
 			authfx.ModuleAuth0(auth0Conf),
 			botfx.Module(botConf.Enable),

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ipfs-force-community/threadmirror/internal/service"
+	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/datatypes"
 )
@@ -81,6 +82,13 @@ func (m *MockBotCookieRepo) SaveCookies(ctx context.Context, email, username str
 	return fmt.Errorf("invalid cookie data type")
 }
 
+// mockJobQueueClient implements jobq.JobQueueClient for testing
+type mockJobQueueClient struct{}
+
+func (m *mockJobQueueClient) Enqueue(ctx context.Context, job *jobq.Job) (string, error) {
+	return "mock-job-id", nil
+}
+
 func createTestBot(_ *testing.T) *TwitterBot {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
@@ -95,6 +103,9 @@ func createTestBot(_ *testing.T) *TwitterBot {
 	// For the bot test, we can pass nil dependencies since we're mainly testing bot initialization
 	mockPostService := service.NewPostService(nil, nil, nil)
 
+	// Mock JobQueueClient
+	jobQueueClient := &mockJobQueueClient{}
+
 	return NewTwitterBot(
 		"testbot",          // username
 		"testpass",         // password
@@ -104,6 +115,7 @@ func createTestBot(_ *testing.T) *TwitterBot {
 		processedMentionService,
 		botCookieService,
 		mockPostService,
+		jobQueueClient,
 		logger,
 	)
 }

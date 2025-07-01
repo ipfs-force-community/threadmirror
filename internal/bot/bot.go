@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ipfs-force-community/threadmirror/internal/job"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
+	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 )
 
@@ -24,6 +26,7 @@ type TwitterBot struct {
 	botCookieService        *service.BotCookieService
 	processedMentionService *service.ProcessedMentionService
 	postService             *service.PostService
+	jobQueueClient          jobq.JobQueueClient
 	logger                  *slog.Logger
 
 	// Control channels
@@ -39,6 +42,7 @@ func NewTwitterBot(
 	processedMentionService *service.ProcessedMentionService,
 	botCookieService *service.BotCookieService,
 	postService *service.PostService,
+	jobQueueClient jobq.JobQueueClient,
 	logger *slog.Logger,
 ) *TwitterBot {
 	// Create login options for xscraper
@@ -66,6 +70,7 @@ func NewTwitterBot(
 		botCookieService:        botCookieService,
 		processedMentionService: processedMentionService,
 		postService:             postService,
+		jobQueueClient:          jobQueueClient,
 		logger:                  logger,
 		stopCh:                  make(chan struct{}),
 		stopped:                 make(chan struct{}),
@@ -156,10 +161,10 @@ func (tb *TwitterBot) checkMentions(ctx context.Context) error {
 
 	tb.logger.Debug("Found mentions", "count", len(mentions))
 
-	// Process each mention
+	// Enqueue each mention as a job
 	for _, mention := range mentions {
-		if err := tb.processMention(ctx, mention); err != nil {
-			tb.logger.Error("Failed to process mention",
+		if err := tb.enqueueMentionJob(ctx, mention); err != nil {
+			tb.logger.Error("Failed to enqueue mention job",
 				"mention_id", mention.ID,
 				"author", mention.Author.ScreenName,
 				"error", err,
@@ -170,48 +175,19 @@ func (tb *TwitterBot) checkMentions(ctx context.Context) error {
 	return nil
 }
 
-// processMention processes a single mention (log only)
-func (tb *TwitterBot) processMention(ctx context.Context, mention *xscraper.Tweet) error {
-	// Use the author's user ID (the user who mentioned the bot) + tweet ID to track processing
-	mentionUserID := mention.Author.ID
-
-	logger := tb.logger.With("mention_user_id", mentionUserID, "tweet_id", mention.ID)
-
-	// Check if we've already processed this mention from this author
-	isProcessed, err := tb.processedMentionService.IsProcessed(ctx, mentionUserID, mention.ID)
+// enqueueMentionJob enqueues a mention for processing as a job
+func (tb *TwitterBot) enqueueMentionJob(ctx context.Context, mention *xscraper.Tweet) error {
+	job, err := job.NewMentionJob(mention)
 	if err != nil {
-		logger.Error("Failed to check if mention is processed", "error", err)
-		return fmt.Errorf("failed to check if mention is processed: %w", err)
+		tb.logger.Error("Failed to create mention job", "error", err)
+		return err
 	}
-
-	if isProcessed {
-		logger.Debug("Mention already processed")
-		return nil
-	}
-
-	// Log the detected mention
-	logger.Info("🤖 Detected new mention",
-		"text", mention.Text,
-		"created_at", mention.CreatedAt.Format(time.RFC3339),
-	)
-
-	post, err := tb.postService.CreatePost(ctx, mentionUserID, &service.CreatePostRequest{
-		Tweets: []*xscraper.Tweet{mention},
-	})
-
+	_, err = tb.jobQueueClient.Enqueue(ctx, job)
 	if err != nil {
-		logger.Error("Failed to create post", "error", err)
-		return fmt.Errorf("failed to create post: %w", err)
+		tb.logger.Error("Failed to enqueue mention job", "error", err)
+		return err
 	}
-
-	logger.Info("🤖 Created post", "post_id", post.ID)
-
-	// Mark as processed to avoid duplicate logging
-	if err := tb.processedMentionService.MarkProcessed(ctx, mentionUserID, mention.ID); err != nil {
-		logger.Error("Failed to mark mention as processed", "error", err)
-		return fmt.Errorf("failed to mark mention as processed: %w", err)
-	}
-
+	tb.logger.Info("Enqueued mention job", "mention_id", mention.ID, "author", mention.Author.ScreenName)
 	return nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/ipfs-force-community/threadmirror/internal/bot"
 	"github.com/ipfs-force-community/threadmirror/internal/config"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
+	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"go.uber.org/fx"
 )
 
@@ -28,6 +29,7 @@ func provideTwitterBot(
 	processedMentionService *service.ProcessedMentionService,
 	botCookieService *service.BotCookieService,
 	postService *service.PostService,
+	jobQueueClient jobq.JobQueueClient,
 	logger *slog.Logger,
 ) *bot.TwitterBot {
 	return bot.NewTwitterBot(
@@ -39,6 +41,7 @@ func provideTwitterBot(
 		processedMentionService,
 		botCookieService,
 		postService,
+		jobQueueClient,
 		logger,
 	)
 }
