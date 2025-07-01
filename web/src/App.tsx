@@ -31,7 +31,7 @@ function App() {
         />
         <header className="App-header">
           <Link to="/" className="project-title-link">
-            <h1 className="project-title">Thread Monitor</h1>
+            <h1 className="project-title">Thread Mirror</h1>
           </Link>
           <UserLgoinOut />
         </header>
