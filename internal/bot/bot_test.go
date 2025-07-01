@@ -176,20 +176,6 @@ func createTestBot(_ *testing.T) *TwitterBot {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Create mock services
-	mockProcessedMentionRepo := NewMockProcessedMentionRepo()
-	processedMentionService := service.NewProcessedMentionService(mockProcessedMentionRepo)
-
-	mockBotCookieRepo := NewMockBotCookieRepo()
-	botCookieService := service.NewBotCookieService(mockBotCookieRepo)
-
-	// Use new mocks for PostService
-	mockPostRepo := NewMockPostRepo()
-	mockLLM := &MockLLM{}
-	mockIPFS := &MockIPFSStorage{}
-
-	// Pass nil for threadRepo and db (not used in these tests)
-	mockPostService := service.NewPostService(mockPostRepo, mockLLM, mockIPFS, nil)
-
 	// Mock JobQueueClient
 	jobQueueClient := &mockJobQueueClient{}
 
@@ -199,23 +185,9 @@ func createTestBot(_ *testing.T) *TwitterBot {
 		nil,                // scraper
 		5*time.Minute,      // checkInterval
 		10,                 // maxMentionsCheck
-		processedMentionService,
-		botCookieService,
-		mockPostService,
 		jobQueueClient,
 		logger,
 	)
-}
-
-func TestNewTwitterBot(t *testing.T) {
-	bot := createTestBot(t)
-
-	assert.NotNil(t, bot)
-	// bot.scraper 允许为 nil，因为测试未注入 mock scraper
-	// assert.NotNil(t, bot.scraper)
-	assert.NotNil(t, bot.botCookieService)
-	assert.NotNil(t, bot.processedMentionService)
-	assert.NotNil(t, bot.logger)
 }
 
 func TestGenerateResponse(t *testing.T) {

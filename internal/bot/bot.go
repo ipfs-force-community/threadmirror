@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/ipfs-force-community/threadmirror/internal/job"
-	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 )
@@ -21,12 +20,9 @@ type TwitterBot struct {
 	checkInterval    time.Duration
 	maxMentionsCheck int
 
-	scraper                 *xscraper.XScraper
-	botCookieService        *service.BotCookieService
-	processedMentionService *service.ProcessedMentionService
-	postService             *service.PostService
-	jobQueueClient          jobq.JobQueueClient
-	logger                  *slog.Logger
+	scraper        *xscraper.XScraper
+	jobQueueClient jobq.JobQueueClient
+	logger         *slog.Logger
 
 	// Control channels
 	stopCh  chan struct{}
@@ -40,26 +36,19 @@ func NewTwitterBot(
 	scraper *xscraper.XScraper,
 	checkInterval time.Duration,
 	maxMentionsCheck int,
-	processedMentionService *service.ProcessedMentionService,
-	botCookieService *service.BotCookieService,
-	postService *service.PostService,
 	jobQueueClient jobq.JobQueueClient,
 	logger *slog.Logger,
 ) *TwitterBot {
-
 	return &TwitterBot{
-		username:                username,
-		email:                   email,
-		checkInterval:           checkInterval,
-		maxMentionsCheck:        maxMentionsCheck,
-		scraper:                 scraper,
-		botCookieService:        botCookieService,
-		processedMentionService: processedMentionService,
-		postService:             postService,
-		jobQueueClient:          jobQueueClient,
-		logger:                  logger,
-		stopCh:                  make(chan struct{}),
-		stopped:                 make(chan struct{}),
+		username:         username,
+		email:            email,
+		checkInterval:    checkInterval,
+		maxMentionsCheck: maxMentionsCheck,
+		scraper:          scraper,
+		jobQueueClient:   jobQueueClient,
+		logger:           logger,
+		stopCh:           make(chan struct{}),
+		stopped:          make(chan struct{}),
 	}
 }
 
