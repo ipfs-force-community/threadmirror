@@ -14,9 +14,11 @@ import (
 
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
+	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tmc/langchaingo/llms"
 	"gorm.io/datatypes"
 )
@@ -172,8 +174,23 @@ func (m *MockIPFSStorage) Get(ctx context.Context, c cid.Cid) (io.ReadCloser, er
 	return io.NopCloser(strings.NewReader("mock content")), nil
 }
 
-func createTestBot(_ *testing.T) *TwitterBot {
+// setupTestDB creates an in-memory SQLite database for testing
+func setupTestDB(t *testing.T) *sql.DB {
+	db, err := sql.New("sqlite", ":memory:", slog.Default())
+	require.NoError(t, err)
+
+	// Migrate the schema
+	err = db.AutoMigrate(model.AllModels()...)
+	require.NoError(t, err)
+
+	return db
+}
+
+func createTestBot(t *testing.T) *TwitterBot {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	// Create test database
+	db := setupTestDB(t)
 
 	// Create mock services
 	// Mock JobQueueClient
@@ -186,6 +203,7 @@ func createTestBot(_ *testing.T) *TwitterBot {
 		5*time.Minute,      // checkInterval
 		10,                 // maxMentionsCheck
 		jobQueueClient,
+		db, // database
 		logger,
 	)
 }

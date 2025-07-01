@@ -39,6 +39,7 @@ func NewTwitterBot(
 	checkInterval time.Duration,
 	maxMentionsCheck int,
 	jobQueueClient jobq.JobQueueClient,
+	db *sql.DB,
 	logger *slog.Logger,
 ) *TwitterBot {
 	return &TwitterBot{
@@ -49,6 +50,7 @@ func NewTwitterBot(
 		scraper:          scraper,
 		jobQueueClient:   jobQueueClient,
 		logger:           logger,
+		db:               db,
 		stopCh:           make(chan struct{}),
 		stopped:          make(chan struct{}),
 	}
