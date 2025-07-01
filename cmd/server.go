@@ -23,6 +23,7 @@ import (
 	"github.com/ipfs-force-community/threadmirror/pkg/llm/llmfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/log/logfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/util"
+	"github.com/ipfs-force-community/threadmirror/pkg/xscraper/xscraperfx"
 )
 
 var ServerCommand = &cli.Command{
@@ -57,6 +58,11 @@ var ServerCommand = &cli.Command{
 				DB:       redisConf.DB,
 			}),
 			fx.Supply(botConf),
+			fx.Supply(&xscraperfx.Config{
+				Username: botConf.Username,
+				Password: botConf.Password,
+				Email:    botConf.Email,
+			}),
 			fx.Supply(llmConf),
 			fx.Supply(ipfsConf),
 			fx.Supply(&logfx.Config{
@@ -73,6 +79,7 @@ var ServerCommand = &cli.Command{
 			apifx.Module,
 			servicefx.Module,
 			jobfx.Module,
+			xscraperfx.Module,
 			i18nfx.Module(&i18n.LocaleFS),
 			authfx.ModuleAuth0(auth0Conf),
 			botfx.Module(botConf.Enable),

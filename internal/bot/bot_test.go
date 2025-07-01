@@ -108,8 +108,8 @@ func createTestBot(_ *testing.T) *TwitterBot {
 
 	return NewTwitterBot(
 		"testbot",          // username
-		"testpass",         // password
 		"test@example.com", // email
+		nil,                // scraper
 		5*time.Minute,      // checkInterval
 		10,                 // maxMentionsCheck
 		processedMentionService,

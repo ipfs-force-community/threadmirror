@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand"
-	"net/http"
 	"time"
 
 	"github.com/ipfs-force-community/threadmirror/internal/job"
@@ -36,7 +35,9 @@ type TwitterBot struct {
 
 // NewTwitterBot creates a new Twitter bot instance
 func NewTwitterBot(
-	username, password, email string,
+	username string,
+	email string,
+	scraper *xscraper.XScraper,
 	checkInterval time.Duration,
 	maxMentionsCheck int,
 	processedMentionService *service.ProcessedMentionService,
@@ -45,21 +46,6 @@ func NewTwitterBot(
 	jobQueueClient jobq.JobQueueClient,
 	logger *slog.Logger,
 ) *TwitterBot {
-	// Create login options for xscraper
-	loginOpts := xscraper.LoginOptions{
-		LoadCookies: func(ctx context.Context) ([]*http.Cookie, error) {
-			return botCookieService.LoadCookies(ctx, email, username)
-		},
-		SaveCookies: func(ctx context.Context, cookies []*http.Cookie) error {
-			return botCookieService.SaveCookies(ctx, email, username, cookies)
-		},
-		Username: username,
-		Password: password,
-		Email:    email,
-	}
-
-	// Create xscraper instance
-	scraper := xscraper.New(loginOpts, logger)
 
 	return &TwitterBot{
 		username:                username,

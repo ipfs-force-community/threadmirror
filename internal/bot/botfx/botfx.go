@@ -7,6 +7,7 @@ import (
 	"github.com/ipfs-force-community/threadmirror/internal/config"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
+	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"go.uber.org/fx"
 )
 
@@ -26,6 +27,7 @@ func Module(startBot bool) fx.Option {
 // provideTwitterBot provides a TwitterBot instance by extracting config fields
 func provideTwitterBot(
 	botConfig *config.BotConfig,
+	scraper *xscraper.XScraper,
 	processedMentionService *service.ProcessedMentionService,
 	botCookieService *service.BotCookieService,
 	postService *service.PostService,
@@ -34,8 +36,8 @@ func provideTwitterBot(
 ) *bot.TwitterBot {
 	return bot.NewTwitterBot(
 		botConfig.Username,
-		botConfig.Password,
 		botConfig.Email,
+		scraper,
 		botConfig.CheckInterval,
 		botConfig.MaxMentionsCheck,
 		processedMentionService,

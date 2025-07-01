@@ -14,6 +14,8 @@ type ServerConfig struct {
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	Debug        bool
+
+	AllowedOrigins []string // 允许的跨域Origin
 }
 
 type DatabaseConfig struct {
@@ -50,10 +52,11 @@ type BotConfig struct {
 
 func LoadServerConfigFromCLI(c *cli.Context) *ServerConfig {
 	return &ServerConfig{
-		Addr:         c.String("server-addr"),
-		ReadTimeout:  c.Duration("server-read-timeout"),
-		WriteTimeout: c.Duration("server-write-timeout"),
-		Debug:        c.Bool("debug"),
+		Addr:           c.String("server-addr"),
+		ReadTimeout:    c.Duration("server-read-timeout"),
+		WriteTimeout:   c.Duration("server-write-timeout"),
+		Debug:          c.Bool("debug"),
+		AllowedOrigins: c.StringSlice("cors-allowed-origins"),
 	}
 }
 
@@ -140,6 +143,12 @@ func GetServerCLIFlags() []cli.Flag {
 			Value:   30 * time.Second,
 			Usage:   "Server write timeout in seconds",
 			EnvVars: []string{"SERVER_WRITE_TIMEOUT"},
+		},
+		&cli.StringSliceFlag{
+			Name:    "cors-allowed-origins",
+			Usage:   "CORS allowed origins (comma separated)",
+			EnvVars: []string{"CORS_ALLOWED_ORIGINS"},
+			Value:   cli.NewStringSlice("https://your-frontend.com"),
 		},
 	}
 }
