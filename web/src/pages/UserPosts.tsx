@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useApiService } from '@services/api';
 import PostList from '@components/post/PostList';
-import { Post } from '@client/index';
+import { PostSummary as Post } from '@client/index';
 import { isUserLoggedIn } from '@utils/cookie';
 import { toast } from 'sonner';
 import styles from './UserPosts.module.css';

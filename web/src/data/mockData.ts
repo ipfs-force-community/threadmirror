@@ -1,4 +1,4 @@
-import { Post } from '@src/client/models';
+import { PostDetail as Post } from '@src/client/models';
 
 // 模拟Post数据
 const originPosts: Post[] = [
@@ -101,7 +101,8 @@ const originPosts: Post[] = [
         isTranslatable: true,
         hasBirdwatchNotes: false
       }
-    ]
+    ],
+    numTweets: 2,
   },
   {
     id: "post_002",
@@ -157,7 +158,8 @@ const originPosts: Post[] = [
         isTranslatable: true,
         hasBirdwatchNotes: false
       }
-    ]
+    ],
+    numTweets: 1,
   },
   {
     id: "post_003",
@@ -273,7 +275,8 @@ const originPosts: Post[] = [
         isTranslatable: true,
         hasBirdwatchNotes: false
       }
-    ]
+    ],
+    numTweets: 2,
   },
 ];
 
