@@ -69,7 +69,7 @@ const MentionSummaryComponent: React.FC<{ mention: MentionData }> = ({ mention }
                 {mention.contentPreview}
             </div>
             <div style={{ fontSize: '0.8em', color: '#888', wordBreak: 'break-all', marginTop: 4 }}>
-                PDP CID: {mention.cid}
+                CID: {mention.cid}
             </div>
             <div className={styles.footer}>
                 <button className={styles.readMore}>Read {mention?.numTweets} tweets</button>
