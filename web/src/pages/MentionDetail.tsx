@@ -101,7 +101,7 @@ const MentionDetail = () => {
                   {tweet.entities.media.map(media => (
                     <img
                       key={media.id}
-                      src={media.url}
+                      src={media.expandedUrl}
                       alt={`${media.type}${index + 1}`}
                       className={styles.mediaImage}
                     />
