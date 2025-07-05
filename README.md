@@ -14,7 +14,6 @@ ThreadMirror lets you archive any X (Twitter) thread with a single mention. Repl
 * **Instant AI summary** – A concise, LLM-generated digest arrives with the reply so you can grasp the whole thread at a glance.
 * **Shareable permalink** – Receive a clean `https://threadmirror.xyz/thread/<id>` link that never breaks—perfect for bookmarking or sharing anywhere.
 * **End-to-end share image** – The bot also returns a single long image of the full thread, great for posting in chats or saving offline.
-* **Multilingual & cross-platform roadmap** – Future support for translating full threads and ingestion from Telegram, Bluesky, TruthSocial, and more.
 
 ## 📝 Usage
 
@@ -38,6 +37,8 @@ Watch ThreadMirror in action on YouTube: [https://www.youtube.com/watch?v=J-D1Dl
 - 🌐 Full‑thread translation
 
 - 📥 Multi‑platform ingestion (Telegram, Bluesky, TruthSocial, …)
+
+- 🖼️ Mint archived threads as NFTs for on-chain ownership
 
 - 🖥️ Web UI upgrades: filtering, search, browser extension
 
