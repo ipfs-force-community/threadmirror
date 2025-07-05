@@ -1,0 +1,94 @@
+---
+description: Go backend project coding guidelines with OpenAPI-first development workflow
+globs: 
+alwaysApply: false
+---
+# API coding guidelines
+
+> These guidelines are enforced by Cursor IDE for this Go backend project.
+
+## Project Architecture Standards
+
+### 1. API Development Workflow (OpenAPI-First)
+- **Always start with OpenAPI specification**: Create/update `api/v1/openapi.yaml`
+  - Use comprehensive constraints: `required` fields, enum definitions, type restrictions
+  - Include detailed `summary` and `description` for all endpoints
+  - Follow OpenAPI 3.0+ standards
+  - Reuse first: reference existing schemas/params/responses via `$ref`
+  - Paginated responses must include the following property:
+  ```yaml
+  meta:
+    $ref: "#/components/schemas/PaginationMeta"
+  ```
+- **Code generation(MUST)**: Run `make generate` to auto-generate:
+  - `internal/api/v1/types_gen.go` (request/response types)
+  - `internal/api/v1/gin_gen.go` (handler methods declared in `ServerInterface`, interfaces and route registration codes)
+- **Implementation**: Create the API-handler files under `internal/api/v1/xxx.go`. Add methods to `V1Handler` so it implements `ServerInterface` in those files, DO NOT create a new Handler structure. `V1Handler` should depend only on the structs defined in the `service` package.
+
+### 2. Directory Structure (Enforced)
+```
+internal/
+└── api/
+    ├── v1/           # API handlers and generated types
+    └── v1/util.go    # API-specific helpers
+├── model/            # Database model (GORM)
+├── service/          # Business logic layer
+└── repo/sqlrepo      # Data access layer
+pkg/util/             # Shared utility functions
+i18n/                 # Internationalization configuration
+api/v1/
+└── openapi.yaml      # OpenAPI specification
+```
+
+### 3. Dependency Management
+- **Service layer**: Define repository dependencies as **interfaces** and error types within service files
+- **Repository layer**: Implement interfaces in `internal/repo/sqlrepo` directory
+- **Dependency injection**: Use constructor functions for all dependencies
+- **Naming Convention**: 
+  - Service names: PascalCase (e.g., `PostService`)
+  - Repository names: PascalCase (e.g., `PosRepo`)
+
+### 4. Database Usage Standards (GORM)
+
+#### 4.1 Model Definition Rules
+- **Location**: All models must be in `internal/model/` directory
+- **Naming Convention**: 
+  - Struct names: PascalCase (e.g., `Post`, `UserProfile`)
+  - Table names: snake_case via `TableName()` method (e.g., `posts`, `user_profiles`)
+- **Constraints**: Use GORM constraints (`not null`, `size`, `default`, `index`, `unique`)
+- **Documentation**: Every model struct must have a Go documentation comment
+
+#### 4.2 Repo Layer Standards
+- **Interface Definition**: Define repo interfaces in service layer files
+- **Implementation**: Implement interfaces in `internal/repo/sqlrepo` directory, repo typically depends on `*database.DB`. Do not define error types in the Repo layer
+
+#### 4.3 Database Operations Best Practices
+- **Transactions**: Use database transactions for multi-table operations
+- **Pagination**: Always implement pagination for list endpoints
+- **Soft Deletes**: Use GORM's soft delete feature with `DeletedAt` field
+- **Indexing**: Add database indexes for frequently queried fields
+- **Preloading**: Use GORM's `Preload()` for eager loading relationships
+- **Query Optimization**: Use `Select()` to limit returned fields when possible
+
+### 5. Supabase
+- Use Supabase Auth for user authentication and management.
+- Leverage Supabase Storage for file uploads and management.
+
+### 6. Development Workflow
+1. Design OpenAPI specification (`api/v1/openapi.yaml`)
+2. Design database schema and models (consider data relationships)
+3. Create/update database models in `internal/model/`
+4. Register models in `AllModels()` function
+5. Test database migrations locally
+6. Implement repository layer (data access)
+7. Create service layer with interface dependencies (business logic)
+8. Register services in `service.Module`
+9. Generate code by `make generate`(This step is mandatory)
+10. Implement `internal/api/v1.ServerInterface` methods (API handler methods)
+11. Write comprehensive unit tests
+12. Integration testing with database
+
+## Cursor IDE Integration
+- These rules are automatically applied during code generation
+- Follow the workflow above for consistent architecture
+- Use the project's `Makefile` commands for code generation and testing

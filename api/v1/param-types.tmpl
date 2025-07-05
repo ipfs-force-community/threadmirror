@@ -1,0 +1,13 @@
+{{range .}}{{$opid := .OperationId}}
+{{range .TypeDefinitions}}
+{{$typeDef := .}}
+// {{.TypeName}} defines parameters for {{$opid}}.
+type {{.TypeName}} {{if .IsAlias}}={{end}} {{.Schema.TypeDecl}}
+{{- if not .IsAlias -}}
+    {{- range .Schema.Properties}}
+        func (p *{{$typeDef.TypeName}}) Get{{.GoFieldName}}() {{.GoTypeDef}} { return p.{{.GoFieldName}} }
+    {{- end -}}
+{{- end -}}
+
+{{end}}
+{{end}}

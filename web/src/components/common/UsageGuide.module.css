@@ -1,0 +1,31 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px 15px;
+  background-color: #fffceb;
+  border: 1px solid #f9e9a2;
+  border-radius: 8px;
+  color: #7c6c3b;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.container h2 {
+  margin-top: 0;
+  font-size: 24px;
+}
+
+.steps {
+  margin: 15px 0;
+  padding-left: 20px;
+}
+
+.steps li {
+  margin-bottom: 10px;
+}
+
+.note {
+  margin-top: 10px;
+  font-style: italic;
+  color: #a3946e;
+} 

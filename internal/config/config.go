@@ -1,0 +1,372 @@
+package config
+
+import (
+	"time"
+
+	"github.com/ipfs-force-community/threadmirror/pkg/ipfs/ipfsfx"
+	"github.com/ipfs-force-community/threadmirror/pkg/llm/llmfx"
+	"github.com/urfave/cli/v2"
+)
+
+type CommonConfig struct {
+	ThreadURLTemplate string
+	Debug             bool
+}
+
+// ServerConfig holds server configuration
+type ServerConfig struct {
+	Addr         string
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+
+	AllowedOrigins []string // 允许的跨域Origin
+}
+
+type DatabaseConfig struct {
+	// postgres, sqlite
+	Driver string
+	DSN    string
+}
+
+// RedisConfig holds Redis configuration for Asynq
+type RedisConfig struct {
+	Addr     string
+	Password string
+	DB       int
+}
+
+// Auth0Config holds Auth0-related configuration
+type Auth0Config struct {
+	Domain   string
+	Audience string
+}
+
+// BotConfig holds Twitter bot configuration
+type BotConfig struct {
+	Enable bool
+	// Twitter credentials
+	Username          string
+	Password          string
+	Email             string
+	APIKey            string
+	APIKeySecret      string
+	AccessToken       string
+	AccessTokenSecret string
+
+	// Bot behavior settings
+	CheckInterval    time.Duration
+	MaxMentionsCheck int
+}
+
+func LoadCommonConfigFromCLI(c *cli.Context) *CommonConfig {
+	return &CommonConfig{
+		ThreadURLTemplate: c.String("thread-url-template"),
+		Debug:             c.Bool("debug"),
+	}
+}
+
+func LoadServerConfigFromCLI(c *cli.Context) *ServerConfig {
+	return &ServerConfig{
+		Addr:           c.String("server-addr"),
+		ReadTimeout:    c.Duration("server-read-timeout"),
+		WriteTimeout:   c.Duration("server-write-timeout"),
+		AllowedOrigins: c.StringSlice("cors-allowed-origins"),
+	}
+}
+
+func LoadDatabaseConfigFromCLI(c *cli.Context) *DatabaseConfig {
+	return &DatabaseConfig{
+		Driver: c.String("db-driver"),
+		DSN:    c.String("db-dsn"),
+	}
+}
+
+func LoadRedisConfigFromCLI(c *cli.Context) *RedisConfig {
+	return &RedisConfig{
+		Addr:     c.String("redis-addr"),
+		Password: c.String("redis-password"),
+		DB:       c.Int("redis-db"),
+	}
+}
+
+func LoadAuth0ConfigFromCLI(c *cli.Context) *Auth0Config {
+	return &Auth0Config{
+		Domain:   c.String("auth0-domain"),
+		Audience: c.String("auth0-audience"),
+	}
+}
+
+func LoadBotConfigFromCLI(c *cli.Context) *BotConfig {
+	return &BotConfig{
+		Enable:            c.Bool("bot-enable"),
+		Username:          c.String("bot-username"),
+		Password:          c.String("bot-password"),
+		Email:             c.String("bot-email"),
+		APIKey:            c.String("bot-api-key"),
+		APIKeySecret:      c.String("bot-api-key-secret"),
+		AccessToken:       c.String("bot-access-token"),
+		AccessTokenSecret: c.String("bot-access-token-secret"),
+		CheckInterval:     c.Duration("bot-check-interval"),
+		MaxMentionsCheck:  c.Int("bot-max-mentions"),
+	}
+}
+
+func LoadIPFSConfigFromCLI(c *cli.Context) *ipfsfx.Config {
+	backend := c.String("ipfs-backend")
+
+	config := &ipfsfx.Config{
+		Backend: backend,
+	}
+
+	// Configure backend-specific settings
+	switch backend {
+	case "kubo":
+		config.Kubo = &ipfsfx.KuboConfig{
+			NodeURL: c.String("ipfs-kubo-node-url"),
+		}
+	case "pdp":
+		config.PDP = &ipfsfx.PDPConfig{
+			ServiceURL:  c.String("ipfs-pdp-service-url"),
+			ServiceName: c.String("ipfs-pdp-service-name"),
+			PrivateKey:  c.String("ipfs-pdp-private-key"),
+			ProofSetID:  c.Uint64("ipfs-pdp-proof-set-id"),
+		}
+	default:
+		// Default to kubo if backend is not recognized
+		config.Backend = "kubo"
+		config.Kubo = &ipfsfx.KuboConfig{
+			NodeURL: c.String("ipfs-kubo-node-url"),
+		}
+	}
+
+	return config
+}
+
+func GetCommonCLIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "thread-url-template",
+			Usage:   "Thread URL template, e.g. https://threadmirror.xyz/thread/%s",
+			EnvVars: []string{"THREAD_URL_TEMPLATE"},
+			Value:   "https://threadmirror.xyz/thread/%s",
+		},
+	}
+}
+
+// GetServerCLIFlags returns server-related CLI flags
+func GetServerCLIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "server-addr",
+			Value:   "localhost:8080",
+			Usage:   "Server host address",
+			EnvVars: []string{"SERVER_ADDR"},
+		},
+		&cli.DurationFlag{
+			Name:    "server-read-timeout",
+			Value:   30 * time.Second,
+			Usage:   "Server read timeout in seconds",
+			EnvVars: []string{"SERVER_READ_TIMEOUT"},
+		},
+		&cli.DurationFlag{
+			Name:    "server-write-timeout",
+			Value:   30 * time.Second,
+			Usage:   "Server write timeout in seconds",
+			EnvVars: []string{"SERVER_WRITE_TIMEOUT"},
+		},
+		&cli.StringSliceFlag{
+			Name:    "cors-allowed-origins",
+			Usage:   "CORS allowed origins (comma separated)",
+			EnvVars: []string{"CORS_ALLOWED_ORIGINS"},
+			Value:   cli.NewStringSlice("https://threadmirror.xyz"),
+		},
+	}
+}
+
+// GetDatabaseCLIFlags returns only database-related CLI flags
+func GetDatabaseCLIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "db-driver",
+			Value:   "sqlite",
+			Usage:   "Database driver (postgres, sqlite)",
+			EnvVars: []string{"DB_DRIVER"},
+		},
+		&cli.StringFlag{
+			Name:    "db-dsn",
+			Value:   "file::memory:?cache=shared",
+			Usage:   "Database connection string",
+			EnvVars: []string{"DB_DSN"},
+		},
+	}
+}
+
+// GetRedisCLIFlags returns Redis-related CLI flags
+func GetRedisCLIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "redis-addr",
+			Value:   "localhost:6379",
+			Usage:   "Redis server address",
+			EnvVars: []string{"REDIS_ADDR"},
+		},
+		&cli.StringFlag{
+			Name:    "redis-password",
+			Value:   "",
+			Usage:   "Redis password",
+			EnvVars: []string{"REDIS_PASSWORD"},
+		},
+		&cli.IntFlag{
+			Name:    "redis-db",
+			Value:   0,
+			Usage:   "Redis database number",
+			EnvVars: []string{"REDIS_DB"},
+		},
+	}
+}
+
+// GetAuth0CLIFlags returns Auth0-related CLI flags
+func GetAuth0CLIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "auth0-domain",
+			Usage:   "Auth0 domain",
+			EnvVars: []string{"AUTH0_DOMAIN"},
+		},
+		&cli.StringFlag{
+			Name:    "auth0-audience",
+			Usage:   "Auth0 API audience",
+			EnvVars: []string{"AUTH0_AUDIENCE"},
+		},
+	}
+}
+
+// GetBotCLIFlags returns bot-related CLI flags
+func GetBotCLIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.BoolFlag{
+			Name:    "bot-enable",
+			Usage:   "Enable the bot",
+			EnvVars: []string{"BOT_ENABLE"},
+			Value:   true,
+		},
+		&cli.StringFlag{
+			Name:    "bot-username",
+			Usage:   "Twitter bot username",
+			EnvVars: []string{"BOT_USERNAME"},
+		},
+		&cli.StringFlag{
+			Name:    "bot-password",
+			Usage:   "Twitter bot password",
+			EnvVars: []string{"BOT_PASSWORD"},
+		},
+		&cli.StringFlag{
+			Name:    "bot-email",
+			Usage:   "Twitter bot email",
+			EnvVars: []string{"BOT_EMAIL"},
+		},
+		&cli.StringFlag{
+			Name:    "bot-api-key",
+			Usage:   "Twitter API key",
+			EnvVars: []string{"BOT_API_KEY"},
+		},
+		&cli.StringFlag{
+			Name:    "bot-api-key-secret",
+			Usage:   "Twitter API key secret",
+			EnvVars: []string{"BOT_API_KEY_SECRET"},
+		},
+		&cli.StringFlag{
+			Name:    "bot-access-token",
+			Usage:   "Twitter access token",
+			EnvVars: []string{"BOT_ACCESS_TOKEN"},
+		},
+		&cli.StringFlag{
+			Name:    "bot-access-token-secret",
+			Usage:   "Twitter access token secret",
+			EnvVars: []string{"BOT_ACCESS_TOKEN_SECRET"},
+		},
+		&cli.DurationFlag{
+			Name:    "bot-check-interval",
+			Value:   5 * time.Minute,
+			Usage:   "Interval to check for new mentions",
+			EnvVars: []string{"BOT_CHECK_INTERVAL"},
+		},
+		&cli.IntFlag{
+			Name:    "bot-max-mentions",
+			Value:   10,
+			Usage:   "Maximum number of mentions to check per interval",
+			EnvVars: []string{"BOT_MAX_MENTIONS"},
+		},
+	}
+}
+
+func LoadLLMConfigFromCLI(c *cli.Context) *llmfx.Config {
+	return &llmfx.Config{
+		OpenAIBaseURL: c.String("openai-base-url"),
+		OpenAIAPIKey:  c.String("openai-api-key"),
+		OpenAIModel:   c.String("openai-model"),
+	}
+}
+
+// GetLLMCLIFlags returns LLM-related CLI flags
+func GetLLMCLIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "openai-base-url",
+			Value:   "https://api.openai.com/v1",
+			Usage:   "OpenAI API base URL",
+			EnvVars: []string{"OPENAI_BASE_URL"},
+		},
+		&cli.StringFlag{
+			Name:    "openai-api-key",
+			Usage:   "OpenAI API key",
+			EnvVars: []string{"OPENAI_API_KEY"},
+		},
+		&cli.StringFlag{
+			Name:    "openai-model",
+			Value:   "gpt-4o-mini",
+			Usage:   "OpenAI model name",
+			EnvVars: []string{"OPENAI_MODEL"},
+		},
+	}
+}
+
+// GetIPFSCLIFlags returns IPFS-related CLI flags
+func GetIPFSCLIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "ipfs-backend",
+			Value:   "kubo",
+			Usage:   "IPFS backend (kubo, pdp)",
+			EnvVars: []string{"IPFS_BACKEND"},
+		},
+		// Kubo backend flags
+		&cli.StringFlag{
+			Name:    "ipfs-kubo-node-url",
+			Value:   "/ip4/127.0.0.1/tcp/5001",
+			Usage:   "Kubo IPFS node URL/multiaddr",
+			EnvVars: []string{"IPFS_KUBO_NODE_URL"},
+		},
+		// PDP backend flags
+		&cli.StringFlag{
+			Name:    "ipfs-pdp-service-url",
+			Usage:   "PDP service URL",
+			EnvVars: []string{"IPFS_PDP_SERVICE_URL"},
+		},
+		&cli.StringFlag{
+			Name:    "ipfs-pdp-service-name",
+			Usage:   "PDP service name",
+			EnvVars: []string{"IPFS_PDP_SERVICE_NAME"},
+		},
+		&cli.StringFlag{
+			Name:    "ipfs-pdp-private-key",
+			Usage:   "PDP private key (PEM format)",
+			EnvVars: []string{"IPFS_PDP_PRIVATE_KEY"},
+		},
+		&cli.Uint64Flag{
+			Name:    "ipfs-pdp-proof-set-id",
+			Usage:   "PDP proof set ID",
+			EnvVars: []string{"IPFS_PDP_PROOF_SET_ID"},
+		},
+	}
+}

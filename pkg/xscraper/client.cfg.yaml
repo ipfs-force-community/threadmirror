@@ -1,0 +1,8 @@
+package: generated
+generate:
+  client: true
+output: generated/client.gen.go
+# output-options:
+#   user-templates:
+#     union.tmpl: union.tmpl
+#     param-types.tmpl: param-types.tmpl

@@ -1,0 +1,60 @@
+.user_page {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    font-size: 14px;
+    color: #888;
+    clear: both;
+    margin-top: 20px;
+}
+
+.loading p {
+    margin: 10px 0;
+}
+
+.fallback_notice {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    border-left: 4px solid #ffc107;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fallback_notice p {
+    margin: 0;
+}
+
+.retry_button {
+    background-color: #ffc107;
+    color: #856404;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.retry_button:hover {
+    background-color: #e0a800;
+}
+
+/* 自定义Toast样式 */
+:global(.customToast) {
+    font-weight: 500 !important;
+    font-size: 15px !important;
+    background-color: rgba(255, 242, 242, 0.95) !important;
+    border-left: 4px solid #e74c3c !important;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
+}

@@ -1,0 +1,72 @@
+import { mockThreads } from '@data/mockData';
+import {
+  MentionsApi,
+  DefaultApi,
+  Configuration,
+  MentionsGetRequest,
+  ThreadIdGetRequest,
+  MentionsGet200Response as MentionsGetResponse,
+  ThreadIdGet200Response as ThreadIdGetResponse,
+} from '@client/index';
+import { getAuthToken } from '@utils/cookie';
+
+const useMock = process.env.REACT_APP_USE_MOCK === 'true' || false;
+const config = new Configuration({
+  basePath: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api/v1',
+  middleware: [
+    {
+      pre: async (context) => {
+        const token = await getAuthToken();
+        if (token) {
+          context.init.headers = {
+            ...context.init.headers,
+            'Authorization': `Bearer ${token}`
+          };
+        }
+      }
+    }
+  ]
+});
+
+const mentionsApi = new MentionsApi(config);
+const defaultApi = new DefaultApi(config);
+
+const fetchUserMentions = async (request: MentionsGetRequest = {}) => {
+  return await mentionsApi.mentionsGet(request);
+};
+
+const fetchThreadDetail = async (request: ThreadIdGetRequest) => {
+  return await defaultApi.threadIdGet(request);
+};
+
+const fetchUserMentionsMock = async (request: MentionsGetRequest = {}) => {
+  console.log('use mock data for fetchUserTwitter');
+  const startIndex = (request?.offset || 0) * (request?.limit || 0);
+  const endIndex = Math.min(startIndex + (request?.limit || 0), mockThreads.length);
+  const _mentions = mockThreads.slice(startIndex, endIndex);
+  console.log('[mock]mentions--------->', '[', startIndex, ',', endIndex, ']');
+
+  return {
+    meta: {
+      total: mockThreads?.length || 0,
+      limit: request.limit,
+      offset: request.offset,
+    },
+    data: {}, // TODO: fix mock
+  } as MentionsGetResponse;
+};
+
+const fetchThreadDetailMock = async (request: ThreadIdGetRequest) => {
+  console.log('use mock data for fetchThreadDetail');
+  return {
+    data: mockThreads.find(thread => thread.id === request.id),
+  } as ThreadIdGetResponse;
+};
+
+// 导出兼容 mock 模式的函数
+export const useApiService = () => {
+  return {
+    fetchGetMentions: useMock ? fetchUserMentionsMock : fetchUserMentions,
+    fetchGetThreadId: useMock ? fetchThreadDetailMock : fetchThreadDetail
+  };
+};

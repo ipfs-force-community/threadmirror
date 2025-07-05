@@ -1,0 +1,5 @@
+package: v1
+output: ../../internal/api/v1/gin_gen.go
+generate:
+  gin-server: true
+  embedded-spec: true

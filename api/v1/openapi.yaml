@@ -1,0 +1,724 @@
+openapi: 3.0.3
+info:
+  title: Threadmirror Backend API
+  description: API for managing user profiles and follows
+  version: 1.0.0
+  contact:
+    name: API Support
+    url: https://github.com/example/threadmirror
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check if the service is healthy and running
+      tags:
+        - Health
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                    description: Current server time
+                  version:
+                    type: string
+                    description: Service version
+                    example: "1.0.0"
+                required:
+                  - status
+                  - timestamp
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [error]
+                    example: error
+                  timestamp:
+                    type: string
+                    format: date-time
+                  message:
+                    type: string
+                    description: Error message
+                required:
+                  - status
+                  - timestamp
+                  - message
+
+  /mentions:
+    get:
+      summary: Get mentions feed
+      description: Get a paginated list of mentions from followed users or public mentions
+      tags:
+        - Mentions
+      parameters:
+        - $ref: '#/components/parameters/PageLimit'
+        - $ref: '#/components/parameters/PageOffset'
+      responses:
+        '200':
+          description: List of mentions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MentionSummary'
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /thread/{id}:
+    get:
+      summary: Get thread details
+      description: Get detailed information about a specific thread
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Thread ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thread details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ThreadDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /qrcode:
+    get:
+      summary: Render QR code
+      description: Generate and return a QR code image for the given thread id
+      security: []
+      tags:
+        - QRCode
+      parameters:
+        - name: thread_id
+          in: query
+          required: true
+          description: The thread id to encode in the QR code
+          schema:
+            type: string
+      responses:
+        '200':
+          description: QR code image (PNG)
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /render:
+    get:
+      summary: Render thread as HTML
+      description: Render a thread as an HTML page for the given thread_id
+      security: []
+      tags:
+        - Render
+      parameters:
+        - name: thread_id
+          in: query
+          required: true
+          description: The thread id to render
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rendered HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+                format: html
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    PageLimit:
+      name: limit
+      in: query
+      description: Maximum number of items to return
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    PageOffset:
+      name: offset
+      in: query
+      description: Number of items to skip
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+  schemas:
+    MentionSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Mention unique identifier
+        cid:
+          type: string
+          description: Content identifier (CID)
+        content_preview:
+          type: string
+          description: Mention content preview/summary
+          maxLength: 500
+        thread_id:
+          type: string
+          description: Thread unique identifier
+        thread_author:
+          $ref: '#/components/schemas/ThreadAuthor'
+        created_at:
+          type: string
+          format: date-time
+          description: Mention creation timestamp
+        mention_create_at:
+          type: string
+          format: date-time
+          description: Mention tweet creation timestamp
+        num_tweets:
+          type: integer
+          description: Number of tweets in the thread
+      required:
+        - id
+        - cid
+        - content_preview
+        - thread_id
+        - created_at
+        - mention_create_at
+        - num_tweets
+
+    ThreadDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Thread unique identifier
+        cid:
+          type: string
+          description: Content identifier (CID)
+        content_preview:
+          type: string
+          description: Thread content preview/summary
+          maxLength: 500
+        created_at:
+          type: string
+          format: date-time
+          description: Thread creation timestamp
+        num_tweets:
+          type: integer
+          description: Number of tweets in the thread
+        tweets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tweet'
+          description: Tweets associated with this Thread
+          nullable: true
+      required:
+        - id
+        - cid
+        - content_preview
+        - created_at
+        - num_tweets
+        - tweets
+
+    ThreadAuthor:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Author's unique identifier (Twitter user ID)
+        name:
+          type: string
+          description: Author's display name
+        screen_name:
+          type: string
+          description: Author's screen name (without @)
+        profile_image_url:
+          type: string
+          description: Author's profile image URL
+          format: uri
+      required:
+        - id
+        - name
+        - screen_name
+        - profile_image_url
+
+    Tweet:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Tweet unique identifier
+        rest_id:
+          type: string
+          description: Tweet REST API identifier
+        text:
+          type: string
+          description: Tweet text content
+        created_at:
+          type: string
+          format: date-time
+          description: Tweet creation timestamp
+        author:
+          $ref: '#/components/schemas/TweetUser'
+        entities:
+          $ref: '#/components/schemas/TweetEntities'
+        stats:
+          $ref: '#/components/schemas/TweetStats'
+        is_retweet:
+          type: boolean
+          description: Whether this is a retweet
+        is_reply:
+          type: boolean
+          description: Whether this is a reply
+        is_quote_status:
+          type: boolean
+          description: Whether this is a quote tweet
+        conversation_id:
+          type: string
+          description: Conversation thread identifier
+        in_reply_to_status_id:
+          type: string
+          description: ID of the tweet this is replying to
+          nullable: true
+        in_reply_to_user_id:
+          type: string
+          description: ID of the user this is replying to
+          nullable: true
+        quoted_tweet:
+          $ref: '#/components/schemas/Tweet'
+          nullable: true
+        has_birdwatch_notes:
+          type: boolean
+          description: Whether this tweet has Birdwatch notes
+        lang:
+          type: string
+          description: Tweet language code
+        source:
+          type: string
+          description: Source application
+          nullable: true
+        possibly_sensitive:
+          type: boolean
+          description: Whether content might be sensitive
+        is_translatable:
+          type: boolean
+          description: Whether tweet can be translated
+        views:
+          type: integer
+          description: Number of views
+          nullable: true
+      required:
+        - id
+        - rest_id
+        - text
+        - created_at
+        - stats
+        - is_retweet
+        - is_reply
+        - is_quote_status
+        - conversation_id
+        - has_birdwatch_notes
+        - lang
+        - possibly_sensitive
+        - is_translatable
+
+    TweetUser:
+      type: object
+      properties:
+        id:
+          type: string
+          description: User unique identifier
+        rest_id:
+          type: string
+          description: User REST API identifier
+        name:
+          type: string
+          description: User display name
+        screen_name:
+          type: string
+          description: User screen name (without @)
+        profile_image_url:
+          type: string
+          description: User profile image URL
+          format: uri
+        description:
+          type: string
+          description: User bio/description
+        followers_count:
+          type: integer
+          description: Number of followers
+        friends_count:
+          type: integer
+          description: Number of following
+        statuses_count:
+          type: integer
+          description: Number of tweets
+        created_at:
+          type: string
+          format: date-time
+          description: User account creation timestamp
+        verified:
+          type: boolean
+          description: Whether user is verified
+        is_blue_verified:
+          type: boolean
+          description: Whether user has blue verification
+      required:
+        - id
+        - rest_id
+        - name
+        - screen_name
+        - profile_image_url
+        - description
+        - followers_count
+        - friends_count
+        - statuses_count
+        - created_at
+        - verified
+        - is_blue_verified
+
+    Hashtag:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Hashtag text (without #)
+        indices:
+          type: array
+          items:
+            type: integer
+          minItems: 2
+          maxItems: 2
+          description: Start and end indices in the tweet text
+      required:
+        - text
+        - indices
+
+    Symbol:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Symbol text (without $)
+        indices:
+          type: array
+          items:
+            type: integer
+          minItems: 2
+          maxItems: 2
+          description: Start and end indices in the tweet text
+      required:
+        - text
+        - indices
+
+    UserMention:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Mentioned user's unique identifier
+        screen_name:
+          type: string
+          description: Mentioned user's screen name (without @)
+        name:
+          type: string
+          description: Mentioned user's display name
+        indices:
+          type: array
+          items:
+            type: integer
+          minItems: 2
+          maxItems: 2
+          description: Start and end indices in the tweet text
+      required:
+        - id
+        - screen_name
+        - name
+        - indices
+
+    Timestamp:
+      type: object
+      properties:
+        indices:
+          type: array
+          items:
+            type: integer
+          minItems: 2
+          maxItems: 2
+          description: Start and end indices in the text
+        seconds:
+          type: integer
+          description: Seconds value of timestamp
+        text:
+          type: string
+          description: Timestamp text
+      required:
+        - indices
+        - seconds
+        - text
+
+    Media:
+      type: object
+      properties:
+        id_str:
+          type: string
+          description: Media unique identifier
+        media_key:
+          type: string
+          description: Media key identifier
+        type:
+          type: string
+          description: Media type (photo, video, etc.)
+        url:
+          type: string
+          description: Media URL
+          format: uri
+        display_url:
+          type: string
+          description: Display URL for media
+        expanded_url:
+          type: string
+          description: Expanded URL for media
+          format: uri
+        media_url_https:
+          type: string
+          description: HTTPS media URL
+          format: uri
+        indices:
+          type: array
+          items:
+            type: integer
+          minItems: 2
+          maxItems: 2
+          description: Start and end indices in the tweet text
+      required:
+        - id_str
+        - media_key
+        - type
+        - url
+        - display_url
+        - expanded_url
+        - media_url_https
+        - indices
+
+    Url:
+      type: object
+      properties:
+        display_url:
+          type: string
+        expanded_url:
+          type: string
+          nullable: true
+        indices:
+          type: array
+          items:
+            type: integer
+        url:
+          type: string
+      required:
+        - display_url
+        - indices
+        - url
+
+    TweetEntities:
+      type: object
+      properties:
+        hashtags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Hashtag'
+          description: Hashtags in the tweet
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/Media'
+          description: Media attachments
+          nullable: true
+        symbols:
+          type: array
+          items:
+            $ref: '#/components/schemas/Symbol'
+          description: Financial symbols in the tweet
+        timestamps:
+          type: array
+          items:
+            $ref: '#/components/schemas/Timestamp'
+          description: Timestamps in the tweet
+          nullable: true
+        urls:
+          type: array
+          items:
+            $ref: '#/components/schemas/Url'
+          description: URLs in the tweet
+        user_mentions:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMention'
+          description: User mentions in the tweet
+      required:
+        - hashtags
+        - symbols
+        - urls
+        - user_mentions
+
+    TweetStats:
+      type: object
+      properties:
+        reply_count:
+          type: integer
+          description: Number of replies
+        retweet_count:
+          type: integer
+          description: Number of retweets
+        favorite_count:
+          type: integer
+          description: Number of likes/favorites
+        quote_count:
+          type: integer
+          description: Number of quote tweets
+        bookmark_count:
+          type: integer
+          description: Number of bookmarks
+        view_count:
+          type: integer
+          description: Number of views
+          nullable: true
+      required:
+        - reply_count
+        - retweet_count
+        - favorite_count
+        - quote_count
+        - bookmark_count
+
+    Image:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Image unique identifier
+          maxLength: 26
+          nullable: true
+        bucket:
+          type: string
+          description: Storage bucket name
+      required:
+        - bucket
+
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of items
+        limit:
+          type: integer
+          description: Maximum number of items returned
+        offset:
+          type: integer
+          description: Number of items skipped
+      required:
+        - total
+        - limit
+        - offset
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+        message:
+          type: string
+          description: Error message
+      required:
+        - code
+        - message
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Forbidden - access denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

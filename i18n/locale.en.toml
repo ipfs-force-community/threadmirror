@@ -1,0 +1,21 @@
+# 英文语言文件
+[ErrorNotFound]
+description = "Error message when something is not found"
+other = "The requested resource was not found."
+
+[ErrorInternalServer]
+description = "Internal server error message"
+other = "An internal server error occurred. Please try again later."
+
+[Success]
+description = "Success message"
+other = "Operation completed successfully."
+
+# User related errors
+[ErrorUserNotFound]
+description = "User not found error"
+other = "User not found"
+
+[ErrorFailedToGetUserProfile]
+description = "Failed to get user profile error"
+other = "Failed to get user profile"

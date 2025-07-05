@@ -1,0 +1,55 @@
+services:
+  web:
+    build: .
+    env_file:
+      - .env
+    environment:
+      DB_DRIVER: postgres
+      DB_DSN: "host=db user=${POSTGRES_USER:-postgres_threadmirror} password=${POSTGRES_PASSWORD:-postgres_threadmirror} dbname=${POSTGRES_DB:-postgres_threadmirror} port=5432 sslmode=prefer TimeZone=UTC"
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DB: ${REDIS_DB:-0}
+    ports:
+      - "8089:8080"
+    entrypoint: [ "./threadmirror", "server" ]
+    depends_on:
+      - db
+
+  bot:
+    build: .
+    env_file:
+      - .env
+    environment:
+      DB_DRIVER: postgres
+      DB_DSN: "host=db user=${POSTGRES_USER:-postgres_threadmirror} password=${POSTGRES_PASSWORD:-postgres_threadmirror} dbname=${POSTGRES_DB:-postgres_threadmirror} port=5432 sslmode=prefer TimeZone=UTC"
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DB: ${REDIS_DB:-0}
+    entrypoint: [ "./threadmirror", "bot" ]
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres_threadmirror}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_threadmirror}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres_threadmirror}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    restart: always
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:

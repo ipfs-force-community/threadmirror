@@ -1,0 +1,19 @@
+{{range .}}{{$opid := .OperationId}}
+{{range .TypeDefinitions}}
+// {{.TypeName}} defines parameters for {{$opid}}.
+type {{.TypeName}} {{if .IsAlias}}={{end}} {{.Schema.TypeDecl}}
+
+func (p *{{.TypeName}}) Query() url.Values {
+    query := url.Values{}
+    {{range .Schema.Properties}}
+        {{if or (eq .GoFieldName "Features") (eq .GoFieldName "Variables") (eq .GoFieldName "FieldToggles") }}
+            {{lcFirst .GoFieldName}}Json, err := json.Marshal(p.{{.GoFieldName}})
+            if err == nil {
+                query.Set("{{lcFirst .GoFieldName}}", string({{lcFirst .GoFieldName}}Json))
+            }
+        {{end}}
+    {{end}}
+    return query
+}
+{{end}}
+{{end}}
