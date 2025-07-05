@@ -1,4 +1,16 @@
 services:
+  migrate:
+    build: .
+    env_file:
+      - .env
+    environment:
+      DB_DRIVER: postgres
+      DB_DSN: "host=db user=${POSTGRES_USER:-postgres_threadmirror} password=${POSTGRES_PASSWORD:-postgres_threadmirror} dbname=${POSTGRES_DB:-postgres_threadmirror} port=5432 sslmode=prefer TimeZone=UTC"
+    entrypoint: [ "./threadmirror", "migrate" ]
+    depends_on:
+      db:
+        condition: service_started
+
   web:
     build: .
     env_file:
@@ -13,7 +25,10 @@ services:
       - "8089:8080"
     entrypoint: [ "./threadmirror", "server" ]
     depends_on:
-      - db
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_started
 
   bot:
     build: .
@@ -27,8 +42,12 @@ services:
       REDIS_DB: ${REDIS_DB:-0}
     entrypoint: [ "./threadmirror", "bot" ]
     depends_on:
-      - db
-      - redis
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_started
+      redis:
+        condition: service_started
 
   db:
     image: postgres:17
