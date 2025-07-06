@@ -1,0 +1,14 @@
+{
+    "name": "ThreadMirror",
+    "tagline": "Mirror any X (Twitter) thread on pdp with a single mention — permanent, searchable, and shareable.",
+    "description": "ThreadMirror lets you archive any X (Twitter) thread with a single mention. Reply @threadmirror under the thread—you'll receive a permanent link, an AI-generated summary, and a long shareable image, all stored immutably on Filecoin PDP.",
+    "team": [
+        {
+            "name": "0x5459",
+            "email": "0x54@protonmail.com"
+        }
+    ],
+    "demo_url": "https://threadmirror.xyz",
+    "video_url": "https://youtube.com/watch?v=J-D1DlNxQPY",
+    "technologies": ["Go", "Filecoin PDP", "React"]
+}
