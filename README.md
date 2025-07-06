@@ -3,6 +3,7 @@
 # ThreadMirror
 
 <img src="logo.png" alt="ThreadMirror Logo" width="200" />
+<img src="logo2.png" alt="ThreadMirror Logo" width="200" />
 
 ThreadMirror lets you archive any X (Twitter) thread with a single mention. Reply **@threadmirror** under the thread—you'll receive a permanent link, an AI-generated summary, and a long shareable image, all stored immutably on Filecoin PDP.
 
