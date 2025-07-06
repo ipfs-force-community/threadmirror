@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/urfave/cli/v2"
@@ -45,7 +46,13 @@ var ServerCommand = &cli.Command{
 		llmConf := config.LoadLLMConfigFromCLI(c)
 		ipfsConf := config.LoadIPFSConfigFromCLI(c)
 
+		baseContext, cancel := context.WithCancel(context.Background())
+
 		fxApp := fx.New(
+			fx.Supply(baseContext),
+			fx.Invoke(func(ctx context.Context, lc fx.Lifecycle) {
+				lc.Append(fx.StopHook(cancel))
+			}),
 			// Provide the configuration
 			fx.Supply(commonConfig),
 			fx.Supply(serverConf),
