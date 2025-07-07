@@ -144,7 +144,7 @@ func (x *XScraper) SearchTweets(ctx context.Context, query string, maxTweets int
 
 // GetMentions returns the recent mentions of the user
 func (x *XScraper) GetMentions(ctx context.Context) ([]*Tweet, error) {
-	query := fmt.Sprintf("@%s", x.loginOpts.Username)
+	query := fmt.Sprintf("(@%s) filter:replies", x.LoginOpts.Username)
 	maxTweets := 20
 	// Fetch recent mentions
 	tweets, err := x.SearchTweets(ctx, query, maxTweets)
@@ -154,7 +154,7 @@ func (x *XScraper) GetMentions(ctx context.Context) ([]*Tweet, error) {
 
 	// Filter out tweets that are not mentions
 	mentions := lo.Filter(tweets, func(tweet *Tweet, _ int) bool {
-		return tweet.Author.ScreenName != x.loginOpts.Username
+		return tweet.Author.ScreenName != x.LoginOpts.Username
 	})
 
 	return mentions, nil

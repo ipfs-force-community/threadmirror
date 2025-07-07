@@ -27,15 +27,13 @@ func Module(startBot bool) fx.Option {
 // provideTwitterBot provides a TwitterBot instance by extracting config fields
 func provideTwitterBot(
 	botConfig *config.BotConfig,
-	scraper *xscraper.XScraper,
+	scrapers []*xscraper.XScraper,
 	jobQueueClient jobq.JobQueueClient,
 	db *sql.DB,
 	logger *slog.Logger,
 ) *bot.TwitterBot {
 	return bot.NewTwitterBot(
-		botConfig.Username,
-		botConfig.Email,
-		scraper,
+		scrapers,
 		botConfig.CheckInterval,
 		botConfig.MaxMentionsCheck,
 		jobQueueClient,

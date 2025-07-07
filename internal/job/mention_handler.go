@@ -21,7 +21,7 @@ type MentionPayload struct {
 type MentionHandler struct {
 	processedMarkService *service.ProcessedMarkService
 	mentionService       *service.MentionService
-	scraper              *xscraper.XScraper
+	scrapers             []*xscraper.XScraper
 	logger               *slog.Logger
 	jobQueueClient       jobq.JobQueueClient
 }
@@ -30,14 +30,14 @@ type MentionHandler struct {
 func NewMentionHandler(
 	processedMarkService *service.ProcessedMarkService,
 	mentionService *service.MentionService,
-	scraper *xscraper.XScraper,
+	scrapers []*xscraper.XScraper,
 	logger *slog.Logger,
 	jobQueueClient jobq.JobQueueClient,
 ) *MentionHandler {
 	return &MentionHandler{
 		processedMarkService: processedMarkService,
 		mentionService:       mentionService,
-		scraper:              scraper,
+		scrapers:             scrapers,
 		logger:               logger.With("job_handler", "mention"),
 		jobQueueClient:       jobQueueClient,
 	}
@@ -105,7 +105,7 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 		"created_at", mention.CreatedAt.Format(time.RFC3339),
 	)
 
-	tweets, err := w.scraper.GetTweets(ctx, mention.RestID)
+	tweets, err := w.scrapers[0].GetTweets(ctx, mention.RestID)
 	if err != nil {
 		log.Error("Failed to get tweets", "error", err)
 		return fmt.Errorf("failed to get tweets: %w", err)

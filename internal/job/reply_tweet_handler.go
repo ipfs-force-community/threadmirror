@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"math/rand/v2"
 	"time"
 
 	"github.com/chromedp/chromedp"
@@ -31,9 +32,8 @@ type ReplyTweetHandler struct {
 	threadService        *service.ThreadService
 	processedMarkService *service.ProcessedMarkService
 	chromedpCtx          ChromedpContext
-	scraper              *xscraper.XScraper
+	scrapers             []*xscraper.XScraper
 	threadURLTemplate    string
-	botScreenName        string
 }
 
 // NewReplyTweetHandler constructs an ReplyTweetHandler.
@@ -42,10 +42,9 @@ func NewReplyTweetHandler(
 	mentionService *service.MentionService,
 	threadService *service.ThreadService,
 	processedMarkService *service.ProcessedMarkService,
-	scraper *xscraper.XScraper,
+	scrapers []*xscraper.XScraper,
 	chromedpCtx ChromedpContext,
 	commonConfig *config.CommonConfig,
-	botConfig *config.BotConfig,
 ) *ReplyTweetHandler {
 	return &ReplyTweetHandler{
 		logger:               logger.With("job_handler", "reply tweet"),
@@ -53,9 +52,8 @@ func NewReplyTweetHandler(
 		threadService:        threadService,
 		processedMarkService: processedMarkService,
 		chromedpCtx:          chromedpCtx,
-		scraper:              scraper,
+		scrapers:             scrapers,
 		threadURLTemplate:    commonConfig.ThreadURLTemplate,
-		botScreenName:        botConfig.Username,
 	}
 }
 
@@ -97,11 +95,30 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 
 	threadURL := fmt.Sprintf(h.threadURLTemplate, mention.ThreadID)
 	replyText := fmt.Sprintf("%s\n\n#threadmirror", threadURL)
-	searchQuery := fmt.Sprintf("(%s) (from:%s) filter:replies", threadURL, h.botScreenName)
+	searchQuery := fmt.Sprintf("(%s) filter:replies", threadURL)
 	// 先检查是否已经回复了该 tweet
-	tweets, err := h.scraper.SearchTweets(ctx, searchQuery, 1)
-	if err != nil {
-		return fmt.Errorf("search tweets %s: %w", searchQuery, err)
+	var tweets []*xscraper.Tweet
+
+	scrapers := make([]*xscraper.XScraper, len(h.scrapers))
+	copy(scrapers, h.scrapers)
+
+	rand.Shuffle(len(scrapers), func(i, j int) {
+		scrapers[i], scrapers[j] = scrapers[j], scrapers[i]
+	})
+
+	valid := false
+	for _, scraper := range scrapers {
+		tweets, err = scraper.SearchTweets(ctx, searchQuery, 1)
+		if err != nil {
+			logger.Error("search tweets", "error", err, "search_query", searchQuery)
+			continue
+		}
+		valid = true
+		break
+	}
+
+	if !valid {
+		return fmt.Errorf("no valid scraper found")
 	}
 
 	if len(tweets) == 0 {
@@ -126,24 +143,34 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 			return err
 		}
 
-		// Upload the generated screenshot and obtain the media ID
-		uploadRes, err := h.scraper.UploadMedia(ctx, bytes.NewReader(buf), len(buf))
-		if err != nil {
-			return fmt.Errorf("upload media: %w", err)
+		valid = false
+		for _, scraper := range h.scrapers {
+			// Upload the generated screenshot and obtain the media ID
+			uploadRes, err := scraper.UploadMedia(ctx, bytes.NewReader(buf), len(buf))
+			if err != nil {
+				logger.Error("upload media", "error", err)
+				continue
+			}
+
+			// Construct and send the tweet
+			tweet, err := scraper.CreateTweet(ctx, xscraper.NewTweet{
+				Text:             replyText,
+				MediaIDs:         []string{uploadRes.MediaID},
+				TaggedUsers:      [][]string{},
+				InReplyToTweetId: &payload.MentionID,
+			})
+			if err != nil {
+				logger.Error("create tweet", "error", err)
+				continue
+			}
+			logger.Info("created tweet for mention", "tweet_id", tweet.RestID, "mention_id", payload.MentionID)
+			valid = true
+			break
 		}
 
-		// Construct and send the tweet
-		tweet, err := h.scraper.CreateTweet(ctx, xscraper.NewTweet{
-			Text:             replyText,
-			MediaIDs:         []string{uploadRes.MediaID},
-			TaggedUsers:      [][]string{},
-			InReplyToTweetId: &payload.MentionID,
-		})
-		if err != nil {
-			return fmt.Errorf("create tweet: %w", err)
+		if !valid {
+			return fmt.Errorf("no valid scraper found")
 		}
-		logger.Info("created tweet for mention", "tweet_id", tweet.RestID, "mention_id", payload.MentionID)
-		return nil
 	} else {
 		logger.Info("tweet already exists", "tweet_id", tweets[0].RestID, "mention_id", payload.MentionID, "search_query", searchQuery)
 	}

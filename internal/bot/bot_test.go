@@ -16,6 +16,7 @@ import (
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
+	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -196,11 +197,9 @@ func createTestBot(t *testing.T) *TwitterBot {
 	jobQueueClient := &mockJobQueueClient{}
 
 	return NewTwitterBot(
-		"testbot",          // username
-		"test@example.com", // email
-		nil,                // scraper
-		5*time.Minute,      // checkInterval
-		10,                 // maxMentionsCheck
+		[]*xscraper.XScraper{}, // scrapers
+		5*time.Minute,          // checkInterval
+		10,                     // maxMentionsCheck
 		jobQueueClient,
 		db, // database
 		logger,

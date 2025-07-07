@@ -24,9 +24,11 @@ func NewTestServer(ctx context.Context, opts ...fx.Option) (*fx.App, error) {
 		DSN: "sqlite://:memory:?_foreign_keys=on", // Use in-memory SQLite for tests
 	}
 	botCfg := &config.BotConfig{
-		Username:         "testbot",
-		Password:         "testpass",
-		Email:            "test@example.com",
+		Credentials: []config.BotCredential{{
+			Username: "testbot",
+			Password: "testpass",
+			Email:    "test@example.com",
+		}},
 		CheckInterval:    60 * time.Second, // Use CheckInterval
 		MaxMentionsCheck: 10,
 	}

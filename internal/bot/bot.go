@@ -21,7 +21,7 @@ type TwitterBot struct {
 	checkInterval    time.Duration
 	maxMentionsCheck int
 
-	scraper        *xscraper.XScraper
+	scrapers       []*xscraper.XScraper
 	jobQueueClient jobq.JobQueueClient
 	logger         *slog.Logger
 	db             *sql.DB
@@ -33,9 +33,7 @@ type TwitterBot struct {
 
 // NewTwitterBot creates a new Twitter bot instance
 func NewTwitterBot(
-	username string,
-	email string,
-	scraper *xscraper.XScraper,
+	scrapers []*xscraper.XScraper,
 	checkInterval time.Duration,
 	maxMentionsCheck int,
 	jobQueueClient jobq.JobQueueClient,
@@ -43,11 +41,9 @@ func NewTwitterBot(
 	logger *slog.Logger,
 ) *TwitterBot {
 	return &TwitterBot{
-		username:         username,
-		email:            email,
 		checkInterval:    checkInterval,
 		maxMentionsCheck: maxMentionsCheck,
-		scraper:          scraper,
+		scrapers:         scrapers,
 		jobQueueClient:   jobQueueClient,
 		logger:           logger,
 		db:               db,
@@ -131,9 +127,8 @@ func (tb *TwitterBot) run(ctx context.Context) {
 // checkMentions checks for new mentions and responds to them
 func (tb *TwitterBot) checkMentions(ctx context.Context) error {
 	tb.logger.Debug("Checking for new mentions")
-
 	// Get recent mentions
-	mentions, err := tb.scraper.GetMentions(ctx)
+	mentions, err := tb.scrapers[0].GetMentions(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get mentions: %w", err)
 	}

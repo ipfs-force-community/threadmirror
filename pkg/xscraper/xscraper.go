@@ -40,7 +40,7 @@ type XScraper struct {
 	// Gotwi client for media upload functionality
 	gotwiClient *gotwi.Client
 
-	loginOpts     LoginOptions
+	LoginOpts     LoginOptions
 	isLoggedIn    bool
 	csrfToken     string
 	loginMu       sync.Mutex
@@ -68,7 +68,7 @@ func New(loginOpts LoginOptions, logger *slog.Logger) (*XScraper, error) {
 		rateLimiter: xrate.NewLimiter(xrate.Every(1500*time.Millisecond), 1),
 
 		logger:    logger,
-		loginOpts: loginOpts,
+		LoginOpts: loginOpts,
 
 		gotwiClient: gotwiClient,
 	}, nil

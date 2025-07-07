@@ -76,22 +76,27 @@ var BotCommand = &cli.Command{
 			redisfx.Module,
 			servicefx.Module,
 			jobfx.Module,
-			fx.Provide(func(s *service.BotCookieService) xscraper.LoginOptions {
-				return xscraper.LoginOptions{
-					Username:          botConf.Username,
-					Password:          botConf.Password,
-					Email:             botConf.Email,
-					APIKey:            botConf.APIKey,
-					APIKeySecret:      botConf.APIKeySecret,
-					AccessToken:       botConf.AccessToken,
-					AccessTokenSecret: botConf.AccessTokenSecret,
-					LoadCookies: func(ctx context.Context) ([]*http.Cookie, error) {
-						return s.LoadCookies(ctx, botConf.Email, botConf.Username)
-					},
-					SaveCookies: func(ctx context.Context, cookies []*http.Cookie) error {
-						return s.SaveCookies(ctx, botConf.Email, botConf.Username, cookies)
-					},
+			fx.Provide(func(s *service.BotCookieService) []xscraper.LoginOptions {
+				loginOpts := make([]xscraper.LoginOptions, len(botConf.Credentials))
+				for i, cred := range botConf.Credentials {
+					credCopy := cred // capture loop variable
+					loginOpts[i] = xscraper.LoginOptions{
+						Username:          credCopy.Username,
+						Password:          credCopy.Password,
+						Email:             credCopy.Email,
+						APIKey:            credCopy.APIKey,
+						APIKeySecret:      credCopy.APIKeySecret,
+						AccessToken:       credCopy.AccessToken,
+						AccessTokenSecret: credCopy.AccessTokenSecret,
+						LoadCookies: func(ctx context.Context) ([]*http.Cookie, error) {
+							return s.LoadCookies(ctx, credCopy.Email, credCopy.Username)
+						},
+						SaveCookies: func(ctx context.Context, cookies []*http.Cookie) error {
+							return s.SaveCookies(ctx, credCopy.Email, credCopy.Username, cookies)
+						},
+					}
 				}
+				return loginOpts
 			}),
 			llmfx.Module,
 			ipfsfx.Module,

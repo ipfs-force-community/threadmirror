@@ -1,6 +1,8 @@
 package config
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/ipfs-force-community/threadmirror/pkg/ipfs/ipfsfx"
@@ -41,17 +43,22 @@ type Auth0Config struct {
 	Audience string
 }
 
+// BotCredential represents a set of credentials for one Twitter bot account.
+type BotCredential struct {
+	Username          string `json:"username"`
+	Password          string `json:"password"`
+	Email             string `json:"email"`
+	APIKey            string `json:"api_key"`
+	APIKeySecret      string `json:"api_key_secret"`
+	AccessToken       string `json:"access_token"`
+	AccessTokenSecret string `json:"access_token_secret"`
+}
+
 // BotConfig holds Twitter bot configuration
 type BotConfig struct {
 	Enable bool
-	// Twitter credentials
-	Username          string
-	Password          string
-	Email             string
-	APIKey            string
-	APIKeySecret      string
-	AccessToken       string
-	AccessTokenSecret string
+	// Multiple Twitter credentials (supporting multiple bots)
+	Credentials []BotCredential
 
 	// Bot behavior settings
 	CheckInterval    time.Duration
@@ -97,17 +104,33 @@ func LoadAuth0ConfigFromCLI(c *cli.Context) *Auth0Config {
 }
 
 func LoadBotConfigFromCLI(c *cli.Context) *BotConfig {
+	var creds []BotCredential
+
+	// Prefer JSON-based credentials if provided
+	if credJSON := c.String("bot-credentials"); credJSON != "" {
+		if err := json.Unmarshal([]byte(credJSON), &creds); err != nil {
+			panic(fmt.Errorf("invalid bot-credentials JSON: %w", err))
+		}
+	}
+
+	// Fallback to single credential flags when JSON not supplied or empty
+	if len(creds) == 0 {
+		creds = []BotCredential{{
+			Username:          c.String("bot-username"),
+			Password:          c.String("bot-password"),
+			Email:             c.String("bot-email"),
+			APIKey:            c.String("bot-api-key"),
+			APIKeySecret:      c.String("bot-api-key-secret"),
+			AccessToken:       c.String("bot-access-token"),
+			AccessTokenSecret: c.String("bot-access-token-secret"),
+		}}
+	}
+
 	return &BotConfig{
-		Enable:            c.Bool("bot-enable"),
-		Username:          c.String("bot-username"),
-		Password:          c.String("bot-password"),
-		Email:             c.String("bot-email"),
-		APIKey:            c.String("bot-api-key"),
-		APIKeySecret:      c.String("bot-api-key-secret"),
-		AccessToken:       c.String("bot-access-token"),
-		AccessTokenSecret: c.String("bot-access-token-secret"),
-		CheckInterval:     c.Duration("bot-check-interval"),
-		MaxMentionsCheck:  c.Int("bot-max-mentions"),
+		Enable:           c.Bool("bot-enable"),
+		Credentials:      creds,
+		CheckInterval:    c.Duration("bot-check-interval"),
+		MaxMentionsCheck: c.Int("bot-max-mentions"),
 	}
 }
 
@@ -244,6 +267,11 @@ func GetAuth0CLIFlags() []cli.Flag {
 // GetBotCLIFlags returns bot-related CLI flags
 func GetBotCLIFlags() []cli.Flag {
 	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "bot-credentials",
+			Usage:   "JSON array of bot credentials (overrides individual BOT_* flags)",
+			EnvVars: []string{"BOT_CREDENTIALS"},
+		},
 		&cli.BoolFlag{
 			Name:    "bot-enable",
 			Usage:   "Enable the bot",

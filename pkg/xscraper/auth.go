@@ -65,7 +65,7 @@ type LoginOptions struct {
 }
 
 func (x *XScraper) loadCookies(ctx context.Context) (bool, error) {
-	cookies, err := x.loginOpts.LoadCookies(ctx)
+	cookies, err := x.LoginOpts.LoadCookies(ctx)
 	if err != nil {
 		return false, fmt.Errorf("failed to load cookies: %w", err)
 	}
@@ -175,19 +175,19 @@ func (a *authHandler) tryLogin(ctx context.Context) error { //nolint:unparam
 			}
 			nextState = subtaskIDToPrivLoginState(nextSubtaskID)
 		case privLoginStateLoginEnterUserIdentifierSSO:
-			nextFlowToken, nextSubtaskID, err = a.handleLoginEnterUserIdentifierSSO(ctx, nextFlowToken, a.scraper.loginOpts.Username)
+			nextFlowToken, nextSubtaskID, err = a.handleLoginEnterUserIdentifierSSO(ctx, nextFlowToken, a.scraper.LoginOpts.Username)
 			if err != nil {
 				return err
 			}
 			nextState = subtaskIDToPrivLoginState(nextSubtaskID)
 		case privLoginStateLoginEnterAlternateIdentifierSubtask:
-			nextFlowToken, nextSubtaskID, err = a.handleLoginEnterAlternateIdentifierSubtask(ctx, nextFlowToken, a.scraper.loginOpts.Email)
+			nextFlowToken, nextSubtaskID, err = a.handleLoginEnterAlternateIdentifierSubtask(ctx, nextFlowToken, a.scraper.LoginOpts.Email)
 			if err != nil {
 				return err
 			}
 			nextState = subtaskIDToPrivLoginState(nextSubtaskID)
 		case privLoginStateLoginEnterPassword:
-			nextFlowToken, nextSubtaskID, err = a.handleLoginEnterPassword(ctx, nextFlowToken, a.scraper.loginOpts.Password)
+			nextFlowToken, nextSubtaskID, err = a.handleLoginEnterPassword(ctx, nextFlowToken, a.scraper.LoginOpts.Password)
 			if err != nil {
 				return err
 			}
@@ -205,7 +205,7 @@ func (a *authHandler) tryLogin(ctx context.Context) error { //nolint:unparam
 			}
 			nextState = subtaskIDToPrivLoginState(nextSubtaskID)
 		case privLoginStateLoginAcid:
-			nextFlowToken, nextSubtaskID, err = a.handleLoginAcid(ctx, nextFlowToken, &a.scraper.loginOpts.Email)
+			nextFlowToken, nextSubtaskID, err = a.handleLoginAcid(ctx, nextFlowToken, &a.scraper.LoginOpts.Email)
 			if err != nil {
 				return err
 			}
@@ -219,7 +219,7 @@ func (a *authHandler) tryLogin(ctx context.Context) error { //nolint:unparam
 		case privLoginStateDenyLoginSubtask:
 			return fmt.Errorf("authentication error: DenyLoginSubtask")
 		case privLoginStateLoggedIn:
-			err = a.scraper.loginOpts.SaveCookies(ctx, a.scraper.xPrivateApiClient.Jar.Cookies(BASE_URL))
+			err = a.scraper.LoginOpts.SaveCookies(ctx, a.scraper.xPrivateApiClient.Jar.Cookies(BASE_URL))
 			return err
 
 		case privLoginStateUnknown:
