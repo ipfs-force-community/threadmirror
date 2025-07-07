@@ -147,7 +147,7 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 		}
 
 		valid = false
-		for _, scraper := range h.scrapers {
+		for _, scraper := range scrapers {
 			// Upload the generated screenshot and obtain the media ID
 			uploadRes, err := scraper.UploadMedia(ctx, bytes.NewReader(buf), len(buf))
 			if err != nil {
