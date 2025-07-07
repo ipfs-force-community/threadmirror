@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import UserMentions from '@pages/UserMentions';
@@ -36,7 +36,7 @@ function App() {
           <UserLgoinOut />
         </header>
         <Routes>
-          <Route path="/" element={<UserMentions />} />
+          <Route path="/" element={<Navigate to="/thread" replace />} />
           <Route path="/thread" element={<UserMentions />} />
           <Route path="/mentions/:id" element={<MentionDetail />} />
           <Route path="/thread/:id" element={<MentionDetail />} />

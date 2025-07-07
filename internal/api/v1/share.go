@@ -47,6 +47,7 @@ func (h *V1Handler) GetShare(c *gin.Context, params GetShareParams) {
 		chromedp.Flag("headless", true),
 		chromedp.Flag("disable-default-apps", true),
 		chromedp.Flag("disable-extensions", true),
+		chromedp.Flag("hide-scrollbars", true),
 		chromedp.DisableGPU,
 	)
 	defer cancelAlloc()

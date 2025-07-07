@@ -41,7 +41,7 @@ const MentionSummaryComponent: React.FC<{ mention: MentionData }> = ({ mention }
 
     return (
         <Link
-            to={`/mentions/${mention.threadId}`}
+            to={`/thread/${mention.threadId}`}
             state={{ mentionData: mention }}
             className={styles.mentionContainer}
             style={{ textDecoration: 'none', color: 'inherit' }}
