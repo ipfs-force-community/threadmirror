@@ -10,13 +10,14 @@
 ThreadMirror lets you archive any X (Twitter) thread with a single mention. Reply **@threadmirror** under the thread—you'll receive a permanent link, an AI-generated summary, and a long shareable image, all stored immutably on Filecoin PDP.
 
 
-## ✨ Highlights 
+## ✨ Highlights 
 
 * **One-step archive (mention @threadmirror)** – No plugin, no signup: just mention `@threadmirror` beneath any thread and the bot does the rest.
 * **Immutable storage on Filecoin PDP –** Threads are saved as content-addressable data that remain online permanently and cannot be tampered with, even after deletion.
 * **Instant AI summary** – A concise, LLM-generated digest arrives with the reply so you can grasp the whole thread at a glance.
 * **Shareable permalink** – Receive a clean `https://threadmirror.xyz/thread/<id>` link that never breaks—perfect for bookmarking or sharing anywhere.
 * **End-to-end share image** – The bot also returns a single long image of the full thread, great for posting in chats or saving offline.
+* **Multi-account support –** Run multiple bot accounts to distribute load and rate limits, enhancing overall service robustness.
 
 ## 📝 Usage
 
