@@ -36,8 +36,7 @@ function App() {
           <UserLgoinOut />
         </header>
         <Routes>
-          <Route path="/" element={<Navigate to="/thread" replace />} />
-          <Route path="/thread" element={<UserMentions />} />
+          <Route path="/" element={<UserMentions />} />
           <Route path="/mentions/:id" element={<MentionDetail />} />
           <Route path="/thread/:id" element={<MentionDetail />} />
         </Routes>
