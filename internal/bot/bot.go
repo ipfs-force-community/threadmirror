@@ -16,8 +16,6 @@ import (
 // TwitterBot represents a Twitter bot that responds to mentions
 type TwitterBot struct {
 	// Bot credentials and settings
-	username         string
-	email            string
 	checkInterval    time.Duration
 	maxMentionsCheck int
 
@@ -75,7 +73,6 @@ func (tb *TwitterBot) randomizedInterval() time.Duration {
 // Start starts the Twitter bot
 func (tb *TwitterBot) Start(ctx context.Context) error {
 	tb.logger.Info("Starting Twitter bot",
-		"username", tb.username,
 		"check_interval", tb.checkInterval,
 		"max_mentions", tb.maxMentionsCheck,
 	)
@@ -126,14 +123,14 @@ func (tb *TwitterBot) run(ctx context.Context) {
 
 // checkMentions checks for new mentions and responds to them
 func (tb *TwitterBot) checkMentions(ctx context.Context) error {
-	tb.logger.Debug("Checking for new mentions")
+	tb.logger.Info("Checking for new mentions")
 	// Get recent mentions
 	mentions, err := tb.scrapers[0].GetMentions(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get mentions: %w", err)
 	}
 
-	tb.logger.Debug("Found mentions", "count", len(mentions))
+	tb.logger.Info("Found mentions", "count", len(mentions))
 
 	// Enqueue each mention as a job
 	for _, mention := range mentions {
@@ -169,7 +166,6 @@ func (tb *TwitterBot) enqueueMentionJob(ctx context.Context, mention *xscraper.T
 func (tb *TwitterBot) GetStats() map[string]interface{} {
 	return map[string]interface{}{
 		"enabled":        true, // Bot is always enabled now
-		"username":       tb.username,
 		"check_interval": tb.checkInterval.String(),
 		"randomized":     true,       // Intervals are randomized with ±30% jitter
 		"storage_type":   "database", // Now using database storage for both processed mentions and cookies
