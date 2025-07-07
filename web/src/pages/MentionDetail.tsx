@@ -11,6 +11,7 @@ const MentionDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [detail, setDetail] = useState<ThreadData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const toastShownRef = useRef(false);
   const { fetchGetThreadId, fetchGetShare } = useApiService();
@@ -47,7 +48,8 @@ const MentionDetail = () => {
   }, [loadData]);
 
   const handleShare = useCallback(async () => {
-    if (!id) return;
+    if (!id || shareLoading) return;
+    setShareLoading(true);
     try {
       const blob = await fetchGetShare(id);
       const url = window.URL.createObjectURL(blob);
@@ -60,8 +62,10 @@ const MentionDetail = () => {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       toast.error("Failed to download share image", { duration: 5000 });
+    } finally {
+      setShareLoading(false);
     }
-  }, [id, fetchGetShare]);
+  }, [id, fetchGetShare, shareLoading]);
 
   useEffect(() => {
     if (mentionData?.tweets?.length > 0) {
@@ -105,7 +109,13 @@ const MentionDetail = () => {
     <div className={styles.container}>
       <UserProfileComponent profile={author} sample={true} />
       <div className={styles.actionBar}>
-        <button className={styles.shareButton} onClick={handleShare}>Share Image</button>
+        <button 
+          className={styles.shareButton} 
+          onClick={handleShare}
+          disabled={shareLoading}
+        >
+          {shareLoading ? 'Sharing...' : 'Share Image'}
+        </button>
       </div>
       <div className={styles.tweetContent}>
         {detail?.tweets?.map((tweet, index) => (
