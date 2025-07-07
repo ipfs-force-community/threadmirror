@@ -35,7 +35,6 @@ func provideTwitterBot(
 	return bot.NewTwitterBot(
 		scrapers,
 		botConfig.CheckInterval,
-		botConfig.MaxMentionsCheck,
 		jobQueueClient,
 		db,
 		logger,

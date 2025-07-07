@@ -16,8 +16,7 @@ import (
 // TwitterBot represents a Twitter bot that responds to mentions
 type TwitterBot struct {
 	// Bot credentials and settings
-	checkInterval    time.Duration
-	maxMentionsCheck int
+	checkInterval time.Duration
 
 	scrapers       []*xscraper.XScraper
 	jobQueueClient jobq.JobQueueClient
@@ -33,20 +32,18 @@ type TwitterBot struct {
 func NewTwitterBot(
 	scrapers []*xscraper.XScraper,
 	checkInterval time.Duration,
-	maxMentionsCheck int,
 	jobQueueClient jobq.JobQueueClient,
 	db *sql.DB,
 	logger *slog.Logger,
 ) *TwitterBot {
 	return &TwitterBot{
-		checkInterval:    checkInterval,
-		maxMentionsCheck: maxMentionsCheck,
-		scrapers:         scrapers,
-		jobQueueClient:   jobQueueClient,
-		logger:           logger,
-		db:               db,
-		stopCh:           make(chan struct{}),
-		stopped:          make(chan struct{}),
+		checkInterval:  checkInterval,
+		scrapers:       scrapers,
+		jobQueueClient: jobQueueClient,
+		logger:         logger,
+		db:             db,
+		stopCh:         make(chan struct{}),
+		stopped:        make(chan struct{}),
 	}
 }
 
@@ -60,7 +57,9 @@ func (tb *TwitterBot) randomizedInterval() time.Duration {
 	interval := tb.checkInterval + jitter
 
 	// Ensure minimum of 30 seconds
-	interval = max(interval, 30*time.Second)
+	if interval < 30*time.Second {
+		interval = 30 * time.Second
+	}
 
 	tb.logger.Debug("Randomized interval",
 		"base", tb.checkInterval,
@@ -74,7 +73,6 @@ func (tb *TwitterBot) randomizedInterval() time.Duration {
 func (tb *TwitterBot) Start(ctx context.Context) error {
 	tb.logger.Info("Starting Twitter bot",
 		"check_interval", tb.checkInterval,
-		"max_mentions", tb.maxMentionsCheck,
 	)
 
 	go tb.run(sql.WithDBToContext(context.Background(), tb.db))
@@ -131,10 +129,20 @@ func (tb *TwitterBot) checkMentions(ctx context.Context) error {
 		scrapers[i], scrapers[j] = scrapers[j], scrapers[i]
 	})
 
-	// Get recent mentions
-	mentions, err := scrapers[0].GetMentionsByScreenName(ctx, tb.scrapers[0].LoginOpts.Username)
-	if err != nil {
-		return fmt.Errorf("failed to get mentions: %w", err)
+	var mentions []*xscraper.Tweet
+	var err error
+	for i, scraper := range scrapers {
+		// Get recent mentions
+		mentions, err = scraper.GetMentionsByScreenName(ctx, tb.scrapers[0].LoginOpts.Username)
+		if err != nil {
+			tb.logger.Error("failed to get mentions", "index", i, "error", err)
+			continue
+		}
+		if len(mentions) == 0 {
+			tb.logger.Info("No mentions found by scraper", "index", i)
+			continue
+		}
+		break
 	}
 
 	tb.logger.Info("Found mentions", "count", len(mentions))
@@ -171,8 +179,13 @@ func (tb *TwitterBot) enqueueMentionJob(ctx context.Context, mention *xscraper.T
 
 // GetStats returns bot statistics
 func (tb *TwitterBot) GetStats() map[string]interface{} {
+	username := ""
+	if len(tb.scrapers) > 0 {
+		username = tb.scrapers[0].LoginOpts.Username
+	}
 	return map[string]interface{}{
 		"enabled":        true, // Bot is always enabled now
+		"username":       username,
 		"check_interval": tb.checkInterval.String(),
 		"randomized":     true,       // Intervals are randomized with ±30% jitter
 		"storage_type":   "database", // Now using database storage for both processed mentions and cookies

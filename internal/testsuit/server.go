@@ -29,8 +29,7 @@ func NewTestServer(ctx context.Context, opts ...fx.Option) (*fx.App, error) {
 			Password: "testpass",
 			Email:    "test@example.com",
 		}},
-		CheckInterval:    60 * time.Second, // Use CheckInterval
-		MaxMentionsCheck: 10,
+		CheckInterval: 60 * time.Second, // Use CheckInterval
 	}
 
 	// Base modules for the test server

@@ -61,8 +61,7 @@ type BotConfig struct {
 	Credentials []BotCredential
 
 	// Bot behavior settings
-	CheckInterval    time.Duration
-	MaxMentionsCheck int
+	CheckInterval time.Duration
 }
 
 func LoadCommonConfigFromCLI(c *cli.Context) *CommonConfig {
@@ -127,10 +126,9 @@ func LoadBotConfigFromCLI(c *cli.Context) *BotConfig {
 	}
 
 	return &BotConfig{
-		Enable:           c.Bool("bot-enable"),
-		Credentials:      creds,
-		CheckInterval:    c.Duration("bot-check-interval"),
-		MaxMentionsCheck: c.Int("bot-max-mentions"),
+		Enable:        c.Bool("bot-enable"),
+		Credentials:   creds,
+		CheckInterval: c.Duration("bot-check-interval"),
 	}
 }
 
@@ -318,12 +316,6 @@ func GetBotCLIFlags() []cli.Flag {
 			Value:   5 * time.Minute,
 			Usage:   "Interval to check for new mentions",
 			EnvVars: []string{"BOT_CHECK_INTERVAL"},
-		},
-		&cli.IntFlag{
-			Name:    "bot-max-mentions",
-			Value:   10,
-			Usage:   "Maximum number of mentions to check per interval",
-			EnvVars: []string{"BOT_MAX_MENTIONS"},
 		},
 	}
 }

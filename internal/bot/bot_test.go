@@ -197,9 +197,10 @@ func createTestBot(t *testing.T) *TwitterBot {
 	jobQueueClient := &mockJobQueueClient{}
 
 	return NewTwitterBot(
-		[]*xscraper.XScraper{}, // scrapers
-		5*time.Minute,          // checkInterval
-		10,                     // maxMentionsCheck
+		[]*xscraper.XScraper{
+			{LoginOpts: xscraper.LoginOptions{Username: "testbot"}},
+		}, // scrapers
+		5*time.Minute, // checkInterval
 		jobQueueClient,
 		db, // database
 		logger,
