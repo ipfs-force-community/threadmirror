@@ -204,6 +204,7 @@ func createTestBot(t *testing.T) *TwitterBot {
 		jobQueueClient,
 		db, // database
 		logger,
+		"threadmirror",
 	)
 }
 

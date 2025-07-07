@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/ipfs-force-community/threadmirror/internal/job"
@@ -23,6 +24,9 @@ type TwitterBot struct {
 	logger         *slog.Logger
 	db             *sql.DB
 
+	// Lower-cased prefix of author screen names to exclude from processing
+	excludeMentionAuthorPrefixLower string
+
 	// Control channels
 	stopCh  chan struct{}
 	stopped chan struct{}
@@ -35,15 +39,17 @@ func NewTwitterBot(
 	jobQueueClient jobq.JobQueueClient,
 	db *sql.DB,
 	logger *slog.Logger,
+	excludeMentionAuthorPrefix string,
 ) *TwitterBot {
 	return &TwitterBot{
-		checkInterval:  checkInterval,
-		scrapers:       scrapers,
-		jobQueueClient: jobQueueClient,
-		logger:         logger,
-		db:             db,
-		stopCh:         make(chan struct{}),
-		stopped:        make(chan struct{}),
+		checkInterval:                   checkInterval,
+		scrapers:                        scrapers,
+		jobQueueClient:                  jobQueueClient,
+		logger:                          logger,
+		db:                              db,
+		excludeMentionAuthorPrefixLower: strings.ToLower(excludeMentionAuthorPrefix),
+		stopCh:                          make(chan struct{}),
+		stopped:                         make(chan struct{}),
 	}
 }
 
@@ -54,12 +60,8 @@ func (tb *TwitterBot) randomizedInterval() time.Duration {
 
 	// Generate random jitter between -30% and +30%
 	jitter := time.Duration((rand.Float64() - 0.5) * 2 * jitterRange)
-	interval := tb.checkInterval + jitter
-
 	// Ensure minimum of 30 seconds
-	if interval < 30*time.Second {
-		interval = 30 * time.Second
-	}
+	interval := max(tb.checkInterval+jitter, 30*time.Second)
 
 	tb.logger.Debug("Randomized interval",
 		"base", tb.checkInterval,
@@ -133,7 +135,12 @@ func (tb *TwitterBot) checkMentions(ctx context.Context) error {
 	var err error
 	for i, scraper := range scrapers {
 		// Get recent mentions
-		mentions, err = scraper.GetMentionsByScreenName(ctx, tb.scrapers[0].LoginOpts.Username)
+		mentions, err = scraper.GetMentionsByScreenName(ctx, tb.scrapers[0].LoginOpts.Username, func(tweet *xscraper.Tweet) bool {
+			if tb.excludeMentionAuthorPrefixLower == "" {
+				return true
+			}
+			return !strings.HasPrefix(strings.ToLower(tweet.Author.ScreenName), tb.excludeMentionAuthorPrefixLower)
+		})
 		if err != nil {
 			tb.logger.Error("failed to get mentions", "index", i, "error", err)
 			continue

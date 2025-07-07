@@ -143,20 +143,12 @@ func (x *XScraper) SearchTweets(ctx context.Context, query string, maxTweets int
 }
 
 // GetMentions returns the recent mentions of the user
-func (x *XScraper) GetMentions(ctx context.Context) ([]*Tweet, error) {
-	query := fmt.Sprintf("(@%s) filter:replies", x.LoginOpts.Username)
-	maxTweets := 20
-	// Fetch recent mentions
-	tweets, err := x.SearchTweets(ctx, query, maxTweets)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get mentions: %w", err)
-	}
-
-	return tweets, nil
+func (x *XScraper) GetMentions(ctx context.Context, filter func(*Tweet) bool) ([]*Tweet, error) {
+	return x.GetMentionsByScreenName(ctx, x.LoginOpts.Username, filter)
 }
 
-// GetMentions returns the recent mentions of the user
-func (x *XScraper) GetMentionsByScreenName(ctx context.Context, screenName string) ([]*Tweet, error) {
+// GetMentionsByScreenName returns the recent mentions of the user
+func (x *XScraper) GetMentionsByScreenName(ctx context.Context, screenName string, filter func(*Tweet) bool) ([]*Tweet, error) {
 	query := fmt.Sprintf("(@%s) filter:replies", screenName)
 	maxTweets := 20
 	// Fetch recent mentions
@@ -165,7 +157,17 @@ func (x *XScraper) GetMentionsByScreenName(ctx context.Context, screenName strin
 		return nil, fmt.Errorf("failed to get mentions: %w", err)
 	}
 
-	return tweets, nil
+	return lo.Filter(tweets, func(tweet *Tweet, _ int) bool {
+		if tweet.RestID == "" {
+			return false
+		}
+
+		if tweet.Author.ScreenName == screenName {
+			return false
+		}
+
+		return filter(tweet)
+	}), nil
 }
 
 type NewTweet struct {

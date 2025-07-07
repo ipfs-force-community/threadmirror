@@ -62,6 +62,9 @@ type BotConfig struct {
 
 	// Bot behavior settings
 	CheckInterval time.Duration
+
+	// Prefix of author screen names to exclude when scanning mentions
+	ExcludeMentionAuthorPrefix string
 }
 
 func LoadCommonConfigFromCLI(c *cli.Context) *CommonConfig {
@@ -126,9 +129,10 @@ func LoadBotConfigFromCLI(c *cli.Context) *BotConfig {
 	}
 
 	return &BotConfig{
-		Enable:        c.Bool("bot-enable"),
-		Credentials:   creds,
-		CheckInterval: c.Duration("bot-check-interval"),
+		Enable:                     c.Bool("bot-enable"),
+		Credentials:                creds,
+		CheckInterval:              c.Duration("bot-check-interval"),
+		ExcludeMentionAuthorPrefix: c.String("bot-exclude-mention-author-prefix"),
 	}
 }
 
@@ -316,6 +320,12 @@ func GetBotCLIFlags() []cli.Flag {
 			Value:   5 * time.Minute,
 			Usage:   "Interval to check for new mentions",
 			EnvVars: []string{"BOT_CHECK_INTERVAL"},
+		},
+		&cli.StringFlag{
+			Name:    "bot-exclude-mention-author-prefix",
+			Value:   "threadmirror",
+			Usage:   "Prefix of author screen names to exclude from mention processing",
+			EnvVars: []string{"BOT_EXCLUDE_MENTION_AUTHOR_PREFIX"},
 		},
 	}
 }

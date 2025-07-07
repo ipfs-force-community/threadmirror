@@ -82,17 +82,17 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 		return fmt.Errorf("mention user ID is empty")
 	}
 
-	log := w.logger.With(
+	logger := w.logger.With(
 		"job_type", j.Type,
 		"mention_user_id", mentionUserID,
-		"tweet_id", mention.RestID,
+		"mention_id", mention.RestID,
 		"author_screen_name", mention.Author.ScreenName,
 	)
 
 	// Check if already processed (idempotency check)
 	processed, err := w.processedMarkService.IsProcessed(ctx, mention.RestID, TypeProcessMention)
 	if err != nil {
-		log.Error("Failed to check if mention is processed", "error", err)
+		logger.Error("Failed to check if mention is processed", "error", err)
 		// This is a transient error, allow retries
 		return fmt.Errorf("failed to check if mention is processed: %w", err)
 	}
@@ -101,14 +101,14 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 		return nil
 	}
 
-	log.Info("🤖 Processing mention from queue",
+	logger.Info("🤖 Processing mention from queue",
 		"text", mention.Text,
 		"created_at", mention.CreatedAt.Format(time.RFC3339),
 	)
 
 	tweets, err := w.scrapers[0].GetTweets(ctx, mention.RestID)
 	if err != nil {
-		log.Error("Failed to get tweets", "error", err)
+		logger.Error("Failed to get tweets", "error", err)
 		return fmt.Errorf("failed to get tweets: %w", err)
 	}
 
@@ -133,7 +133,7 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 		tweets = tweets[:idx+1]
 	}
 
-	log.Info("🤖 Get tweets", "tweets", tweets)
+	logger.Info("🤖 Get tweets", "tweets", tweets)
 
 	// Create mention from tweets
 	mentionSummary, err := w.mentionService.CreateMention(ctx, &service.CreateMentionRequest{
@@ -155,7 +155,7 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 
 	// Mark as processed to prevent duplicate work
 	if err := w.processedMarkService.MarkProcessed(ctx, mention.RestID, TypeProcessMention); err != nil {
-		log.Error("Failed to mark mention as processed",
+		logger.Error("Failed to mark mention as processed",
 			"error", err,
 			"mention_id", mentionSummary.ID,
 		)
@@ -163,7 +163,7 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 		return fmt.Errorf("failed to mark mention as processed: %w", err)
 	}
 
-	log.Info("🤖 Mention processed successfully",
+	logger.Info("🤖 Mention processed successfully",
 		"mention_id", mentionSummary.ID,
 		"reply_tweet_job_id", jobID,
 		"processing_time", time.Since(mention.CreatedAt),
