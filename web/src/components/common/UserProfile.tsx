@@ -19,7 +19,7 @@ const UserProfileComponent = ({ profile, sample }: UserProfileProps) => {
             <div style={{ flex: 1, textAlign: 'left' }}>
                 {/* 第一行：名称 */}
                 <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 5px 0' }}>
-                    <a href={`/user/${profile.screenName}`}>{profile.name}</a>
+                    <a href="javascript:void(0)">{profile.name}</a>
                 </h2>
                 {/* 第二行：screen_name */}
                 <p style={{ fontSize: '14px', color: '#1da1f2', margin: '0 0 5px 0' }} >
