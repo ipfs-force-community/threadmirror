@@ -176,6 +176,35 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /share:
+    get:
+      summary: Download share image
+      description: Download a long image representation of the thread for sharing
+      security: []
+      tags:
+        - Share
+      parameters:
+        - name: thread_id
+          in: query
+          required: true
+          description: The thread id to generate the share image
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Share image (PNG)
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
 components:
   securitySchemes:
     BearerAuth:

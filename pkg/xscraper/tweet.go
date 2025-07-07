@@ -152,12 +152,20 @@ func (x *XScraper) GetMentions(ctx context.Context) ([]*Tweet, error) {
 		return nil, fmt.Errorf("failed to get mentions: %w", err)
 	}
 
-	// Filter out tweets that are not mentions
-	mentions := lo.Filter(tweets, func(tweet *Tweet, _ int) bool {
-		return tweet.Author.ScreenName != x.LoginOpts.Username
-	})
+	return tweets, nil
+}
 
-	return mentions, nil
+// GetMentions returns the recent mentions of the user
+func (x *XScraper) GetMentionsByScreenName(ctx context.Context, screenName string) ([]*Tweet, error) {
+	query := fmt.Sprintf("(@%s) filter:replies", screenName)
+	maxTweets := 20
+	// Fetch recent mentions
+	tweets, err := x.SearchTweets(ctx, query, maxTweets)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get mentions: %w", err)
+	}
+
+	return tweets, nil
 }
 
 type NewTweet struct {

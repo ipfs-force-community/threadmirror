@@ -355,3 +355,11 @@ type GetRenderParams struct {
 }
 
 func (p *GetRenderParams) GetThreadId() string { return p.ThreadId }
+
+// GetShareParams defines parameters for GetShare.
+type GetShareParams struct {
+	// ThreadId The thread id to generate the share image
+	ThreadId string `form:"thread_id" json:"thread_id"`
+}
+
+func (p *GetShareParams) GetThreadId() string { return p.ThreadId }

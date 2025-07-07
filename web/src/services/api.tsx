@@ -11,8 +11,10 @@ import {
 import { getAuthToken } from '@utils/cookie';
 
 const useMock = process.env.REACT_APP_USE_MOCK === 'true' || false;
+const API_BASE_PATH = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api/v1';
+
 const config = new Configuration({
-  basePath: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api/v1',
+  basePath: API_BASE_PATH,
   middleware: [
     {
       pre: async (context) => {
@@ -63,10 +65,35 @@ const fetchThreadDetailMock = async (request: ThreadIdGetRequest) => {
   } as ThreadIdGetResponse;
 };
 
+const fetchShareImage = async (threadId: string) => {
+  if (useMock) {
+    // Return placeholder blob in mock mode
+    return new Blob();
+  }
+
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_PATH}/share?thread_id=${threadId}`, {
+    method: 'GET',
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to download share image: ${response.statusText}`);
+  }
+
+  return await response.blob();
+};
+
 // 导出兼容 mock 模式的函数
 export const useApiService = () => {
   return {
     fetchGetMentions: useMock ? fetchUserMentionsMock : fetchUserMentions,
-    fetchGetThreadId: useMock ? fetchThreadDetailMock : fetchThreadDetail
+    fetchGetThreadId: useMock ? fetchThreadDetailMock : fetchThreadDetail,
+    fetchGetShare: fetchShareImage,
   };
 };

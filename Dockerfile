@@ -27,7 +27,7 @@ RUN go build -o bin/threadmirror ./cmd/*.go
 FROM chromedp/headless-shell:140.0.7259.2
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates tzdata && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates tzdata fonts-liberation fonts-noto-cjk	fonts-noto-color-emoji && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
 RUN groupadd -g 1001 appgroup && \

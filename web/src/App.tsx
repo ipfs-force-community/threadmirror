@@ -37,7 +37,9 @@ function App() {
         </header>
         <Routes>
           <Route path="/" element={<UserMentions />} />
+          <Route path="/thread" element={<UserMentions />} />
           <Route path="/mentions/:id" element={<MentionDetail />} />
+          <Route path="/thread/:id" element={<MentionDetail />} />
         </Routes>
       </div>
     </Router>

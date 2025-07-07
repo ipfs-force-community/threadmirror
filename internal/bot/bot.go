@@ -124,8 +124,15 @@ func (tb *TwitterBot) run(ctx context.Context) {
 // checkMentions checks for new mentions and responds to them
 func (tb *TwitterBot) checkMentions(ctx context.Context) error {
 	tb.logger.Info("Checking for new mentions")
+
+	scrapers := make([]*xscraper.XScraper, len(tb.scrapers))
+	copy(scrapers, tb.scrapers)
+	rand.Shuffle(len(scrapers), func(i, j int) {
+		scrapers[i], scrapers[j] = scrapers[j], scrapers[i]
+	})
+
 	// Get recent mentions
-	mentions, err := tb.scrapers[0].GetMentions(ctx)
+	mentions, err := scrapers[0].GetMentionsByScreenName(ctx, tb.scrapers[0].LoginOpts.Username)
 	if err != nil {
 		return fmt.Errorf("failed to get mentions: %w", err)
 	}
