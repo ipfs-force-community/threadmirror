@@ -71,8 +71,10 @@ export const getUserInfo = <T = any,>(): T | null => {
 
 // 清除认证信息
 export const clearAuthCookies = (customOptions = {}) => {
-    removeCookieValue(AUTH_TOKEN_KEY, customOptions);
-    removeCookieValue(USER_INFO_KEY, customOptions);
+    // 使用与设置cookie时相同的默认配置，确保domain等属性匹配以便正确删除
+    const options = { ...getDefaultCookieOptions(), ...customOptions };
+    removeCookieValue(AUTH_TOKEN_KEY, options);
+    removeCookieValue(USER_INFO_KEY, options);
 };
 
 // 检查是否已认证
