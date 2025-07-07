@@ -20,7 +20,15 @@ type (
 var Module = fx.Module("job",
 	jobqfx.Module,
 	fx.Provide(func() (chromedpContext, chromedpCancelFn) {
-		chromedpCtx, cancelFn := chromedp.NewContext(context.Background())
+		chromedpCtx, cancelFn := chromedp.NewExecAllocator(context.Background(),
+			chromedp.NoFirstRun,
+			chromedp.NoDefaultBrowserCheck,
+			chromedp.NoSandbox,
+			chromedp.Flag("disable-default-apps", true),
+			chromedp.Flag("disable-extensions", true),
+			chromedp.Flag("disable-setuid-sandbox", true),
+			chromedp.DisableGPU,
+		)
 		return chromedpContext(chromedpCtx), chromedpCancelFn(cancelFn)
 	}),
 	fx.Invoke(func(lc fx.Lifecycle, cancelFn chromedpCancelFn) {
