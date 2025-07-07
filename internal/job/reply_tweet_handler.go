@@ -92,7 +92,7 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 		return fmt.Errorf("get mention by id %s: %w", payload.MentionID, err)
 	}
 	if mention == nil {
-		return fmt.Errorf("mention not found")
+		return fmt.Errorf("mention not found: %s", payload.MentionID)
 	}
 
 	threadURL := fmt.Sprintf(h.threadURLTemplate, mention.ThreadID)

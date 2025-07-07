@@ -47,11 +47,11 @@ var Module = fx.Module("job",
 )
 
 // registerJobLifecycle sets up proper startup and shutdown hooks for job processing
-func registerJobLifecycle(lc fx.Lifecycle, registry jobq.JobHandlerRegistry, mentionHandler *internaljob.MentionHandler, imageHandler *internaljob.ReplyTweetHandler, db *sql.DB) {
+func registerJobLifecycle(lc fx.Lifecycle, registry jobq.JobHandlerRegistry, mentionHandler *internaljob.MentionHandler, replyHandler *internaljob.ReplyTweetHandler, db *sql.DB) {
 	dbInjector := middleware.DBInjector(db)
 	lc.Append(fx.StartHook(func(ctx context.Context) error {
 		registry.RegisterHandler(internaljob.TypeProcessMention, dbInjector(mentionHandler))
-		registry.RegisterHandler(internaljob.TypeReplyTweet, dbInjector(imageHandler))
+		registry.RegisterHandler(internaljob.TypeReplyTweet, dbInjector(replyHandler))
 		return nil
 	}))
 }
