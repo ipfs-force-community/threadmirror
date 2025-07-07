@@ -181,6 +181,9 @@ func (s *MentionService) GetMentionByID(ctx context.Context, id string) (*Mentio
 	if err != nil {
 		return nil, err
 	}
+	if mention == nil {
+		return nil, nil
+	}
 	return s.buildMentionSummary(mention, nil), nil
 }
 
