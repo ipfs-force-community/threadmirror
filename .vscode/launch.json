@@ -33,6 +33,20 @@
             }
         },
         {
+            "name": "Bot",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/",
+            "args": [
+                "--debug",
+                "bot"
+            ],
+            "env": {
+                "TM_DOT_ENV": "${workspaceFolder}/.env"
+            }
+        },
+        {
             "name": "Migrate",
             "type": "go",
             "request": "launch",

@@ -10,6 +10,7 @@ import (
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
+	"github.com/samber/lo"
 )
 
 const TypeProcessMention = "process_mention"
@@ -114,6 +115,25 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 	if len(tweets) < 2 {
 		return nil
 	}
+
+	// Filter out empty RestID tweets, it maybe deleted by the user
+	tweets = lo.Filter(tweets, func(tweet *xscraper.Tweet, _ int) bool {
+		return tweet.RestID != ""
+	})
+
+	// Truncate tweets so that the last element is the mention tweet itself
+	idx := -1
+	for i, tweet := range tweets {
+		if tweet.RestID == mention.RestID {
+			idx = i
+			break
+		}
+	}
+	if idx != -1 {
+		tweets = tweets[:idx+1]
+	}
+
+	log.Info("🤖 Get tweets", "tweets", tweets)
 
 	// Create mention from tweets
 	mentionSummary, err := w.mentionService.CreateMention(ctx, &service.CreateMentionRequest{

@@ -68,6 +68,9 @@ func NewReplyTweetJob(mentionID string) (*jobq.Job, error) {
 
 // HandleJob implements the job.JobHandler interface for ReplyTweetHandler.
 func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
+	// sleep 2s to 5s to reduce API burst and mimic human-like interval
+	time.Sleep(time.Duration(2+rand.IntN(3)) * time.Second)
+
 	var payload ReplyTweetPayload
 	if err := json.Unmarshal(j.Payload, &payload); err != nil {
 		return fmt.Errorf("json.Unmarshal failed: %v", err)
