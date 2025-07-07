@@ -24,7 +24,7 @@ ENV CGO_ENABLED=1
 RUN go build -o bin/threadmirror ./cmd/*.go
 
 # Runtime stage
-FROM chromedp/headless-shell:137.0.7106.2
+FROM chromedp/headless-shell:140.0.7259.2
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates tzdata && rm -rf /var/lib/apt/lists/*

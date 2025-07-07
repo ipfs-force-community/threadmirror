@@ -38,6 +38,7 @@ func main() {
 			MigrateCommand,
 			BotCommand,
 			ReplyCommand,
+			TakeScreenshotCommand,
 		},
 	}
 
