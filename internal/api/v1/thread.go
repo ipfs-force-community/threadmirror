@@ -186,7 +186,6 @@ func (h *V1Handler) convertXScraperTweetToAPI(tweet *xscraper.Tweet) Tweet {
 	}
 }
 
-// 工具函数：interface{} 转 []int
 func toIntSlice(v interface{}) []int {
 	arr, ok := v.([]interface{})
 	if !ok {
@@ -194,16 +193,11 @@ func toIntSlice(v interface{}) []int {
 	}
 	res := make([]int, 0, len(arr))
 	for _, x := range arr {
-		// 直接尝试转换为int
-		if i, ok := x.(int); ok {
-			res = append(res, i)
-			continue
-		}
-		// 处理指针到interface{}的情况
-		if ptr, ok := x.(*interface{}); ok && ptr != nil {
-			if i, ok := (*ptr).(int); ok {
-				res = append(res, i)
-			}
+		switch val := x.(type) {
+		case int:
+			res = append(res, val)
+		case float64:
+			res = append(res, int(val))
 		}
 	}
 	return res
