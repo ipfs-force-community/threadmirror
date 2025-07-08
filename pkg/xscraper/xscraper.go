@@ -166,8 +166,6 @@ func (x *XScraper) doJson(req *http.Request, target any) error {
 		return fmt.Errorf("read response body: %w", err)
 	}
 
-	fmt.Println(string(respBody))
-
 	if http.StatusOK != resp.StatusCode {
 		return &BadRequestError{
 			StatusCode: resp.StatusCode,
