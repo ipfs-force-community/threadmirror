@@ -8,16 +8,18 @@ import (
 )
 
 // ProcessedMarkRepo provides database operations for processed marks
-type ProcessedMarkRepo struct{}
+type ProcessedMarkRepo struct {
+	db *sql.DB
+}
 
 // NewProcessedMarkRepo creates a new processed mark repository
-func NewProcessedMarkRepo() *ProcessedMarkRepo {
-	return &ProcessedMarkRepo{}
+func NewProcessedMarkRepo(db *sql.DB) *ProcessedMarkRepo {
+	return &ProcessedMarkRepo{db: db}
 }
 
 // IsProcessed checks if a mark has been processed for a specific key and type
 func (r *ProcessedMarkRepo) IsProcessed(ctx context.Context, key string, typ string) (bool, error) {
-	db := sql.MustDBFromContext(ctx)
+	db := sql.GetDBOrTx(ctx, r.db)
 	var count int64
 	err := db.WithContext(ctx).
 		Model(&model.ProcessedMark{}).
@@ -33,7 +35,7 @@ func (r *ProcessedMarkRepo) IsProcessed(ctx context.Context, key string, typ str
 
 // MarkProcessed marks a mark as processed for a specific key and type
 func (r *ProcessedMarkRepo) MarkProcessed(ctx context.Context, key string, typ string) error {
-	db := sql.MustDBFromContext(ctx)
+	db := sql.GetDBOrTx(ctx, r.db)
 	processedMark := &model.ProcessedMark{
 		Key:  key,
 		Type: typ,

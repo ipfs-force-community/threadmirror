@@ -13,7 +13,6 @@ import (
 	v1middleware "github.com/ipfs-force-community/threadmirror/internal/api/v1/middleware"
 	"github.com/ipfs-force-community/threadmirror/internal/config"
 	"github.com/ipfs-force-community/threadmirror/pkg/auth"
-	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"github.com/ipfs-force-community/threadmirror/pkg/i18n"
 	sloggin "github.com/samber/slog-gin"
 )
@@ -31,7 +30,6 @@ func NewServer(
 	v1Handler *v1.V1Handler,
 	i18nBundle *i18n.I18nBundle,
 	jwtVerifier auth.JWTVerifier,
-	db *sql.DB,
 ) *Server {
 	if !common.Debug {
 		gin.SetMode(gin.ReleaseMode)
@@ -42,7 +40,6 @@ func NewServer(
 	engine.Use(gin.Recovery())
 	engine.Use(i18n.Middleware(i18nBundle))
 	engine.Use(v1middleware.ErrorHandler())
-	engine.Use(v1middleware.DBInjector(db))
 
 	c := cors.DefaultConfig()
 	if common.Debug {

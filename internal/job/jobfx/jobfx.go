@@ -5,8 +5,6 @@ import (
 
 	"github.com/chromedp/chromedp"
 	internaljob "github.com/ipfs-force-community/threadmirror/internal/job"
-	"github.com/ipfs-force-community/threadmirror/internal/job/middleware"
-	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq/jobqfx"
 	"go.uber.org/fx"
@@ -47,11 +45,10 @@ var Module = fx.Module("job",
 )
 
 // registerJobLifecycle sets up proper startup and shutdown hooks for job processing
-func registerJobLifecycle(lc fx.Lifecycle, registry jobq.JobHandlerRegistry, mentionHandler *internaljob.MentionHandler, replyHandler *internaljob.ReplyTweetHandler, db *sql.DB) {
-	dbInjector := middleware.DBInjector(db)
+func registerJobLifecycle(lc fx.Lifecycle, registry jobq.JobHandlerRegistry, mentionHandler *internaljob.MentionHandler, replyHandler *internaljob.ReplyTweetHandler) {
 	lc.Append(fx.StartHook(func(ctx context.Context) error {
-		registry.RegisterHandler(internaljob.TypeProcessMention, dbInjector(mentionHandler))
-		registry.RegisterHandler(internaljob.TypeReplyTweet, dbInjector(replyHandler))
+		registry.RegisterHandler(internaljob.TypeProcessMention, mentionHandler)
+		registry.RegisterHandler(internaljob.TypeReplyTweet, replyHandler)
 		return nil
 	}))
 }
