@@ -1,7 +1,7 @@
 .container {
-  max-width: 1000px;
+  max-width: 680px; /* Medium-style readable width */
   margin: 0 auto;
-  padding: 20px;
+  padding: 40px 24px;
 }
 
 .backLink {
@@ -48,41 +48,31 @@
 }
 
 .tweetItem {
-  margin-bottom: 15px;
-  display: block;
-  cursor: pointer; /* 鼠标悬停时显示手型 */
+  margin: 40px 0; /* Generous vertical rhythm like Medium */
 }
 
 .tweetText {
-  font-size: 16px;
-  color: #14171a;
-  line-height: 1.6;
-  margin: 0 0 10px;
-  user-select: text; /* 确保文本可划选复制 */
-  font-family: 'Arial', sans-serif; /* 美化字体 */
+  font-size: 20px;
+  color: #242424;
+  line-height: 1.8;
+  margin: 0 0 24px;
+  user-select: text;
+  font-family: Georgia, 'Times New Roman', serif; /* Medium-like serif typography */
 }
 
 .tweetLink {
   display: block;
-  padding: 12px 15px;
-  border: 1px solid #e1e8ed;
   border-radius: 8px;
   background-color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   text-decoration: none; /* 移除下划线 */
-  transition: background-color 0.2s, box-shadow 0.2s;
-}
-
-.tweetLink:hover {
-  background-color: #f9f9f9; /* 悬停时浅灰背景 */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 增强阴影 */
 }
 
 .mediaContainer {
   display: flex;
-  gap: 10px;
+  gap: 16px;
   flex-wrap: wrap;
-  margin-top: 10px;
+  margin: 24px 0;
+  justify-content: center;
 }
 
 .mediaImage {
@@ -138,19 +128,20 @@
 }
 
 .shareButton {
-  background-color: #1da1f2;
-  color: #ffffff;
-  border: none;
+  background-color: #ffffff;
+  color: #1a8917; /* Medium green */
+  border: 1px solid #1a8917;
   border-radius: 4px;
-  padding: 8px 16px;
+  padding: 6px 16px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .shareButton:hover {
-  background-color: #0d95e8;
+  background-color: #1a8917;
+  color: #ffffff;
 }
 
 /* 自定义Toast样式 */
@@ -160,4 +151,30 @@
   background-color: rgba(255, 242, 242, 0.95) !important;
   border-left: 4px solid #e74c3c !important;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
+}
+
+.metaBar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+  color: #6b6b6b;
+  margin-bottom: 24px;
+}
+
+.sourceLink {
+  color: #1a8917; /* Medium green link */
+  text-decoration: none;
+}
+
+.sourceLink:hover {
+  text-decoration: underline;
+}
+
+.cid {
+  background-color: #f2f2f2;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  color: #333;
 }

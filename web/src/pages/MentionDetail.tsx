@@ -117,29 +117,43 @@ const MentionDetail = () => {
           {shareLoading ? 'Sharing...' : 'Share Image'}
         </button>
       </div>
+
+      <div className={styles.metaBar}>
+        {detail?.tweets?.[0] && (
+          <a
+            href={`https://twitter.com/${author.screenName}/status/${detail.tweets[0].id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.sourceLink}
+          >
+            原文链接
+          </a>
+        )}
+        {detail?.cid && (
+          <span className={styles.cid}>CID: {detail.cid}</span>
+        )}
+      </div>
+
       <div className={styles.tweetContent}>
         {detail?.tweets?.map((tweet, index) => (
-          <div
+          <article
             key={tweet.id}
             className={styles.tweetItem}
-            onClick={() => handleClick(`https://x.com/${tweet?.author?.screenName}/status/${tweet.id}`)}
           >
-            <div className={styles.tweetLink}>
-              <p className={styles.tweetText}>{tweet.text}</p>
-              {tweet?.entities?.media && tweet.entities.media.length > 0 && (
-                <div className={styles.mediaContainer}>
-                  {tweet.entities.media.map(media => (
-                    <img
-                      key={media.idStr}
-                      src={media.mediaUrlHttps}
-                      alt={`${media.type}${index + 1}`}
-                      className={styles.mediaImage}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+            <p className={styles.tweetText}>{tweet.text}</p>
+            {tweet?.entities?.media && tweet.entities.media.length > 0 && (
+              <figure className={styles.mediaContainer}>
+                {tweet.entities.media.map(media => (
+                  <img
+                    key={media.idStr}
+                    src={media.mediaUrlHttps}
+                    alt={`${media.type}${index + 1}`}
+                    className={styles.mediaImage}
+                  />
+                ))}
+              </figure>
+            )}
+          </article>
         ))}
       </div>
     </div>

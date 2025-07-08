@@ -4,18 +4,20 @@
 }
 
 .App-header {
-  background: linear-gradient(90deg, #2a2f4a, #3c4b6e);
-  padding: 15px 20px;
-  color: white;
+  background-color: #ffffff; /* Medium-like white background */
+  border-bottom: 1px solid #f2f2f2; /* subtle divider */
+  padding: 12px 28px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .project-title-link {
   text-decoration: none !important;
-  color: white !important;
+  color: #191919 !important; /* dark text */
   cursor: default;
 }
 
@@ -23,14 +25,15 @@
 .App-header a.project-title-link:hover,
 .App-header .project-title-link:hover {
   text-decoration: none !important;
-  color: white !important;
+  color: #191919 !important;
   background-color: transparent !important;
 }
 
 .project-title {
   margin: 0;
-  font-size: 1.8em;
-  font-weight: bold;
+  font-size: 1.5rem; /* Medium-ish size */
+  font-weight: 700;
+  font-family: 'Georgia', 'Times New Roman', serif; /* serif logo feel */
 }
 
 main {
