@@ -20,28 +20,27 @@ type DB struct {
 // to avoid collisions.
 type contextKey struct{}
 
-var dbContextKey = &contextKey{}
+var txContextKey = &contextKey{}
 
-// WithDBToContext returns a new context with the given *DB attached.
-func WithDBToContext(ctx context.Context, db *DB) context.Context {
-	return context.WithValue(ctx, dbContextKey, db)
+// WithTxToContext returns a new context with the given *gorm.DB transaction attached.
+func WithTxToContext(ctx context.Context, tx *gorm.DB) context.Context {
+	return context.WithValue(ctx, txContextKey, tx)
 }
 
-// GetDBFromContext retrieves the *DB from context. Returns (*DB, bool).
-func GetDBFromContext(ctx context.Context) (*DB, bool) {
-	if db, ok := ctx.Value(dbContextKey).(*DB); ok {
-		return db, true
+// GetTxFromContext retrieves the *gorm.DB transaction from context. Returns (*gorm.DB, bool).
+func GetTxFromContext(ctx context.Context) (*gorm.DB, bool) {
+	if tx, ok := ctx.Value(txContextKey).(*gorm.DB); ok {
+		return tx, true
 	}
 	return nil, false
 }
 
-// MustDBFromContext retrieves the *DB from context or panics if not found.
-func MustDBFromContext(ctx context.Context) *DB {
-	db, ok := GetDBFromContext(ctx)
-	if !ok {
-		panic("db not found in context")
+// GetDBOrTx returns transaction if available in context, otherwise returns the provided db
+func GetDBOrTx(ctx context.Context, db *DB) *gorm.DB {
+	if tx, ok := GetTxFromContext(ctx); ok {
+		return tx
 	}
-	return db
+	return db.DB
 }
 
 // New creates a new database connection

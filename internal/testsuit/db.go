@@ -37,15 +37,15 @@ func SetupDBTestSuite(t *testing.T) *DBTestSuite {
 	db := SetupTestDB(t)
 
 	// Create repositories
-	mentionRepo := sqlrepo.NewMentionRepo()
-	threadRepo := sqlrepo.NewThreadRepo()
+	mentionRepo := sqlrepo.NewMentionRepo(db)
+	threadRepo := sqlrepo.NewThreadRepo(db)
 
 	// Create mock dependencies
 	mockLLM := &MockLLM{}
 	mockIPFS := &MockIPFSStorage{}
 
 	// Create services
-	mentionService := service.NewMentionService(mentionRepo, llm.Model(mockLLM), ipfs.Storage(mockIPFS), threadRepo)
+	mentionService := service.NewMentionService(mentionRepo, llm.Model(mockLLM), ipfs.Storage(mockIPFS), threadRepo, db)
 
 	return &DBTestSuite{
 		DB:             db,

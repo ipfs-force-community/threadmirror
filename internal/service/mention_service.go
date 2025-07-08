@@ -64,6 +64,7 @@ type MentionService struct {
 	llm         llm.Model
 	storage     ipfs.Storage
 	threadRepo  ThreadRepoInterface
+	db          *sql.DB
 }
 
 // NewMentionService creates a new mention service
@@ -72,12 +73,14 @@ func NewMentionService(
 	llm llm.Model,
 	storage ipfs.Storage,
 	threadRepo ThreadRepoInterface,
+	db *sql.DB,
 ) *MentionService {
 	return &MentionService{
 		mentionRepo: mentionRepo,
 		llm:         llm,
 		storage:     storage,
 		threadRepo:  threadRepo,
+		db:          db,
 	}
 }
 
@@ -87,8 +90,10 @@ func (s *MentionService) CreateMention(
 	req *CreateMentionRequest,
 ) (*MentionSummary, error) {
 	var result *model.Mention
-	db := sql.MustDBFromContext(ctx)
-	err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Inject transaction into context for repo operations
+		ctx := sql.WithTxToContext(ctx, tx)
+
 		mentionRepo := s.mentionRepo
 		threadRepo := s.threadRepo
 

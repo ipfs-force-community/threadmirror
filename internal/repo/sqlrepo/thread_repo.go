@@ -10,14 +10,16 @@ import (
 	"gorm.io/gorm"
 )
 
-type ThreadRepo struct{}
+type ThreadRepo struct {
+	db *sql.DB
+}
 
-func NewThreadRepo() *ThreadRepo {
-	return &ThreadRepo{}
+func NewThreadRepo(db *sql.DB) *ThreadRepo {
+	return &ThreadRepo{db: db}
 }
 
 func (r *ThreadRepo) GetThreadByID(ctx context.Context, id string) (*model.Thread, error) {
-	db := sql.MustDBFromContext(ctx)
+	db := sql.GetDBOrTx(ctx, r.db)
 	var thread model.Thread
 	err := db.Where("id = ?", id).First(&thread).Error
 	if err != nil {
@@ -30,7 +32,7 @@ func (r *ThreadRepo) GetThreadByID(ctx context.Context, id string) (*model.Threa
 }
 
 func (r *ThreadRepo) CreateThread(ctx context.Context, thread *model.Thread) error {
-	db := sql.MustDBFromContext(ctx)
+	db := sql.GetDBOrTx(ctx, r.db)
 	return db.Create(thread).Error
 }
 
@@ -38,7 +40,7 @@ func (r *ThreadRepo) GetTweetsByIDs(ctx context.Context, ids []string) (map[stri
 	if len(ids) == 0 {
 		return map[string]*model.Thread{}, nil
 	}
-	db := sql.MustDBFromContext(ctx)
+	db := sql.GetDBOrTx(ctx, r.db)
 	var tweets []model.Thread
 	err := db.Where("id IN ?", ids).Find(&tweets).Error
 	if err != nil {

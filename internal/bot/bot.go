@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/ipfs-force-community/threadmirror/internal/job"
-	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 )
@@ -22,7 +21,6 @@ type TwitterBot struct {
 	scrapers       []*xscraper.XScraper
 	jobQueueClient jobq.JobQueueClient
 	logger         *slog.Logger
-	db             *sql.DB
 
 	// Lower-cased prefix of author screen names to exclude from processing
 	excludeMentionAuthorPrefixLower string
@@ -37,7 +35,6 @@ func NewTwitterBot(
 	scrapers []*xscraper.XScraper,
 	checkInterval time.Duration,
 	jobQueueClient jobq.JobQueueClient,
-	db *sql.DB,
 	logger *slog.Logger,
 	excludeMentionAuthorPrefix string,
 ) *TwitterBot {
@@ -46,7 +43,6 @@ func NewTwitterBot(
 		scrapers:                        scrapers,
 		jobQueueClient:                  jobQueueClient,
 		logger:                          logger,
-		db:                              db,
 		excludeMentionAuthorPrefixLower: strings.ToLower(excludeMentionAuthorPrefix),
 		stopCh:                          make(chan struct{}),
 		stopped:                         make(chan struct{}),
@@ -77,7 +73,7 @@ func (tb *TwitterBot) Start(ctx context.Context) error {
 		"check_interval", tb.checkInterval,
 	)
 
-	go tb.run(sql.WithDBToContext(context.Background(), tb.db))
+	go tb.run(context.Background())
 	return nil
 }
 

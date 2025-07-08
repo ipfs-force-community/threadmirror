@@ -5,7 +5,6 @@ import (
 
 	"github.com/ipfs-force-community/threadmirror/internal/bot"
 	"github.com/ipfs-force-community/threadmirror/internal/config"
-	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"go.uber.org/fx"
@@ -29,14 +28,12 @@ func provideTwitterBot(
 	botConfig *config.BotConfig,
 	scrapers []*xscraper.XScraper,
 	jobQueueClient jobq.JobQueueClient,
-	db *sql.DB,
 	logger *slog.Logger,
 ) *bot.TwitterBot {
 	return bot.NewTwitterBot(
 		scrapers,
 		botConfig.CheckInterval,
 		jobQueueClient,
-		db,
 		logger,
 		botConfig.ExcludeMentionAuthorPrefix,
 	)

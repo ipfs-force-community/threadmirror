@@ -11,18 +11,20 @@ import (
 )
 
 // MentionRepo implements MentionRepoInterface
-type MentionRepo struct{}
+type MentionRepo struct {
+	db *sql.DB
+}
 
 // NewMentionRepo creates a new mention repo
-func NewMentionRepo() *MentionRepo {
-	return &MentionRepo{}
+func NewMentionRepo(db *sql.DB) *MentionRepo {
+	return &MentionRepo{db: db}
 }
 
 // Mention CRUD operations
 
 // GetMentionByID retrieves a mention by ID
 func (r *MentionRepo) GetMentionByID(ctx context.Context, id string) (*model.Mention, error) {
-	db := sql.MustDBFromContext(ctx)
+	db := sql.GetDBOrTx(ctx, r.db)
 	var mention model.Mention
 	err := db.Where("id = ?", id).First(&mention).Error
 	if err != nil {
@@ -35,7 +37,7 @@ func (r *MentionRepo) GetMentionByID(ctx context.Context, id string) (*model.Men
 }
 
 func (r *MentionRepo) GetMentionByUserIDAndThreadID(ctx context.Context, userID, threadID string) (*model.Mention, error) {
-	db := sql.MustDBFromContext(ctx)
+	db := sql.GetDBOrTx(ctx, r.db)
 	var mention model.Mention
 	err := db.Where("user_id = ? AND thread_id = ?", userID, threadID).First(&mention).Error
 	if err != nil {
@@ -49,7 +51,7 @@ func (r *MentionRepo) GetMentionByUserIDAndThreadID(ctx context.Context, userID,
 
 // CreateMention creates a new mention
 func (r *MentionRepo) CreateMention(ctx context.Context, mention *model.Mention) error {
-	db := sql.MustDBFromContext(ctx)
+	db := sql.GetDBOrTx(ctx, r.db)
 	return db.Create(mention).Error
 }
 
@@ -59,7 +61,7 @@ func (r *MentionRepo) GetMentions(
 	userID string,
 	limit, offset int,
 ) ([]model.Mention, int64, error) {
-	db := sql.MustDBFromContext(ctx)
+	db := sql.GetDBOrTx(ctx, r.db)
 	var mentions []model.Mention
 	var total int64
 
@@ -90,7 +92,7 @@ func (r *MentionRepo) GetMentionsByUser(
 	userID string,
 	limit, offset int,
 ) ([]model.Mention, int64, error) {
-	db := sql.MustDBFromContext(ctx)
+	db := sql.GetDBOrTx(ctx, r.db)
 	var mentions []model.Mention
 	var total int64
 

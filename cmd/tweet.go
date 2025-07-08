@@ -111,10 +111,9 @@ func getScraper(c *cli.Context) (*xscraper.XScraper, error) {
 		return nil, err
 	}
 	defer db.Close() // nolint:errcheck
-	ctx := sql.WithDBToContext(c.Context, db)
 
-	botCookieService := service.NewBotCookieService(sqlrepo.NewBotCookieRepo())
-	botCookie, err := botCookieService.GetLatestBotCookie(ctx)
+	botCookieService := service.NewBotCookieService(sqlrepo.NewBotCookieRepo(db))
+	botCookie, err := botCookieService.GetLatestBotCookie(c.Context)
 	if err != nil {
 		return nil, err
 	}

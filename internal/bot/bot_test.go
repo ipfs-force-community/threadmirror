@@ -206,9 +206,6 @@ func setupTestDB(t *testing.T) *sql.DB {
 func createTestBot(t *testing.T) *TwitterBot {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	// Create test database
-	db := setupTestDB(t)
-
 	// Create mock services
 	// Mock JobQueueClient
 	jobQueueClient := &mockJobQueueClient{}
@@ -219,7 +216,6 @@ func createTestBot(t *testing.T) *TwitterBot {
 		}, // scrapers
 		5*time.Minute, // checkInterval
 		jobQueueClient,
-		db, // database
 		logger,
 		"threadmirror",
 	)
@@ -267,9 +263,10 @@ func TestBotCookieService(t *testing.T) {
 	testEmail := "test@example.com"
 	testUsername := "testbot"
 
-	// Test initially no cookies
+	// Test initially no cookies - should return errutil.ErrNotFound
 	cookies, err := botCookieService.LoadCookies(ctx, testEmail, testUsername)
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, errutil.ErrNotFound)
 	assert.Nil(t, cookies)
 
 	// Save some test cookies
