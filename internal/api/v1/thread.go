@@ -145,19 +145,19 @@ func (h *V1Handler) convertXScraperTweetToAPI(tweet *xscraper.Tweet) Tweet {
 	}
 
 	// Convert richtext if exists
-	var apiRichtext *NoteTweetRichText
+	apiRichtext := NoteTweetRichText{
+		RichtextTags: []NoteTweetRichTextTag{},
+	}
 	if tweet.RichText != nil {
-		apiRichtext = &NoteTweetRichText{
-			RichtextTags: lo.Map(tweet.RichText.RichtextTags, func(tag generated.NoteTweetResultRichTextTag, _ int) NoteTweetRichTextTag {
-				return NoteTweetRichTextTag{
-					FromIndex: tag.FromIndex,
-					ToIndex:   tag.ToIndex,
-					RichtextTypes: lo.Map(tag.RichtextTypes, func(t generated.NoteTweetResultRichTextTagRichtextTypes, _ int) NoteTweetRichTextTagRichtextTypes {
-						return NoteTweetRichTextTagRichtextTypes(t)
-					}),
-				}
-			}),
-		}
+		apiRichtext.RichtextTags = lo.Map(tweet.RichText.RichtextTags, func(tag generated.NoteTweetResultRichTextTag, _ int) NoteTweetRichTextTag {
+			return NoteTweetRichTextTag{
+				FromIndex: tag.FromIndex,
+				ToIndex:   tag.ToIndex,
+				RichtextTypes: lo.Map(tag.RichtextTypes, func(t generated.NoteTweetResultRichTextTagRichtextTypes, _ int) NoteTweetRichTextTagRichtextTypes {
+					return NoteTweetRichTextTagRichtextTypes(t)
+				}),
+			}
+		})
 	}
 
 	return Tweet{

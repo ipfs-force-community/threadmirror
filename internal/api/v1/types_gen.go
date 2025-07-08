@@ -223,8 +223,8 @@ type Tweet struct {
 	QuotedTweet       *Tweet `json:"quoted_tweet,omitempty"`
 
 	// RestId Tweet REST API identifier
-	RestId   string             `json:"rest_id"`
-	Richtext *NoteTweetRichText `json:"richtext,omitempty"`
+	RestId   string            `json:"rest_id"`
+	Richtext NoteTweetRichText `json:"richtext"`
 
 	// Source Source application
 	Source *string    `json:"source"`
@@ -266,9 +266,6 @@ type TweetStats struct {
 	// FavoriteCount Number of likes/favorites
 	FavoriteCount int `json:"favorite_count"`
 
-	// IsNoteTweet Whether this is a long-form Note Tweet
-	IsNoteTweet bool `json:"is_note_tweet"`
-
 	// QuoteCount Number of quote tweets
 	QuoteCount int `json:"quote_count"`
 
@@ -276,8 +273,7 @@ type TweetStats struct {
 	ReplyCount int `json:"reply_count"`
 
 	// RetweetCount Number of retweets
-	RetweetCount int               `json:"retweet_count"`
-	Richtext     NoteTweetRichText `json:"richtext"`
+	RetweetCount int `json:"retweet_count"`
 
 	// ViewCount Number of views
 	ViewCount *int `json:"view_count"`

@@ -179,7 +179,7 @@ export interface Tweet {
      * @type {NoteTweetRichText}
      * @memberof Tweet
      */
-    richtext?: NoteTweetRichText;
+    richtext: NoteTweetRichText;
 }
 
 /**
@@ -200,6 +200,7 @@ export function instanceOfTweet(value: object): value is Tweet {
     if (!('possiblySensitive' in value) || value['possiblySensitive'] === undefined) return false;
     if (!('isTranslatable' in value) || value['isTranslatable'] === undefined) return false;
     if (!('isNoteTweet' in value) || value['isNoteTweet'] === undefined) return false;
+    if (!('richtext' in value) || value['richtext'] === undefined) return false;
     return true;
 }
 
@@ -234,7 +235,7 @@ export function TweetFromJSONTyped(json: any, ignoreDiscriminator: boolean): Twe
         'isTranslatable': json['is_translatable'],
         'views': json['views'] == null ? undefined : json['views'],
         'isNoteTweet': json['is_note_tweet'],
-        'richtext': json['richtext'] == null ? undefined : NoteTweetRichTextFromJSON(json['richtext']),
+        'richtext': NoteTweetRichTextFromJSON(json['richtext']),
     };
 }
 

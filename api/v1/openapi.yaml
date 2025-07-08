@@ -414,6 +414,7 @@ components:
         - possibly_sensitive
         - is_translatable
         - is_note_tweet
+        - richtext
 
     TweetUser:
       type: object
@@ -676,21 +677,12 @@ components:
           type: integer
           description: Number of views
           nullable: true
-        is_note_tweet:
-          type: boolean
-          description: Whether this is a long-form Note Tweet
-        richtext:
-          $ref: '#/components/schemas/NoteTweetRichText'
-          description: Rich text formatting information for Note Tweet
-          nullable: true
       required:
         - reply_count
         - retweet_count
         - favorite_count
         - quote_count
         - bookmark_count
-        - is_note_tweet
-        - richtext
 
     Image:
       type: object
