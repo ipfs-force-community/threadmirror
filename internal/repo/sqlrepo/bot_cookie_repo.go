@@ -7,6 +7,7 @@ import (
 
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
+	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -29,7 +30,7 @@ func (r *BotCookieRepo) GetCookies(ctx context.Context, email, username string) 
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, errutil.ErrNotFound
 		}
 		return nil, err
 	}

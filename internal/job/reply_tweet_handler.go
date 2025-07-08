@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math/rand/v2"
@@ -14,6 +15,7 @@ import (
 	"github.com/ipfs-force-community/threadmirror/internal/comm"
 	"github.com/ipfs-force-community/threadmirror/internal/config"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
+	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 )
@@ -90,10 +92,10 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 
 	mention, err := h.mentionService.GetMentionByID(ctx, payload.MentionID)
 	if err != nil {
+		if errors.Is(err, errutil.ErrNotFound) {
+			return fmt.Errorf("mention not found: %s", payload.MentionID)
+		}
 		return fmt.Errorf("get mention by id %s: %w", payload.MentionID, err)
-	}
-	if mention == nil {
-		return fmt.Errorf("mention not found: %s", payload.MentionID)
 	}
 
 	threadURL := fmt.Sprintf(h.threadURLTemplate, mention.ThreadID)

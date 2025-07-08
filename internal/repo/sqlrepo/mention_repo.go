@@ -6,6 +6,7 @@ import (
 
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
+	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"gorm.io/gorm"
 )
 
@@ -26,7 +27,7 @@ func (r *MentionRepo) GetMentionByID(ctx context.Context, id string) (*model.Men
 	err := db.Where("id = ?", id).First(&mention).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, errutil.ErrNotFound
 		}
 		return nil, err
 	}
@@ -39,7 +40,7 @@ func (r *MentionRepo) GetMentionByUserIDAndThreadID(ctx context.Context, userID,
 	err := db.Where("user_id = ? AND thread_id = ?", userID, threadID).First(&mention).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, errutil.ErrNotFound
 		}
 		return nil, err
 	}

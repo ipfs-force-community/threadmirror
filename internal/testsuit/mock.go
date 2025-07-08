@@ -2,11 +2,11 @@ package testsuit
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"strings"
 
 	"github.com/ipfs-force-community/threadmirror/internal/model"
+	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"github.com/ipfs/go-cid"
 	"github.com/tmc/langchaingo/llms"
 	"gorm.io/datatypes"
@@ -65,7 +65,7 @@ func (m *MockBotCookieRepo) GetCookies(ctx context.Context, email, username stri
 	key := m.makeKey(email, username)
 	cookies, exists := m.cookies[key]
 	if !exists {
-		return nil, nil // Simulate no cookies found
+		return nil, errutil.ErrNotFound // Simulate no cookies found
 	}
 	return datatypes.JSON(cookies), nil
 }
@@ -123,7 +123,7 @@ func NewMockMentionRepo() *MockMentionRepo {
 func (m *MockMentionRepo) GetMentionByID(ctx context.Context, id string) (*model.Mention, error) {
 	mention, ok := m.mentions[id]
 	if !ok {
-		return nil, fmt.Errorf("mention not found")
+		return nil, errutil.ErrNotFound
 	}
 	return mention, nil
 }
@@ -134,7 +134,7 @@ func (m *MockMentionRepo) GetMentionByUserIDAndThreadID(ctx context.Context, use
 			return mention, nil
 		}
 	}
-	return nil, nil
+	return nil, errutil.ErrNotFound
 }
 
 func (m *MockMentionRepo) CreateMention(ctx context.Context, mention *model.Mention) error {

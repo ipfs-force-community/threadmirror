@@ -3,7 +3,6 @@ package bot
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
+	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"github.com/ipfs/go-cid"
@@ -85,7 +85,7 @@ func (m *MockBotCookieRepo) GetCookies(ctx context.Context, email, username stri
 	key := m.makeKey(email, username)
 	cookies, exists := m.cookies[key]
 	if !exists {
-		return nil, nil // Simulate no cookies found
+		return nil, errutil.ErrNotFound // Simulate no cookies found
 	}
 	return datatypes.JSON(cookies), nil
 }
@@ -115,7 +115,7 @@ func NewMockMentionRepo() *MockMentionRepo {
 func (m *MockMentionRepo) GetMentionByID(ctx context.Context, id string) (*model.Mention, error) {
 	mention, ok := m.mentions[id]
 	if !ok {
-		return nil, fmt.Errorf("mention not found")
+		return nil, errutil.ErrNotFound
 	}
 	return mention, nil
 }

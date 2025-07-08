@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
+	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"github.com/ipfs-force-community/threadmirror/pkg/ipfs"
 	"github.com/ipfs-force-community/threadmirror/pkg/llm"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
@@ -100,18 +102,24 @@ func (s *MentionService) CreateMention(
 		// 去重逻辑：如已存在则直接返回
 		mention, err := mentionRepo.GetMentionByUserIDAndThreadID(ctx, mentionTweet.Author.RestID, threadID)
 		if err != nil {
-			return err
+			if errors.Is(err, errutil.ErrNotFound) {
+				mention = nil
+			} else {
+				return err
+			}
 		}
 		if mention != nil {
 			result = mention
 			return nil
 		}
 
-		thread, err := threadRepo.GetThreadByID(ctx, threadID)
+		_, err = threadRepo.GetThreadByID(ctx, threadID)
 		if err != nil {
-			return fmt.Errorf("failed to check thread existence: %w", err)
+			if !errors.Is(err, errutil.ErrNotFound) {
+				return fmt.Errorf("failed to check thread existence: %w", err)
+			}
 		}
-		if thread == nil {
+		if errors.Is(err, errutil.ErrNotFound) {
 			threadTweets := req.Tweets[:len(req.Tweets)-1]
 			summary, err := s.generateTweetsSummary(ctx, threadTweets)
 			if err != nil {
@@ -180,9 +188,6 @@ func (s *MentionService) GetMentionByID(ctx context.Context, id string) (*Mentio
 	mention, err := s.mentionRepo.GetMentionByID(ctx, id)
 	if err != nil {
 		return nil, err
-	}
-	if mention == nil {
-		return nil, nil
 	}
 	return s.buildMentionSummary(mention, nil), nil
 }

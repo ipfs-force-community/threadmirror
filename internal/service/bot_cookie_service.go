@@ -42,9 +42,6 @@ func (s *BotCookieService) LoadCookies(ctx context.Context, email, username stri
 	if err != nil {
 		return nil, err
 	}
-	if cookiesJSON == nil {
-		return nil, nil
-	}
 	var cookies []*http.Cookie
 	err = json.Unmarshal(cookiesJSON, &cookies)
 	if err != nil {

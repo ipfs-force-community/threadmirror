@@ -7,7 +7,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/eko/gocache/lib/v4/cache"
+	redis_store "github.com/eko/gocache/store/redis/v4"
 	"github.com/ipfs-force-community/threadmirror/internal/model"
+	wrRedis "github.com/ipfs-force-community/threadmirror/pkg/database/redis"
+	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"github.com/ipfs-force-community/threadmirror/pkg/ipfs"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"github.com/ipfs/go-cid"
@@ -31,19 +35,19 @@ type ThreadRepoInterface interface {
 type ThreadService struct {
 	threadRepo ThreadRepoInterface
 	storage    ipfs.Storage
+	cache      cache.CacheInterface[[]*xscraper.Tweet]
 }
 
-func NewThreadService(threadRepo ThreadRepoInterface, storage ipfs.Storage) *ThreadService {
-	return &ThreadService{threadRepo: threadRepo, storage: storage}
+func NewThreadService(threadRepo ThreadRepoInterface, storage ipfs.Storage, redisClientWrapper *wrRedis.Client) *ThreadService {
+	redisStore := redis_store.NewRedis(redisClientWrapper.Client)
+	cacheManager := cache.New[[]*xscraper.Tweet](redisStore)
+	return &ThreadService{threadRepo: threadRepo, storage: storage, cache: cacheManager}
 }
 
 func (s *ThreadService) GetThreadByID(ctx context.Context, id string) (*ThreadDetail, error) {
 	thread, err := s.threadRepo.GetThreadByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("get thread: %w", err)
-	}
-	if thread == nil {
-		return nil, nil
 	}
 
 	// Load tweets from IPFS
@@ -60,13 +64,19 @@ func (s *ThreadService) GetThreadByID(ctx context.Context, id string) (*ThreadDe
 		Tweets:         tweets,
 		CreatedAt:      thread.CreatedAt,
 	}, nil
-
 }
 
 // loadTweetsFromIPFS loads tweets from IPFS using the CID
 func (s *ThreadService) loadTweetsFromIPFS(ctx context.Context, cidStr string) ([]*xscraper.Tweet, error) {
+	// First, try cache
+	if s.cache != nil {
+		if tweets, err := s.cache.Get(ctx, cidStr); err == nil && tweets != nil {
+			return tweets, nil
+		}
+	}
+
 	if cidStr == "" {
-		return nil, nil
+		return nil, errutil.ErrNotFound
 	}
 
 	// Parse CID from string
@@ -96,5 +106,10 @@ func (s *ThreadService) loadTweetsFromIPFS(ctx context.Context, cidStr string) (
 		return nil, fmt.Errorf("failed to unmarshal tweets: %w", err)
 	}
 
+	// Cache the result for future requests
+	if s.cache != nil {
+		// Permanent cache (no TTL), rely on Redis allkeys-lru eviction
+		_ = s.cache.Set(ctx, cidStr, tweets)
+	}
 	return tweets, nil
 }

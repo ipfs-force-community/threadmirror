@@ -1,11 +1,13 @@
 package v1
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	v1errors "github.com/ipfs-force-community/threadmirror/internal/api/v1/errors"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
+	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper/generated"
 	"github.com/samber/lo"
@@ -18,11 +20,11 @@ var ErrCodeThreadNotFound = v1errors.NewErrorCode(14001, "thread not found")
 func (h *V1Handler) GetThreadId(c *gin.Context, id string) {
 	thread, err := h.threadService.GetThreadByID(c.Request.Context(), id)
 	if err != nil {
+		if errors.Is(err, errutil.ErrNotFound) {
+			_ = c.Error(v1errors.NotFound(err).WithCode(ErrCodeThreadNotFound))
+			return
+		}
 		_ = c.Error(v1errors.InternalServerError(err).WithCode(ErrCodeFailedToGetMention))
-		return
-	}
-	if thread == nil {
-		_ = c.Error(v1errors.NotFound(err).WithCode(ErrCodeThreadNotFound))
 		return
 	}
 

@@ -75,6 +75,22 @@ const MentionDetail = () => {
     }
   }, [mentionData, loadData]);
 
+  // Update document title based on detail data
+  useEffect(() => {
+    const defaultTitle = 'Thread Mirror';
+    if (detail?.tweets?.length) {
+      const firstTweet = detail.tweets[0];
+      const authorName = firstTweet?.author?.name || firstTweet?.author?.screenName;
+      document.title = authorName ? `${authorName} | Thread Mirror` : `Detail | Thread Mirror`;
+    } else {
+      document.title = `Detail | Thread Mirror`;
+    }
+    // Cleanup: reset title on unmount
+    return () => {
+      document.title = defaultTitle;
+    };
+  }, [detail]);
+
   if (loading) return <div className={styles.container}>Loading...</div>;
   
   if (error) {
@@ -97,13 +113,6 @@ const MentionDetail = () => {
   if (!author) {
     return <div className={styles.container}>Lose Author Info</div>;
   }
-
-  const handleClick = (url: string) => {
-    const selection = window.getSelection();
-    if (selection && selection.toString().length === 0) {
-      window.open(url, '_blank');
-    }
-  };
 
   return (
     <div className={styles.container}>

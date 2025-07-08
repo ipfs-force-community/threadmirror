@@ -6,6 +6,7 @@ import (
 
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
+	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"gorm.io/gorm"
 )
 
@@ -21,7 +22,7 @@ func (r *ThreadRepo) GetThreadByID(ctx context.Context, id string) (*model.Threa
 	err := db.Where("id = ?", id).First(&thread).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, errutil.ErrNotFound
 		}
 		return nil, err
 	}
