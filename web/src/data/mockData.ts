@@ -40,8 +40,6 @@ const originThreads: ThreadDetail[] = [
           quoteCount: 7,
           bookmarkCount: 89,
           viewCount: 120538,
-          isNoteTweet: false,
-          richtext: { richtextTags: [] }
         },
         isRetweet: false,
         isReply: false,
@@ -87,8 +85,6 @@ const originThreads: ThreadDetail[] = [
           quoteCount: 3,
           bookmarkCount: 67,
           viewCount: 89254,
-          isNoteTweet: false,
-          richtext: { richtextTags: [] }
         },
         isRetweet: false,
         isReply: true,
@@ -145,8 +141,6 @@ const originThreads: ThreadDetail[] = [
           quoteCount: 15,
           bookmarkCount: 156,
           viewCount: 198742,
-          isNoteTweet: false,
-          richtext: { richtextTags: [] }
         },
         isRetweet: false,
         isReply: false,
@@ -211,8 +205,6 @@ const originThreads: ThreadDetail[] = [
           quoteCount: 28,
           bookmarkCount: 287,
           viewCount: 215683,
-          isNoteTweet: false,
-          richtext: { richtextTags: [] }
         },
         isRetweet: false,
         isReply: false,
@@ -263,8 +255,6 @@ const originThreads: ThreadDetail[] = [
           quoteCount: 19,
           bookmarkCount: 246,
           viewCount: 184392,
-          isNoteTweet: false,
-          richtext: { richtextTags: [] }
         },
         isRetweet: false,
         isReply: true,
