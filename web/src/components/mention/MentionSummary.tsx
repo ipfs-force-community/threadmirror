@@ -32,20 +32,15 @@ const MentionSummaryComponent: React.FC<{ mention: MentionData }> = ({ mention }
         return `${diffMinutes > 0 ? diffMinutes : 1}m`;
     };
 
-    // 单独处理Twitter用户名点击，阻止事件冒泡
+    // 单独处理Twitter用户名点击
     const handleTwitterLinkClick = (e: React.MouseEvent) => {
-        e.stopPropagation(); // 阻止事件冒泡到父Link
-        e.preventDefault(); // 阻止默认行为
+        e.stopPropagation();
+        e.preventDefault();
         window.open(`https://twitter.com/${mention?.threadAuthor?.screenName}`, '_blank', 'noopener,noreferrer');
     };
 
     return (
-        <Link
-            to={`/thread/${mention.threadId}`}
-            state={{ mentionData: mention }}
-            className={styles.mentionContainer}
-            style={{ textDecoration: 'none', color: 'inherit' }}
-        >
+        <div className={styles.mentionContainer}>
             <div className={styles.mentionHeader}>
                 <img
                     src={mention?.threadAuthor?.profileImageUrl}
@@ -72,9 +67,16 @@ const MentionSummaryComponent: React.FC<{ mention: MentionData }> = ({ mention }
                 CID: {mention.cid}
             </div>
             <div className={styles.footer}>
-                <button className={styles.readMore}>Read {mention?.numTweets} tweets</button>
+                <Link 
+                    to={`/thread/${mention.threadId}`}
+                    state={{ mentionData: mention }}
+                    className={styles.readMore}
+                    style={{ textDecoration: 'none' }}
+                >
+                    Read {mention?.numTweets} tweets
+                </Link>
             </div>
-        </Link>
+        </div>
     );
 };
 

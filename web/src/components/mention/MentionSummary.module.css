@@ -89,7 +89,7 @@
 }
 
 .readMore {
-    background: #1da1f2;
+    background: #1a8917;
     border: none;
     border-radius: 20px;
     padding: 6px 16px;
@@ -101,5 +101,5 @@
 }
 
 .readMore:hover {
-    background: #1a91da;
+    background: #15751a;
 }
