@@ -414,7 +414,6 @@ components:
         - possibly_sensitive
         - is_translatable
         - is_note_tweet
-        - richtext
 
     TweetUser:
       type: object

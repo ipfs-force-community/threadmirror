@@ -32,11 +32,13 @@ const MentionDetail = () => {
       setError(null);
       toastShownRef.current = false;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Data Loading Failed';
+      // Keep a short message for UI while keeping full trace in console
+      console.error('Failed to load mention details:', err);
+      const errorMessage = err instanceof Error ? (err.message || 'Data Loading Failed') : 'Data Loading Failed';
       setError(errorMessage);
 
       if (showToast && !toastShownRef.current) {
-        toast.error("Failed to load mention details", { duration: 5000 });
+        toast.error('Failed to load mention details', { duration: 5000 });
         toastShownRef.current = true;
       }
     } finally {
@@ -62,6 +64,7 @@ const MentionDetail = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (err) {
+      console.error('Failed to download share image:', err);
       toast.error("Failed to download share image", { duration: 5000 });
     } finally {
       setShareLoading(false);

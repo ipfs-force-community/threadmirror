@@ -223,8 +223,8 @@ type Tweet struct {
 	QuotedTweet       *Tweet `json:"quoted_tweet,omitempty"`
 
 	// RestId Tweet REST API identifier
-	RestId   string            `json:"rest_id"`
-	Richtext NoteTweetRichText `json:"richtext"`
+	RestId   string             `json:"rest_id"`
+	Richtext *NoteTweetRichText `json:"richtext,omitempty"`
 
 	// Source Source application
 	Source *string    `json:"source"`
