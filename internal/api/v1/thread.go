@@ -194,8 +194,16 @@ func toIntSlice(v interface{}) []int {
 	}
 	res := make([]int, 0, len(arr))
 	for _, x := range arr {
+		// 直接尝试转换为int
 		if i, ok := x.(int); ok {
 			res = append(res, i)
+			continue
+		}
+		// 处理指针到interface{}的情况
+		if ptr, ok := x.(*interface{}); ok && ptr != nil {
+			if i, ok := (*ptr).(int); ok {
+				res = append(res, i)
+			}
 		}
 	}
 	return res
