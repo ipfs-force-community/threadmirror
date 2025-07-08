@@ -39,6 +39,7 @@ func main() {
 			BotCommand,
 			ReplyCommand,
 			TakeScreenshotCommand,
+			TweetCommand,
 		},
 	}
 

@@ -15,24 +15,24 @@
 
 import * as runtime from '../runtime';
 
-export interface QrcodeGetRequest {
+export interface ShareGetRequest {
     threadId: string;
 }
 
 /**
  * 
  */
-export class QRCodeApi extends runtime.BaseAPI {
+export class ShareApi extends runtime.BaseAPI {
 
     /**
-     * Generate and return a QR code image for the given thread id
-     * Render QR code
+     * Download a long image representation of the thread for sharing
+     * Download share image
      */
-    async qrcodeGetRaw(requestParameters: QrcodeGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Blob>> {
+    async shareGetRaw(requestParameters: ShareGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Blob>> {
         if (requestParameters['threadId'] == null) {
             throw new runtime.RequiredError(
                 'threadId',
-                'Required parameter "threadId" was null or undefined when calling qrcodeGet().'
+                'Required parameter "threadId" was null or undefined when calling shareGet().'
             );
         }
 
@@ -45,7 +45,7 @@ export class QRCodeApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
 
-        let urlPath = `/qrcode`;
+        let urlPath = `/share`;
 
         const response = await this.request({
             path: urlPath,
@@ -58,11 +58,11 @@ export class QRCodeApi extends runtime.BaseAPI {
     }
 
     /**
-     * Generate and return a QR code image for the given thread id
-     * Render QR code
+     * Download a long image representation of the thread for sharing
+     * Download share image
      */
-    async qrcodeGet(requestParameters: QrcodeGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Blob> {
-        const response = await this.qrcodeGetRaw(requestParameters, initOverrides);
+    async shareGet(requestParameters: ShareGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Blob> {
+        const response = await this.shareGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

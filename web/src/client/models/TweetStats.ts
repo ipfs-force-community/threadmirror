@@ -13,6 +13,14 @@
  */
 
 import { mapValues } from '../runtime';
+import type { NoteTweetRichText } from './NoteTweetRichText';
+import {
+    NoteTweetRichTextFromJSON,
+    NoteTweetRichTextFromJSONTyped,
+    NoteTweetRichTextToJSON,
+    NoteTweetRichTextToJSONTyped,
+} from './NoteTweetRichText';
+
 /**
  * 
  * @export
@@ -55,6 +63,18 @@ export interface TweetStats {
      * @memberof TweetStats
      */
     viewCount?: number | null;
+    /**
+     * Whether this is a long-form Note Tweet
+     * @type {boolean}
+     * @memberof TweetStats
+     */
+    isNoteTweet: boolean;
+    /**
+     * 
+     * @type {NoteTweetRichText}
+     * @memberof TweetStats
+     */
+    richtext: NoteTweetRichText;
 }
 
 /**
@@ -66,6 +86,8 @@ export function instanceOfTweetStats(value: object): value is TweetStats {
     if (!('favoriteCount' in value) || value['favoriteCount'] === undefined) return false;
     if (!('quoteCount' in value) || value['quoteCount'] === undefined) return false;
     if (!('bookmarkCount' in value) || value['bookmarkCount'] === undefined) return false;
+    if (!('isNoteTweet' in value) || value['isNoteTweet'] === undefined) return false;
+    if (!('richtext' in value) || value['richtext'] === undefined) return false;
     return true;
 }
 
@@ -85,6 +107,8 @@ export function TweetStatsFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'quoteCount': json['quote_count'],
         'bookmarkCount': json['bookmark_count'],
         'viewCount': json['view_count'] == null ? undefined : json['view_count'],
+        'isNoteTweet': json['is_note_tweet'],
+        'richtext': NoteTweetRichTextFromJSON(json['richtext']),
     };
 }
 
@@ -105,6 +129,8 @@ export function TweetStatsToJSONTyped(value?: TweetStats | null, ignoreDiscrimin
         'quote_count': value['quoteCount'],
         'bookmark_count': value['bookmarkCount'],
         'view_count': value['viewCount'],
+        'is_note_tweet': value['isNoteTweet'],
+        'richtext': NoteTweetRichTextToJSON(value['richtext']),
     };
 }
 

@@ -58,6 +58,16 @@
   margin: 0 0 24px;
   user-select: text;
   font-family: Georgia, 'Times New Roman', serif; /* Medium-like serif typography */
+  white-space: pre-wrap;
+}
+
+.tweetText a {
+  color: #1a8917; /* Medium link green */
+  text-decoration: none;
+}
+
+.tweetText a:hover {
+  text-decoration: underline;
 }
 
 .tweetLink {

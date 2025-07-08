@@ -44,8 +44,11 @@ export class RenderApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/render`;
+
         const response = await this.request({
-            path: `/render`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,

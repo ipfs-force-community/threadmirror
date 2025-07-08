@@ -100,6 +100,23 @@ func (m *MockBotCookieRepo) SaveCookies(ctx context.Context, email, username str
 	return nil
 }
 
+func (m *MockBotCookieRepo) GetLatestBotCookie(ctx context.Context) (*model.BotCookie, error) {
+	for key, data := range m.cookies {
+		parts := strings.SplitN(key, ":", 2)
+		email := parts[0]
+		username := ""
+		if len(parts) > 1 {
+			username = parts[1]
+		}
+		return &model.BotCookie{
+			Email:       email,
+			Username:    username,
+			CookiesData: datatypes.JSON(data),
+		}, nil
+	}
+	return nil, errutil.ErrNotFound
+}
+
 // MockMentionRepo is a mock implementation for MentionRepoInterface
 // Stores mentions in memory for testing
 type MockMentionRepo struct {

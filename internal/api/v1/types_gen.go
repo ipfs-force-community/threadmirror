@@ -11,6 +11,12 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// Defines values for NoteTweetRichTextTagRichtextTypes.
+const (
+	Bold   NoteTweetRichTextTagRichtextTypes = "Bold"
+	Italic NoteTweetRichTextTagRichtextTypes = "Italic"
+)
+
 // Error defines model for Error.
 type Error struct {
 	// Code Error code
@@ -80,6 +86,27 @@ type MentionSummary struct {
 	// ThreadId Thread unique identifier
 	ThreadId string `json:"thread_id"`
 }
+
+// NoteTweetRichText defines model for NoteTweetRichText.
+type NoteTweetRichText struct {
+	// RichtextTags Richtext tag list defining formatting ranges
+	RichtextTags []NoteTweetRichTextTag `json:"richtext_tags"`
+}
+
+// NoteTweetRichTextTag defines model for NoteTweetRichTextTag.
+type NoteTweetRichTextTag struct {
+	// FromIndex Start index (inclusive) of the formatted text segment
+	FromIndex int `json:"from_index"`
+
+	// RichtextTypes Formatting types applied to this text range
+	RichtextTypes []NoteTweetRichTextTagRichtextTypes `json:"richtext_types"`
+
+	// ToIndex End index (exclusive) of the formatted text segment
+	ToIndex int `json:"to_index"`
+}
+
+// NoteTweetRichTextTagRichtextTypes defines model for NoteTweetRichTextTag.RichtextTypes.
+type NoteTweetRichTextTagRichtextTypes string
 
 // PaginationMeta defines model for PaginationMeta.
 type PaginationMeta struct {
@@ -173,6 +200,9 @@ type Tweet struct {
 	// InReplyToUserId ID of the user this is replying to
 	InReplyToUserId *string `json:"in_reply_to_user_id"`
 
+	// IsNoteTweet Whether this is a long-form Note Tweet
+	IsNoteTweet bool `json:"is_note_tweet"`
+
 	// IsQuoteStatus Whether this is a quote tweet
 	IsQuoteStatus bool `json:"is_quote_status"`
 
@@ -193,7 +223,8 @@ type Tweet struct {
 	QuotedTweet       *Tweet `json:"quoted_tweet,omitempty"`
 
 	// RestId Tweet REST API identifier
-	RestId string `json:"rest_id"`
+	RestId   string            `json:"rest_id"`
+	Richtext NoteTweetRichText `json:"richtext"`
 
 	// Source Source application
 	Source *string    `json:"source"`
@@ -235,6 +266,9 @@ type TweetStats struct {
 	// FavoriteCount Number of likes/favorites
 	FavoriteCount int `json:"favorite_count"`
 
+	// IsNoteTweet Whether this is a long-form Note Tweet
+	IsNoteTweet bool `json:"is_note_tweet"`
+
 	// QuoteCount Number of quote tweets
 	QuoteCount int `json:"quote_count"`
 
@@ -242,7 +276,8 @@ type TweetStats struct {
 	ReplyCount int `json:"reply_count"`
 
 	// RetweetCount Number of retweets
-	RetweetCount int `json:"retweet_count"`
+	RetweetCount int               `json:"retweet_count"`
+	Richtext     NoteTweetRichText `json:"richtext"`
 
 	// ViewCount Number of views
 	ViewCount *int `json:"view_count"`

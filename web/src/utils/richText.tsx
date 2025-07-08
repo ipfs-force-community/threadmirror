@@ -1,0 +1,113 @@
+import React from 'react';
+import type { TweetEntities, NoteTweetRichText, Url, UserMention } from '@client/models';
+
+interface Range {
+  start: number;
+  end: number;
+  type: 'bold' | 'italic' | 'link' | 'mention';
+  data?: any;
+}
+
+function buildEntityRanges(entities?: TweetEntities): Range[] {
+  const ranges: Range[] = [];
+  if (!entities) return ranges;
+  // URLs
+  entities.urls?.forEach((u: Url) => {
+    if (u.indices?.length === 2) {
+      ranges.push({ start: u.indices[0], end: u.indices[1], type: 'link', data: u.expandedUrl || u.url });
+    }
+  });
+  // Mentions
+  entities.userMentions?.forEach((m: UserMention) => {
+    if (m.indices?.length === 2) {
+      ranges.push({ start: m.indices[0], end: m.indices[1], type: 'mention', data: m.screenName });
+    }
+  });
+  return ranges;
+}
+
+function buildRichTextRanges(rich?: NoteTweetRichText): Range[] {
+  const ranges: Range[] = [];
+  if (!rich) return ranges;
+  rich.richtextTags?.forEach(tag => {
+    tag.richtextTypes.forEach(t => {
+      const low = t.toLowerCase();
+      if (low === 'bold' || low === 'italic') {
+        ranges.push({ start: tag.fromIndex, end: tag.toIndex, type: low as 'bold' | 'italic' });
+      }
+    });
+  });
+  return ranges;
+}
+
+function sortRanges(ranges: Range[]): Range[] {
+  return ranges.sort((a, b) => {
+    if (a.start === b.start) {
+      return b.end - a.end; // longer first
+    }
+    return a.start - b.start;
+  });
+}
+
+function decodeHtml(html: string): string {
+  if (!html) return html;
+  const txt = document.createElement('textarea');
+  txt.innerHTML = html;
+  return txt.value;
+}
+
+export function renderTweetContent(text: string, entities?: TweetEntities, rich?: NoteTweetRichText): React.ReactNode {
+  const entityRanges = buildEntityRanges(entities);
+  const richRanges = buildRichTextRanges(rich);
+  const allRanges = sortRanges([...entityRanges, ...richRanges]);
+
+  const result: React.ReactNode[] = [];
+  let cursor = 0;
+
+  const pushText = (t: string) => {
+    if (!t) return;
+    result.push(decodeHtml(t));
+  };
+
+  allRanges.forEach((range, idx) => {
+    if (range.start < cursor) {
+      return; // overlapping already handled
+    }
+    // plain text before range
+    pushText(text.slice(cursor, range.start));
+    const sliceRaw = text.slice(range.start, range.end);
+    const slice = decodeHtml(sliceRaw);
+    let node: React.ReactNode = slice;
+    switch (range.type) {
+      case 'link':
+        node = (
+          <a key={`link-${idx}-${range.start}`} href={range.data} target="_blank" rel="noopener noreferrer">
+            {slice}
+          </a>
+        );
+        break;
+      case 'mention':
+        node = (
+          <a key={`mention-${idx}-${range.start}`} href={`https://twitter.com/${range.data}`} target="_blank" rel="noopener noreferrer">
+            @{range.data}
+          </a>
+        );
+        break;
+      case 'bold':
+        node = <strong key={`b-${idx}-${range.start}`}>{slice}</strong>;
+        break;
+      case 'italic':
+        node = <em key={`i-${idx}-${range.start}`}>{slice}</em>;
+        break;
+      default:
+        break;
+    }
+    result.push(node);
+    cursor = range.end;
+  });
+
+  // remaining text
+  pushText(text.slice(cursor));
+
+  return result;
+}

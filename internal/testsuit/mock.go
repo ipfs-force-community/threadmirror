@@ -77,6 +77,24 @@ func (m *MockBotCookieRepo) SaveCookies(ctx context.Context, email, username str
 	return nil
 }
 
+// GetLatestBotCookie returns an arbitrary cookie record (last added if any) to satisfy the interface.
+func (m *MockBotCookieRepo) GetLatestBotCookie(ctx context.Context) (*model.BotCookie, error) {
+	for key, data := range m.cookies {
+		parts := strings.SplitN(key, ":", 2)
+		email := parts[0]
+		username := ""
+		if len(parts) > 1 {
+			username = parts[1]
+		}
+		return &model.BotCookie{
+			Email:       email,
+			Username:    username,
+			CookiesData: datatypes.JSON(data),
+		}, nil
+	}
+	return nil, errutil.ErrNotFound
+}
+
 // MockLLM is a mock implementation for testing
 type MockLLM struct{}
 

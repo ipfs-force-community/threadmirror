@@ -8,6 +8,8 @@ export * from './Media';
 export * from './MentionSummary';
 export * from './MentionsGet200Response';
 export * from './ModelError';
+export * from './NoteTweetRichText';
+export * from './NoteTweetRichTextTag';
 export * from './PaginationMeta';
 export * from './Symbol';
 export * from './ThreadAuthor';

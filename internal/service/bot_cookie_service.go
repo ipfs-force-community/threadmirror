@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"gorm.io/datatypes"
 )
 
@@ -13,6 +14,7 @@ import (
 type BotCookieRepoInterface interface {
 	GetCookies(ctx context.Context, email, username string) (datatypes.JSON, error)
 	SaveCookies(ctx context.Context, email, username string, cookiesData interface{}) error
+	GetLatestBotCookie(ctx context.Context) (*model.BotCookie, error)
 }
 
 // BotCookieService provides business logic for bot cookie management
@@ -48,4 +50,9 @@ func (s *BotCookieService) LoadCookies(ctx context.Context, email, username stri
 		return nil, fmt.Errorf("failed to unmarshal cookies: %w", err)
 	}
 	return cookies, nil
+}
+
+// GetLatestBotCookie returns the most recently updated bot cookie record
+func (s *BotCookieService) GetLatestBotCookie(ctx context.Context) (*model.BotCookie, error) {
+	return s.repo.GetLatestBotCookie(ctx)
 }

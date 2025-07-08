@@ -70,3 +70,22 @@ func (r *BotCookieRepo) SaveCookies(ctx context.Context, email, username string,
 		Model(&existingCookie).
 		Update("cookies_data", cookiesJSON).Error
 }
+
+// GetLatestCookies retrieves the cookies data from the most recently updated record
+func (r *BotCookieRepo) GetLatestBotCookie(ctx context.Context) (*model.BotCookie, error) {
+	db := sql.MustDBFromContext(ctx)
+
+	var botCookie model.BotCookie
+	err := db.WithContext(ctx).
+		Order("updated_at DESC").
+		First(&botCookie).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errutil.ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &botCookie, nil
+}

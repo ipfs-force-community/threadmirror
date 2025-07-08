@@ -5,3 +5,4 @@ export * from './HealthApi';
 export * from './MentionsApi';
 export * from './QRCodeApi';
 export * from './RenderApi';
+export * from './ShareApi';

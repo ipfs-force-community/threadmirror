@@ -29,7 +29,6 @@ var Module = fx.Module("job",
 			chromedp.Flag("disable-default-apps", true),
 			chromedp.Flag("disable-extensions", true),
 			chromedp.Flag("hide-scrollbars", true),
-			chromedp.DisableGPU,
 		)
 		chromedpCtx, cancelFn2 := chromedp.NewContext(allocCtx)
 		return chromedpContext(chromedpCtx), chromedpCancelFn(func() {

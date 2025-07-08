@@ -49,8 +49,11 @@ export class MentionsApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/mentions`;
+
         const response = await this.request({
-            path: `/mentions`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,

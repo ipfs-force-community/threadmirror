@@ -4,6 +4,7 @@ apis/HealthApi.ts
 apis/MentionsApi.ts
 apis/QRCodeApi.ts
 apis/RenderApi.ts
+apis/ShareApi.ts
 apis/index.ts
 index.ts
 models/Hashtag.ts
@@ -14,6 +15,8 @@ models/Media.ts
 models/MentionSummary.ts
 models/MentionsGet200Response.ts
 models/ModelError.ts
+models/NoteTweetRichText.ts
+models/NoteTweetRichTextTag.ts
 models/PaginationMeta.ts
 models/Symbol.ts
 models/ThreadAuthor.ts

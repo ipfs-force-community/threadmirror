@@ -34,6 +34,13 @@ import {
     TweetUserToJSON,
     TweetUserToJSONTyped,
 } from './TweetUser';
+import type { NoteTweetRichText } from './NoteTweetRichText';
+import {
+    NoteTweetRichTextFromJSON,
+    NoteTweetRichTextFromJSONTyped,
+    NoteTweetRichTextToJSON,
+    NoteTweetRichTextToJSONTyped,
+} from './NoteTweetRichText';
 
 /**
  * 
@@ -161,6 +168,18 @@ export interface Tweet {
      * @memberof Tweet
      */
     views?: number | null;
+    /**
+     * Whether this is a long-form Note Tweet
+     * @type {boolean}
+     * @memberof Tweet
+     */
+    isNoteTweet: boolean;
+    /**
+     * 
+     * @type {NoteTweetRichText}
+     * @memberof Tweet
+     */
+    richtext: NoteTweetRichText;
 }
 
 /**
@@ -180,6 +199,8 @@ export function instanceOfTweet(value: object): value is Tweet {
     if (!('lang' in value) || value['lang'] === undefined) return false;
     if (!('possiblySensitive' in value) || value['possiblySensitive'] === undefined) return false;
     if (!('isTranslatable' in value) || value['isTranslatable'] === undefined) return false;
+    if (!('isNoteTweet' in value) || value['isNoteTweet'] === undefined) return false;
+    if (!('richtext' in value) || value['richtext'] === undefined) return false;
     return true;
 }
 
@@ -213,6 +234,8 @@ export function TweetFromJSONTyped(json: any, ignoreDiscriminator: boolean): Twe
         'possiblySensitive': json['possibly_sensitive'],
         'isTranslatable': json['is_translatable'],
         'views': json['views'] == null ? undefined : json['views'],
+        'isNoteTweet': json['is_note_tweet'],
+        'richtext': NoteTweetRichTextFromJSON(json['richtext']),
     };
 }
 
@@ -247,6 +270,8 @@ export function TweetToJSONTyped(value?: Tweet | null, ignoreDiscriminator: bool
         'possibly_sensitive': value['possiblySensitive'],
         'is_translatable': value['isTranslatable'],
         'views': value['views'],
+        'is_note_tweet': value['isNoteTweet'],
+        'richtext': NoteTweetRichTextToJSON(value['richtext']),
     };
 }
 

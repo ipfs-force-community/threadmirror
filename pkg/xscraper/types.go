@@ -35,26 +35,28 @@ type TweetStats struct {
 
 // Tweet represents a simplified tweet structure
 type Tweet struct {
-	ID                string             `json:"id"`
-	RestID            string             `json:"rest_id"`
-	Text              string             `json:"text"`
-	CreatedAt         time.Time          `json:"created_at"`
-	Author            *User              `json:"author,omitempty"`
-	Entities          generated.Entities `json:"entities"`
-	Stats             TweetStats         `json:"stats"`
-	IsRetweet         bool               `json:"is_retweet"`
-	IsReply           bool               `json:"is_reply"`
-	IsQuoteStatus     bool               `json:"is_quote_status"`
-	ConversationID    string             `json:"conversation_id"`
-	InReplyToStatusID string             `json:"in_reply_to_status_id,omitempty"`
-	InReplyToUserID   string             `json:"in_reply_to_user_id,omitempty"`
-	QuotedTweet       *Tweet             `json:"quoted_tweet,omitempty"`
-	HasBirdwatchNotes bool               `json:"has_birdwatch_notes"`
-	Lang              string             `json:"lang"`
-	Source            string             `json:"source,omitempty"`
-	PossiblySensitive bool               `json:"possibly_sensitive"`
-	IsTranslatable    bool               `json:"is_translatable"`
-	Views             int                `json:"views,omitempty"`
+	ID                string                             `json:"id"`
+	RestID            string                             `json:"rest_id"`
+	Text              string                             `json:"text"`
+	CreatedAt         time.Time                          `json:"created_at"`
+	Author            *User                              `json:"author,omitempty"`
+	Entities          generated.Entities                 `json:"entities"`
+	Stats             TweetStats                         `json:"stats"`
+	IsRetweet         bool                               `json:"is_retweet"`
+	IsReply           bool                               `json:"is_reply"`
+	IsQuoteStatus     bool                               `json:"is_quote_status"`
+	ConversationID    string                             `json:"conversation_id"`
+	InReplyToStatusID string                             `json:"in_reply_to_status_id,omitempty"`
+	InReplyToUserID   string                             `json:"in_reply_to_user_id,omitempty"`
+	QuotedTweet       *Tweet                             `json:"quoted_tweet,omitempty"`
+	HasBirdwatchNotes bool                               `json:"has_birdwatch_notes"`
+	Lang              string                             `json:"lang"`
+	Source            string                             `json:"source,omitempty"`
+	PossiblySensitive bool                               `json:"possibly_sensitive"`
+	IsTranslatable    bool                               `json:"is_translatable"`
+	Views             int                                `json:"views,omitempty"`
+	IsNoteTweet       bool                               `json:"is_note_tweet"`
+	RichText          *generated.NoteTweetResultRichText `json:"richtext,omitempty"`
 }
 
 // convertTimelineToTweets converts a generated.Timeline to our Tweet struct
@@ -170,6 +172,17 @@ func convertGeneratedTweetToTweet(genTweet *generated.Tweet) (*Tweet, error) {
 
 		tweet.Entities = legacy.Entities
 
+	}
+
+	if genTweet.NoteTweet != nil {
+		// Long-form Note Tweet overrides legacy text and entities
+		note := genTweet.NoteTweet.NoteTweetResults.Result
+
+		// Replace text and entities with the content from the note tweet
+		tweet.Text = note.Text
+		tweet.Entities = note.EntitySet
+		tweet.IsNoteTweet = true
+		tweet.RichText = note.Richtext
 	}
 
 	// Extract user information from Core

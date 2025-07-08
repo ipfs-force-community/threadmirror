@@ -48,15 +48,19 @@ type XScraper struct {
 }
 
 func New(loginOpts LoginOptions, logger *slog.Logger) (*XScraper, error) {
-	gotwiClient, err := gotwi.NewClient(&gotwi.NewClientInput{
-		AuthenticationMethod: gotwi.AuthenMethodOAuth1UserContext,
-		APIKey:               loginOpts.APIKey,
-		APIKeySecret:         loginOpts.APIKeySecret,
-		OAuthToken:           loginOpts.AccessToken,
-		OAuthTokenSecret:     loginOpts.AccessTokenSecret,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("create gotwi client: %w", err)
+	var gotwiClient *gotwi.Client
+	var err error
+	if loginOpts.APIKey != "" && loginOpts.APIKeySecret != "" {
+		gotwiClient, err = gotwi.NewClient(&gotwi.NewClientInput{
+			AuthenticationMethod: gotwi.AuthenMethodOAuth1UserContext,
+			APIKey:               loginOpts.APIKey,
+			APIKeySecret:         loginOpts.APIKeySecret,
+			OAuthToken:           loginOpts.AccessToken,
+			OAuthTokenSecret:     loginOpts.AccessTokenSecret,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("create gotwi client: %w", err)
+		}
 	}
 
 	return &XScraper{
@@ -161,6 +165,8 @@ func (x *XScraper) doJson(req *http.Request, target any) error {
 	if err != nil {
 		return fmt.Errorf("read response body: %w", err)
 	}
+
+	fmt.Println(string(respBody))
 
 	if http.StatusOK != resp.StatusCode {
 		return &BadRequestError{

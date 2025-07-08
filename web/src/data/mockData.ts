@@ -39,7 +39,9 @@ const originThreads: ThreadDetail[] = [
           favoriteCount: 561,
           quoteCount: 7,
           bookmarkCount: 89,
-          viewCount: 120538
+          viewCount: 120538,
+          isNoteTweet: false,
+          richtext: { richtextTags: [] }
         },
         isRetweet: false,
         isReply: false,
@@ -49,7 +51,9 @@ const originThreads: ThreadDetail[] = [
         source: "Twitter Web App",
         possiblySensitive: false,
         isTranslatable: true,
-        hasBirdwatchNotes: false
+        hasBirdwatchNotes: false,
+        isNoteTweet: false,
+        richtext: { richtextTags: [] }
       },
       {
         id: "1691375485119811584",
@@ -82,7 +86,9 @@ const originThreads: ThreadDetail[] = [
           favoriteCount: 426,
           quoteCount: 3,
           bookmarkCount: 67,
-          viewCount: 89254
+          viewCount: 89254,
+          isNoteTweet: false,
+          richtext: { richtextTags: [] }
         },
         isRetweet: false,
         isReply: true,
@@ -94,7 +100,9 @@ const originThreads: ThreadDetail[] = [
         source: "Twitter Web App",
         possiblySensitive: false,
         isTranslatable: true,
-        hasBirdwatchNotes: false
+        hasBirdwatchNotes: false,
+        isNoteTweet: false,
+        richtext: { richtextTags: [] }
       }
     ],
     numTweets: 2,
@@ -136,7 +144,9 @@ const originThreads: ThreadDetail[] = [
           favoriteCount: 892,
           quoteCount: 15,
           bookmarkCount: 156,
-          viewCount: 198742
+          viewCount: 198742,
+          isNoteTweet: false,
+          richtext: { richtextTags: [] }
         },
         isRetweet: false,
         isReply: false,
@@ -146,7 +156,9 @@ const originThreads: ThreadDetail[] = [
         source: "Twitter for iPhone",
         possiblySensitive: false,
         isTranslatable: true,
-        hasBirdwatchNotes: false
+        hasBirdwatchNotes: false,
+        isNoteTweet: false,
+        richtext: { richtextTags: [] }
       }
     ],
     numTweets: 1,
@@ -198,7 +210,9 @@ const originThreads: ThreadDetail[] = [
           favoriteCount: 1245,
           quoteCount: 28,
           bookmarkCount: 287,
-          viewCount: 215683
+          viewCount: 215683,
+          isNoteTweet: false,
+          richtext: { richtextTags: [] }
         },
         isRetweet: false,
         isReply: false,
@@ -208,7 +222,9 @@ const originThreads: ThreadDetail[] = [
         source: "Twitter Web App",
         possiblySensitive: false,
         isTranslatable: true,
-        hasBirdwatchNotes: false
+        hasBirdwatchNotes: false,
+        isNoteTweet: false,
+        richtext: { richtextTags: [] }
       },
       {
         id: "1709912490698314957",
@@ -246,7 +262,9 @@ const originThreads: ThreadDetail[] = [
           favoriteCount: 1098,
           quoteCount: 19,
           bookmarkCount: 246,
-          viewCount: 184392
+          viewCount: 184392,
+          isNoteTweet: false,
+          richtext: { richtextTags: [] }
         },
         isRetweet: false,
         isReply: true,
@@ -258,7 +276,9 @@ const originThreads: ThreadDetail[] = [
         source: "Twitter Web App",
         possiblySensitive: false,
         isTranslatable: true,
-        hasBirdwatchNotes: false
+        hasBirdwatchNotes: false,
+        isNoteTweet: false,
+        richtext: { richtextTags: [] }
       }
     ],
     numTweets: 2,

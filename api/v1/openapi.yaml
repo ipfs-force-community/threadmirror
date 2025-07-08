@@ -392,6 +392,13 @@ components:
           type: integer
           description: Number of views
           nullable: true
+        is_note_tweet:
+          type: boolean
+          description: Whether this is a long-form Note Tweet
+        richtext:
+          $ref: '#/components/schemas/NoteTweetRichText'
+          description: Rich text formatting information for Note Tweet
+          nullable: true
       required:
         - id
         - rest_id
@@ -406,6 +413,8 @@ components:
         - lang
         - possibly_sensitive
         - is_translatable
+        - is_note_tweet
+        - richtext
 
     TweetUser:
       type: object
@@ -668,12 +677,21 @@ components:
           type: integer
           description: Number of views
           nullable: true
+        is_note_tweet:
+          type: boolean
+          description: Whether this is a long-form Note Tweet
+        richtext:
+          $ref: '#/components/schemas/NoteTweetRichText'
+          description: Rich text formatting information for Note Tweet
+          nullable: true
       required:
         - reply_count
         - retweet_count
         - favorite_count
         - quote_count
         - bookmark_count
+        - is_note_tweet
+        - richtext
 
     Image:
       type: object
@@ -719,6 +737,37 @@ components:
       required:
         - code
         - message
+
+    NoteTweetRichTextTag:
+      type: object
+      properties:
+        from_index:
+          type: integer
+          description: Start index (inclusive) of the formatted text segment
+        to_index:
+          type: integer
+          description: End index (exclusive) of the formatted text segment
+        richtext_types:
+          type: array
+          items:
+            type: string
+            enum: [Bold, Italic]
+          description: Formatting types applied to this text range
+      required:
+        - from_index
+        - to_index
+        - richtext_types
+
+    NoteTweetRichText:
+      type: object
+      properties:
+        richtext_tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/NoteTweetRichTextTag'
+          description: Richtext tag list defining formatting ranges
+      required:
+        - richtext_tags
 
   responses:
     Unauthorized:

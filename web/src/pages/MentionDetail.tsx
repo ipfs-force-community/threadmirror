@@ -4,7 +4,8 @@ import { useApiService } from '@services/api';
 import UserProfileComponent from '@components/common/UserProfile';
 import { toast } from 'sonner';
 import styles from './MentionDetail.module.css';
-import { ThreadDetail as ThreadData } from '@src/client/models';
+import { ThreadDetail as ThreadData, Tweet as TweetModel } from '@src/client/models';
+import { renderTweetContent } from '@utils/richText';
 
 const MentionDetail = () => {
   const { mentionData } = useLocation().state || {};
@@ -149,7 +150,7 @@ const MentionDetail = () => {
             key={tweet.id}
             className={styles.tweetItem}
           >
-            <p className={styles.tweetText}>{tweet.text}</p>
+            <p className={styles.tweetText}>{renderTweetContent(tweet.text, tweet.entities || undefined, tweet.richtext)}</p>
             {tweet?.entities?.media && tweet.entities.media.length > 0 && (
               <figure className={styles.mediaContainer}>
                 {tweet.entities.media.map(media => (

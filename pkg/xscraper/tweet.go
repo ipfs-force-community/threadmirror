@@ -66,6 +66,12 @@ func (x *XScraper) GetTweets(ctx context.Context, id string) ([]*Tweet, error) {
 		return nil, fmt.Errorf("failed to get tweet detail: %w", err)
 	}
 
+	// Handle GraphQL-level errors
+	if resp.Errors != nil && len(*resp.Errors) > 0 {
+		msgs := lo.Map(*resp.Errors, func(e generated.ErrorResponse, _ int) string { return e.Message })
+		return nil, fmt.Errorf("tweet detail: %s", strings.Join(msgs, "; "))
+	}
+
 	tweets, err := convertTimelineToTweets(resp.Data.ThreadedConversationWithInjectionsV2)
 	if err != nil {
 		return nil, fmt.Errorf("convert tweet: %w", err)
@@ -76,6 +82,155 @@ func (x *XScraper) GetTweets(ctx context.Context, id string) ([]*Tweet, error) {
 	}
 
 	return tweets, nil
+}
+
+// GetTweetDetail 调用 TweetDetail GraphQL接口，返回目标推文及其线程（可能包含多条推文）。
+// 参数仅需 tweet `id`，其余字段按 OpenAPI 默认/示例填充。
+func (x *XScraper) GetTweetDetail(ctx context.Context, id string) ([]*Tweet, error) {
+	p := generated.GetTweetDetailParams{}
+
+	// Variables
+	p.Variables.FocalTweetId = id
+	p.Variables.Referrer = "home"
+	p.Variables.RankingMode = "Relevance"
+	p.Variables.IncludePromotedContent = true
+	p.Variables.WithCommunity = true
+	p.Variables.WithQuickPromoteEligibilityTweetFields = true
+	p.Variables.WithBirdwatchNotes = true
+	p.Variables.WithVoice = true
+	p.Variables.WithRuxInjections = false
+
+	p.Features.ArticlesPreviewEnabled = true
+	p.Features.C9sTweetAnatomyModeratorBadgeEnabled = true
+	p.Features.CommunitiesWebEnableTweetCommunityResultsFetch = true
+	p.Features.CreatorSubscriptionsQuoteTweetPreviewEnabled = false
+	p.Features.CreatorSubscriptionsTweetPreviewApiEnabled = true
+	p.Features.FreedomOfSpeechNotReachFetchEnabled = true
+	p.Features.GraphqlIsTranslatableRwebTweetIsTranslatableEnabled = true
+	p.Features.LongformNotetweetsConsumptionEnabled = true
+	p.Features.LongformNotetweetsInlineMediaEnabled = true
+	p.Features.LongformNotetweetsRichTextReadEnabled = true
+	p.Features.PremiumContentApiReadEnabled = false
+	p.Features.ProfileLabelImprovementsPcfLabelInPostEnabled = true
+	p.Features.ResponsiveWebEditTweetApiEnabled = true
+	p.Features.ResponsiveWebEnhanceCardsEnabled = false
+	p.Features.ResponsiveWebGraphqlSkipUserProfileImageExtensionsEnabled = false
+	p.Features.ResponsiveWebGraphqlTimelineNavigationEnabled = true
+	p.Features.ResponsiveWebGrokAnalysisButtonFromBackend = false
+	p.Features.ResponsiveWebGrokAnalyzeButtonFetchTrendsEnabled = false
+	p.Features.ResponsiveWebGrokAnalyzePostFollowupsEnabled = true
+	p.Features.ResponsiveWebGrokImageAnnotationEnabled = true
+	p.Features.ResponsiveWebGrokShareAttachmentEnabled = true
+	p.Features.ResponsiveWebGrokShowGrokTranslatedPost = false
+	p.Features.ResponsiveWebJetfuelFrame = false
+	p.Features.ResponsiveWebTwitterArticleTweetConsumptionEnabled = true
+	p.Features.RwebTipjarConsumptionEnabled = true
+	p.Features.RwebVideoScreenEnabled = false
+	p.Features.StandardizedNudgesMisinfo = true
+	p.Features.TweetAwardsWebTippingEnabled = false
+	p.Features.TweetWithVisibilityResultsPreferGqlLimitedActionsPolicyEnabled = true
+	p.Features.VerifiedPhoneLabelEnabled = false
+	p.Features.ViewCountsEverywhereApiEnabled = true
+
+	// Field toggles
+	p.FieldToggles.WithArticleRichContentState = true
+	p.FieldToggles.WithArticlePlainText = false
+	p.FieldToggles.WithGrokAnalyze = false
+	p.FieldToggles.WithDisallowedReplyControls = false
+
+	var resp generated.TweetDetailResponse
+	var berr *BadRequestError
+	err := x.GetGraphQL(ctx, "/i/api/graphql/xd_EMdYvB9hfZsZ6Idri0w/TweetDetail", &p, &resp)
+	if err != nil {
+		if errors.As(err, &berr) && berr.StatusCode == http.StatusNotFound {
+			return []*Tweet{}, nil
+		}
+		return nil, fmt.Errorf("failed to get tweet detail: %w", err)
+	}
+
+	// Handle GraphQL-level errors
+	if resp.Errors != nil && len(*resp.Errors) > 0 {
+		msgs := lo.Map(*resp.Errors, func(e generated.ErrorResponse, _ int) string { return e.Message })
+		return nil, fmt.Errorf("tweet detail: %s", strings.Join(msgs, "; "))
+	}
+
+	tweets, err := convertTimelineToTweets(resp.Data.ThreadedConversationWithInjectionsV2)
+	if err != nil {
+		return nil, fmt.Errorf("convert tweet: %w", err)
+	}
+	return tweets, nil
+}
+
+// GetTweetDetail returns the tweet with the given ID
+func (x *XScraper) GetTweetResultByRestId(ctx context.Context, id string) (*Tweet, error) {
+	p := generated.GetTweetResultByRestIdParams{}
+	p.Variables.TweetId = id
+	p.Variables.IncludePromotedContent = false
+	p.Variables.WithCommunity = false
+	p.Variables.WithVoice = false
+
+	// Feature toggles (aligned with other calls)
+	p.Features.ArticlesPreviewEnabled = true
+	p.Features.C9sTweetAnatomyModeratorBadgeEnabled = true
+	p.Features.CommunitiesWebEnableTweetCommunityResultsFetch = true
+	p.Features.CreatorSubscriptionsQuoteTweetPreviewEnabled = false
+	p.Features.CreatorSubscriptionsTweetPreviewApiEnabled = true
+	p.Features.FreedomOfSpeechNotReachFetchEnabled = true
+	p.Features.GraphqlIsTranslatableRwebTweetIsTranslatableEnabled = true
+	p.Features.LongformNotetweetsConsumptionEnabled = true
+	p.Features.LongformNotetweetsInlineMediaEnabled = true
+	p.Features.LongformNotetweetsRichTextReadEnabled = true
+	p.Features.ResponsiveWebEditTweetApiEnabled = true
+	p.Features.ResponsiveWebEnhanceCardsEnabled = false
+	p.Features.ResponsiveWebGraphqlExcludeDirectiveEnabled = true
+	p.Features.ResponsiveWebGraphqlSkipUserProfileImageExtensionsEnabled = false
+	p.Features.ResponsiveWebGraphqlTimelineNavigationEnabled = true
+	p.Features.ResponsiveWebTwitterArticleTweetConsumptionEnabled = true
+	p.Features.RwebTipjarConsumptionEnabled = true
+	p.Features.RwebVideoTimestampsEnabled = true
+	p.Features.StandardizedNudgesMisinfo = true
+	p.Features.TweetAwardsWebTippingEnabled = false
+	p.Features.TweetWithVisibilityResultsPreferGqlLimitedActionsPolicyEnabled = true
+	p.Features.TweetWithVisibilityResultsPreferGqlMediaInterstitialEnabled = true
+	p.Features.TweetypieUnmentionOptimizationEnabled = true
+	p.Features.VerifiedPhoneLabelEnabled = false
+	p.Features.ViewCountsEverywhereApiEnabled = true
+
+	// Field toggles
+	p.FieldToggles.WithArticlePlainText = false
+	p.FieldToggles.WithArticleRichContentState = true
+
+	var resp generated.TweetResultByRestIdResponse
+	var berr *BadRequestError
+	err := x.GetGraphQL(ctx, "/i/api/graphql/7xflPyRiUxGVbJd4uWmbfg/TweetResultByRestId", &p, &resp)
+	if err != nil {
+		if errors.As(err, &berr) && berr.StatusCode == http.StatusNotFound {
+			return nil, fmt.Errorf("tweet not found")
+		}
+		return nil, fmt.Errorf("failed to get tweet detail: %w", err)
+	}
+
+	// Handle GraphQL-level errors
+	if resp.Errors != nil && len(*resp.Errors) > 0 {
+		msgs := lo.Map(*resp.Errors, func(e generated.ErrorResponse, _ int) string { return e.Message })
+		return nil, fmt.Errorf("tweet detail: %s", strings.Join(msgs, "; "))
+	}
+
+	if resp.Data.TweetResult == nil || resp.Data.TweetResult.Result == nil {
+		return nil, fmt.Errorf("no tweet found")
+	}
+
+	genTweet, err := resp.Data.TweetResult.Result.AsTweet()
+	if err != nil {
+		return nil, fmt.Errorf("result is not a tweet: %w", err)
+	}
+
+	tweet, err := convertGeneratedTweetToTweet(&genTweet)
+	if err != nil {
+		return nil, fmt.Errorf("convert tweet: %w", err)
+	}
+
+	return tweet, nil
 }
 
 // SearchTweets searches for tweets matching the given query
@@ -132,6 +287,12 @@ func (x *XScraper) SearchTweets(ctx context.Context, query string, maxTweets int
 			return []*Tweet{}, nil
 		}
 		return nil, fmt.Errorf("failed to get tweet detail: %w", err)
+	}
+
+	// Handle GraphQL-level errors
+	if resp.Errors != nil && len(*resp.Errors) > 0 {
+		msgs := lo.Map(*resp.Errors, func(e generated.ErrorResponse, _ int) string { return e.Message })
+		return nil, fmt.Errorf("search tweets: %s", strings.Join(msgs, "; "))
 	}
 
 	tweets, err := convertTimelineToTweets(&resp.Data.SearchByRawQuery.SearchTimeline.Timeline)
