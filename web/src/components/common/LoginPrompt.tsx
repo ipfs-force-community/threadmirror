@@ -28,7 +28,7 @@ const LoginPrompt: React.FC = () => {
         <div className={styles.hero}>
           <h1 className={styles.title}>Decentralize your archives.</h1>
           <p className={styles.subtitle}>
-            Store and preserve content forever on the blockchain. Powered by <strong>Filecoin's</strong> decentralized storage network.
+            One-step archive to store and preserve content forever on the blockchain. Powered by <strong>Filecoin's</strong> decentralized storage network.
           </p>
         </div>
         
@@ -50,10 +50,10 @@ const LoginPrompt: React.FC = () => {
           </div>
           
           <div className={styles.feature}>
-            <div className={styles.featureIcon}>♾️</div>
-            <h3 className={styles.featureTitle}>Forever Archives</h3>
+            <div className={styles.featureIcon}>⚡</div>
+            <h3 className={styles.featureTitle}>One-Step Archive</h3>
             <p className={styles.featureText}>
-              Content mirrored to the blockchain never disappears - access your archives decades from now.
+              Single mention instantly creates permanent blockchain archives - no complex setup or multiple steps required.
             </p>
           </div>
         </div>
