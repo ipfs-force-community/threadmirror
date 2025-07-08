@@ -5,7 +5,6 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { Auth0Provider } from '@auth0/auth0-react';
 import { CookiesProvider } from 'react-cookie';
-import history from "./utils/history";
 
 
 const root = ReactDOM.createRoot(
@@ -16,14 +15,18 @@ root.render(
     domain={process.env.REACT_APP_AUTH0_DOMAIN || ''}
     clientId={process.env.REACT_APP_AUTH0_CLIENT_ID || ''}
     onRedirectCallback={(appState: any) => {
-      history.push(
-        appState && appState.returnTo ? appState.returnTo : window.location.pathname
-      );
+      // 让Auth0处理完整的回调流程，避免手动干预导致状态验证失败
+      const targetUrl = appState?.returnTo || window.location.pathname;
+      if (targetUrl !== window.location.pathname) {
+        window.history.replaceState({}, '', targetUrl);
+      }
     }}
     authorizationParams={{
       redirect_uri: window.location.origin,
       ...(process.env.REACT_APP_AUTH0_AUDIENCE ? { audience: process.env.REACT_APP_AUTH0_AUDIENCE } : null),
     }}
+    cacheLocation="localstorage"
+    useRefreshTokens={true}
   >
     <CookiesProvider>
       <App />

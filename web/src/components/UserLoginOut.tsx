@@ -11,7 +11,7 @@ import {
 import styles from "./UserLoginOut.module.css";
 
 const UserLgoinOut = () => {
-    const { user, error, getAccessTokenSilently, loginWithRedirect, logout } = useAuth0();
+    const { user, error, getAccessTokenSilently, loginWithRedirect, logout, isAuthenticated, isLoading: auth0Loading } = useAuth0();
     const [localUser, setLocalUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const lastErrorRef = useRef<string | null>(null);
@@ -100,7 +100,7 @@ const UserLgoinOut = () => {
     };
 
     const handleAuthAction = () => {
-        if (isUserLoggedIn()) {
+        if (isAuthenticated && isUserLoggedIn()) {
             handleLogout();
         } else {
             handleLogin();
@@ -112,16 +112,17 @@ const UserLgoinOut = () => {
         handleLogout();
     };
 
-    if (isLoading) {
+    if (isLoading || auth0Loading) {
         return <div className="flex justify-center p-4">Loading...</div>;
     }
 
     const displayUser = localUser || user;
+    const isFullyLoggedIn = isAuthenticated && isUserLoggedIn();
 
     return (
         <div className={styles.nav_container}>
             <div className={styles.user_container}>
-                {isUserLoggedIn() && displayUser && (
+                {isFullyLoggedIn && displayUser && (
                     <div className={styles.user_profile} >
                         {displayUser.picture && (
                             <img
@@ -149,7 +150,7 @@ const UserLgoinOut = () => {
                         </span>
                     </div>
                 )}
-                {!isUserLoggedIn() && (
+                {!isFullyLoggedIn && (
                     <div
                         role="button"
                         title="Login"

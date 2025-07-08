@@ -1,13 +1,15 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
 import { useApiService } from '@services/api';
 import MentionList from '@components/mention/MentionList';
 import { MentionSummary as Mention } from '@client/index';
 import { isUserLoggedIn } from '@utils/cookie';
 import { toast } from 'sonner';
 import styles from './UserMentions.module.css';
-import UsageGuide from '@components/common/UsageGuide';
+import LoginPrompt from '@components/common/LoginPrompt';
 
 const UserMentions = () => {
+  const { isAuthenticated, isLoading: auth0Loading } = useAuth0();
   const [mentions, setMentions] = useState<Mention[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -26,7 +28,8 @@ const UserMentions = () => {
   const toastShownRef = useRef(false);
   const { fetchGetMentions } = useApiService();
 
-  const isLoggedIn = isUserLoggedIn();
+  // 结合Auth0状态和本地cookie状态来确定登录状态
+  const isLoggedIn = isAuthenticated && isUserLoggedIn();
 
   const calculateInitialLoadCount = useCallback(() => {
     const viewportHeight = window.innerHeight;
@@ -129,18 +132,33 @@ const UserMentions = () => {
     };
   }, [loading, hasMore, loadMoreMentions, isLoggedIn, apiErrorOccurred]);
 
+  // 重置组件状态当认证状态改变时
   useEffect(() => {
-    if (isLoggedIn && !apiErrorOccurred && isInitialLoad && !initialLoadDone) {
+    if (!auth0Loading) {
+      setMentions([]);
+      setPagination({ offset: 0, total: 0 });
+      setHasMore(true);
+      setError(null);
+      setApiErrorOccurred(false);
+      setIsInitialLoad(true);
+      setInitialLoadDone(false);
+      toastShownRef.current = false;
+    }
+  }, [isLoggedIn, auth0Loading]);
+
+  useEffect(() => {
+    if (isLoggedIn && !apiErrorOccurred && isInitialLoad && !initialLoadDone && !auth0Loading) {
       loadMoreMentions();
     }
-  }, [isLoggedIn, loadMoreMentions, apiErrorOccurred, isInitialLoad, initialLoadDone]);
+  }, [isLoggedIn, loadMoreMentions, apiErrorOccurred, isInitialLoad, initialLoadDone, auth0Loading]);
+
+  // 等待Auth0加载完成
+  if (auth0Loading) {
+    return <div className="flex justify-center p-4">Loading...</div>;
+  }
 
   if (!isLoggedIn) {
-    return (
-      <div className={styles.user_page}>
-        <UsageGuide />
-      </div>
-    );
+    return <LoginPrompt />;
   }
 
   return (
