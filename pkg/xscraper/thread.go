@@ -42,7 +42,7 @@ func GetCompleteThread(ctx context.Context, scraper XScraperInterface, tweetID s
 		oldestTweet := tweetsResult.Tweets[0]
 
 		// 无法找到更早的推文，终止循环
-		if oldestTweet == nil || oldestTweet.InReplyToStatusID == "" {
+		if oldestTweet == nil || !oldestTweet.IsReply {
 			break
 		}
 

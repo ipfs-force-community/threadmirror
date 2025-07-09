@@ -102,6 +102,7 @@ const originThreads: ThreadDetail[] = [
       }
     ],
     numTweets: 2,
+    status: 'completed' as any,
   },
   {
     id: "thread_002",
@@ -156,6 +157,7 @@ const originThreads: ThreadDetail[] = [
       }
     ],
     numTweets: 1,
+    status: 'completed' as any,
   },
   {
     id: "thread_003",
@@ -272,6 +274,7 @@ const originThreads: ThreadDetail[] = [
       }
     ],
     numTweets: 2,
+    status: 'scraping' as any,
   },
 ];
 
@@ -285,10 +288,14 @@ const generateData = (count: number, startId: number = 1000): ThreadDetail[] => 
     const template = templateThreads[templateIndex];
 
     // 创建新thread，复制模板并修改部分属性
+    const statuses = ['completed', 'pending', 'scraping', 'failed'] as const;
+    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+    
     const newThread: ThreadDetail = {
       ...template,
       id: `thread_${startId + i}`,
       createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // 随机设置在过去30天内的时间
+      status: randomStatus as any,
     };
 
     // 为每个thread生成新的tweets，确保ID唯一

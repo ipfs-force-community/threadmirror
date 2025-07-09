@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import styles from './MentionSummary.module.css';
 import { MentionSummary as MentionData } from '@src/client/models';
+import StatusBadge from '@components/common/StatusBadge';
 
 const MentionSummaryComponent: React.FC<{ mention: MentionData }> = ({ mention }) => {
     const formatDate = (date: Date) => {
@@ -58,7 +59,10 @@ const MentionSummaryComponent: React.FC<{ mention: MentionData }> = ({ mention }
                         </span>
                     </span>
                 </div>
-                <span className={styles.createdAt}>{formatDate(mention.createdAt)}</span>
+                <div className={styles.metaInfo}>
+                    <StatusBadge status={mention.status as any} size="small" />
+                    <span className={styles.createdAt}>{formatDate(mention.createdAt)}</span>
+                </div>
             </div>
             <div className={styles.contentPreview}>
                 {mention.contentPreview}

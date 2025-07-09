@@ -36,6 +36,7 @@ func provideTwitterBot(
 		jobQueueClient,
 		logger,
 		botConfig.ExcludeMentionAuthorPrefix,
+		botConfig.MentionUsername,
 	)
 }
 

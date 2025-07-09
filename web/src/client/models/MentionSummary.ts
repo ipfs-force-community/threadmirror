@@ -75,7 +75,26 @@ export interface MentionSummary {
      * @memberof MentionSummary
      */
     numTweets: number;
+    /**
+     * Current status of the mention processing
+     * @type {string}
+     * @memberof MentionSummary
+     */
+    status: MentionSummaryStatusEnum;
 }
+
+
+/**
+ * @export
+ */
+export const MentionSummaryStatusEnum = {
+    Pending: 'pending',
+    Scraping: 'scraping',
+    Completed: 'completed',
+    Failed: 'failed'
+} as const;
+export type MentionSummaryStatusEnum = typeof MentionSummaryStatusEnum[keyof typeof MentionSummaryStatusEnum];
+
 
 /**
  * Check if a given object implements the MentionSummary interface.
@@ -88,6 +107,7 @@ export function instanceOfMentionSummary(value: object): value is MentionSummary
     if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
     if (!('mentionCreateAt' in value) || value['mentionCreateAt'] === undefined) return false;
     if (!('numTweets' in value) || value['numTweets'] === undefined) return false;
+    if (!('status' in value) || value['status'] === undefined) return false;
     return true;
 }
 
@@ -109,6 +129,7 @@ export function MentionSummaryFromJSONTyped(json: any, ignoreDiscriminator: bool
         'createdAt': (new Date(json['created_at'])),
         'mentionCreateAt': (new Date(json['mention_create_at'])),
         'numTweets': json['num_tweets'],
+        'status': json['status'],
     };
 }
 
@@ -131,6 +152,7 @@ export function MentionSummaryToJSONTyped(value?: MentionSummary | null, ignoreD
         'created_at': ((value['createdAt']).toISOString()),
         'mention_create_at': ((value['mentionCreateAt']).toISOString()),
         'num_tweets': value['numTweets'],
+        'status': value['status'],
     };
 }
 

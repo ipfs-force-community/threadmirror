@@ -2,11 +2,14 @@ import { mockThreads } from '@data/mockData';
 import {
   MentionsApi,
   DefaultApi,
+  ThreadsApi,
   Configuration,
   MentionsGetRequest,
   ThreadIdGetRequest,
+  ThreadScrapePostOperationRequest,
   MentionsGet200Response as MentionsGetResponse,
   ThreadIdGet200Response as ThreadIdGetResponse,
+  ThreadScrapePost200Response as ThreadScrapeResponse,
 } from '@client/index';
 import { getAuthToken } from '@utils/cookie';
 
@@ -32,6 +35,7 @@ const config = new Configuration({
 
 const mentionsApi = new MentionsApi(config);
 const defaultApi = new DefaultApi(config);
+const threadsApi = new ThreadsApi(config);
 
 const fetchUserMentions = async (request: MentionsGetRequest = {}) => {
   return await mentionsApi.mentionsGet(request);
@@ -89,11 +93,28 @@ const fetchShareImage = async (threadId: string) => {
   return await response.blob();
 };
 
+const scrapeTwitterThread = async (request: { url: string }) => {
+  const scrapeRequest: ThreadScrapePostOperationRequest = {
+    threadScrapePostRequest: { url: request.url }
+  };
+  return await threadsApi.threadScrapePost(scrapeRequest);
+};
+
+const scrapeTwitterThreadMock = async (request: { url: string }) => {
+  console.log('use mock data for scrapeTwitterThread', request.url);
+  // Return mock response for development
+  return {
+    tweetId: 'mock_tweet_' + Date.now(),
+    message: 'Thread scraping job queued successfully (mock)'
+  } as ThreadScrapeResponse;
+};
+
 // 导出兼容 mock 模式的函数
 export const useApiService = () => {
   return {
     fetchGetMentions: useMock ? fetchUserMentionsMock : fetchUserMentions,
     fetchGetThreadId: useMock ? fetchThreadDetailMock : fetchThreadDetail,
     fetchGetShare: fetchShareImage,
+    postThreadsScrape: useMock ? scrapeTwitterThreadMock : scrapeTwitterThread,
   };
 };

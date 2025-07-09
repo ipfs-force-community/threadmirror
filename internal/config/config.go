@@ -54,6 +54,18 @@ type BotCredential struct {
 	AccessTokenSecret string `json:"access_token_secret"`
 }
 
+// CronConfig holds cron-related configuration
+type CronConfig struct {
+	// Thread status cleanup configuration
+	ThreadStatusCleanup struct {
+		EnabledIntervalMinutes int `mapstructure:"enabled_interval_minutes" default:"15"`
+		ScrapingTimeoutMinutes int `mapstructure:"scraping_timeout_minutes" default:"30"`
+		PendingTimeoutMinutes  int `mapstructure:"pending_timeout_minutes" default:"60"`
+		RetryDelayMinutes      int `mapstructure:"retry_delay_minutes" default:"15"`
+		MaxRetries             int `mapstructure:"max_retries" default:"3"`
+	} `mapstructure:"thread_status_cleanup"`
+}
+
 // BotConfig holds Twitter bot configuration
 type BotConfig struct {
 	Enable bool
@@ -65,6 +77,9 @@ type BotConfig struct {
 
 	// Prefix of author screen names to exclude when scanning mentions
 	ExcludeMentionAuthorPrefix string
+
+	// Username to monitor for mentions (if empty, uses first credential's username)
+	MentionUsername string
 }
 
 func LoadCommonConfigFromCLI(c *cli.Context) *CommonConfig {
@@ -105,6 +120,24 @@ func LoadAuth0ConfigFromCLI(c *cli.Context) *Auth0Config {
 	}
 }
 
+func LoadCronConfigFromCLI(c *cli.Context) *CronConfig {
+	return &CronConfig{
+		ThreadStatusCleanup: struct {
+			EnabledIntervalMinutes int `mapstructure:"enabled_interval_minutes" default:"15"`
+			ScrapingTimeoutMinutes int `mapstructure:"scraping_timeout_minutes" default:"30"`
+			PendingTimeoutMinutes  int `mapstructure:"pending_timeout_minutes" default:"60"`
+			RetryDelayMinutes      int `mapstructure:"retry_delay_minutes" default:"15"`
+			MaxRetries             int `mapstructure:"max_retries" default:"3"`
+		}{
+			EnabledIntervalMinutes: c.Int("thread-cleanup-interval-minutes"),
+			ScrapingTimeoutMinutes: c.Int("thread-scraping-timeout-minutes"),
+			PendingTimeoutMinutes:  c.Int("thread-pending-timeout-minutes"),
+			RetryDelayMinutes:      c.Int("thread-retry-delay-minutes"),
+			MaxRetries:             c.Int("thread-max-retries"),
+		},
+	}
+}
+
 func LoadBotConfigFromCLI(c *cli.Context) *BotConfig {
 	var creds []BotCredential
 
@@ -133,6 +166,7 @@ func LoadBotConfigFromCLI(c *cli.Context) *BotConfig {
 		Credentials:                creds,
 		CheckInterval:              c.Duration("bot-check-interval"),
 		ExcludeMentionAuthorPrefix: c.String("bot-exclude-mention-author-prefix"),
+		MentionUsername:            c.String("bot-mention-username"),
 	}
 }
 
@@ -266,6 +300,42 @@ func GetAuth0CLIFlags() []cli.Flag {
 	}
 }
 
+// GetCronCLIFlags returns cron-related CLI flags
+func GetCronCLIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.IntFlag{
+			Name:    "thread-cleanup-interval-minutes",
+			Value:   3,
+			Usage:   "Interval in minutes for cleaning up thread statuses",
+			EnvVars: []string{"THREAD_CLEANUP_INTERVAL_MINUTES"},
+		},
+		&cli.IntFlag{
+			Name:    "thread-scraping-timeout-minutes",
+			Value:   30,
+			Usage:   "Timeout in minutes for scraping thread statuses",
+			EnvVars: []string{"THREAD_SCRAPING_TIMEOUT_MINUTES"},
+		},
+		&cli.IntFlag{
+			Name:    "thread-pending-timeout-minutes",
+			Value:   60,
+			Usage:   "Timeout in minutes for pending thread statuses",
+			EnvVars: []string{"THREAD_PENDING_TIMEOUT_MINUTES"},
+		},
+		&cli.IntFlag{
+			Name:    "thread-retry-delay-minutes",
+			Value:   15,
+			Usage:   "Delay in minutes before retrying failed thread status updates",
+			EnvVars: []string{"THREAD_RETRY_DELAY_MINUTES"},
+		},
+		&cli.IntFlag{
+			Name:    "thread-max-retries",
+			Value:   5,
+			Usage:   "Maximum number of retries for failed thread status updates",
+			EnvVars: []string{"THREAD_MAX_RETRIES"},
+		},
+	}
+}
+
 // GetBotCLIFlags returns bot-related CLI flags
 func GetBotCLIFlags() []cli.Flag {
 	return []cli.Flag{
@@ -326,6 +396,11 @@ func GetBotCLIFlags() []cli.Flag {
 			Value:   "threadmirror",
 			Usage:   "Prefix of author screen names to exclude from mention processing",
 			EnvVars: []string{"BOT_EXCLUDE_MENTION_AUTHOR_PREFIX"},
+		},
+		&cli.StringFlag{
+			Name:    "bot-mention-username",
+			Usage:   "Username to monitor for mentions (if empty, uses first credential's username)",
+			EnvVars: []string{"BOT_MENTION_USERNAME"},
 		},
 	}
 }

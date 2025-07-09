@@ -3,7 +3,6 @@ package xscraper
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -40,22 +39,15 @@ func TestGetTweets(t *testing.T) {
 	require.NoError(t, err)
 
 	tweetsResult, err := scraper.GetTweets(context.Background(), "1939670365153657119")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	require.NoError(t, err)
 
-	fmt.Println("--------------------------------")
-	if tweetsBytes, err := json.Marshal(tweetsResult); err == nil {
-		fmt.Println(string(tweetsBytes))
-	} else {
-		t.Fatal(err)
-		return
-	}
+	// Verify we got some tweets
+	require.NotEmpty(t, tweetsResult.Tweets, "Expected to get at least one tweet")
 
-	fmt.Println("--------------------------------")
+	// Verify tweet structure is valid
 	for _, tweet := range tweetsResult.Tweets {
-		fmt.Println(tweet.Text)
+		require.NotEmpty(t, tweet.ID, "Tweet ID should not be empty")
+		require.NotEmpty(t, tweet.Text, "Tweet text should not be empty")
 	}
 }
 
@@ -117,5 +109,6 @@ func TestCreateTweet(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	fmt.Println(tweets)
+	// Verify tweet creation was successful
+	require.NotNil(t, tweets, "Created tweet should not be nil")
 }

@@ -5,6 +5,7 @@ apis/MentionsApi.ts
 apis/QRCodeApi.ts
 apis/RenderApi.ts
 apis/ShareApi.ts
+apis/ThreadsApi.ts
 apis/index.ts
 index.ts
 models/Hashtag.ts
@@ -22,6 +23,9 @@ models/Symbol.ts
 models/ThreadAuthor.ts
 models/ThreadDetail.ts
 models/ThreadIdGet200Response.ts
+models/ThreadScrapePost200Response.ts
+models/ThreadScrapePost409Response.ts
+models/ThreadScrapePostRequest.ts
 models/Timestamp.ts
 models/Tweet.ts
 models/TweetEntities.ts

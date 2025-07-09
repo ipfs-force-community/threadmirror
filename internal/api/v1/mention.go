@@ -63,5 +63,6 @@ func (h *V1Handler) convertMentionSummaryToAPI(mention service.MentionSummary) M
 		CreatedAt:       mention.CreatedAt,
 		MentionCreateAt: mention.MentionCreateAt,
 		NumTweets:       mention.NumTweets,
+		Status:          MentionSummaryStatus(mention.Status),
 	}
 }

@@ -20,6 +20,13 @@ import {
     TweetToJSON,
     TweetToJSONTyped,
 } from './Tweet';
+import type { ThreadAuthor } from './ThreadAuthor';
+import {
+    ThreadAuthorFromJSON,
+    ThreadAuthorFromJSONTyped,
+    ThreadAuthorToJSON,
+    ThreadAuthorToJSONTyped,
+} from './ThreadAuthor';
 
 /**
  * 
@@ -63,7 +70,32 @@ export interface ThreadDetail {
      * @memberof ThreadDetail
      */
     tweets: Array<Tweet> | null;
+    /**
+     * Current status of the thread scraping process
+     * @type {string}
+     * @memberof ThreadDetail
+     */
+    status: ThreadDetailStatusEnum;
+    /**
+     * 
+     * @type {ThreadAuthor}
+     * @memberof ThreadDetail
+     */
+    author?: ThreadAuthor;
 }
+
+
+/**
+ * @export
+ */
+export const ThreadDetailStatusEnum = {
+    Pending: 'pending',
+    Scraping: 'scraping',
+    Completed: 'completed',
+    Failed: 'failed'
+} as const;
+export type ThreadDetailStatusEnum = typeof ThreadDetailStatusEnum[keyof typeof ThreadDetailStatusEnum];
+
 
 /**
  * Check if a given object implements the ThreadDetail interface.
@@ -75,6 +107,7 @@ export function instanceOfThreadDetail(value: object): value is ThreadDetail {
     if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
     if (!('numTweets' in value) || value['numTweets'] === undefined) return false;
     if (!('tweets' in value) || value['tweets'] === undefined) return false;
+    if (!('status' in value) || value['status'] === undefined) return false;
     return true;
 }
 
@@ -94,6 +127,8 @@ export function ThreadDetailFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'createdAt': (new Date(json['created_at'])),
         'numTweets': json['num_tweets'],
         'tweets': (json['tweets'] == null ? null : (json['tweets'] as Array<any>).map(TweetFromJSON)),
+        'status': json['status'],
+        'author': json['author'] == null ? undefined : ThreadAuthorFromJSON(json['author']),
     };
 }
 
@@ -114,6 +149,8 @@ export function ThreadDetailToJSONTyped(value?: ThreadDetail | null, ignoreDiscr
         'created_at': ((value['createdAt']).toISOString()),
         'num_tweets': value['numTweets'],
         'tweets': (value['tweets'] == null ? null : (value['tweets'] as Array<any>).map(TweetToJSON)),
+        'status': value['status'],
+        'author': ThreadAuthorToJSON(value['author']),
     };
 }
 

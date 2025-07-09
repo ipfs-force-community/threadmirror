@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import styles from './MentionDetail.module.css';
 import { ThreadDetail as ThreadData, Tweet as TweetModel } from '@src/client/models';
 import { renderTweetContent } from '@utils/richText';
+import StatusBadge from '@components/common/StatusBadge';
 
 const MentionDetail = () => {
   const { mentionData } = useLocation().state || {};
@@ -121,6 +122,14 @@ const MentionDetail = () => {
   return (
     <div className={styles.container}>
       <UserProfileComponent profile={author} sample={true} />
+      
+      <div className={styles.statusBar}>
+        <StatusBadge status={detail?.status as any} size="medium" />
+        <span className={styles.statusText}>
+          Thread processing status: {detail?.status}
+        </span>
+      </div>
+
       <div className={styles.actionBar}>
         <button 
           className={styles.shareButton} 

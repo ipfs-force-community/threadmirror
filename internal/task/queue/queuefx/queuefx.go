@@ -1,21 +1,21 @@
-package jobfx
+package queuefx
 
 import (
 	"context"
 
 	"github.com/chromedp/chromedp"
-	internaljob "github.com/ipfs-force-community/threadmirror/internal/job"
+	internalqueue "github.com/ipfs-force-community/threadmirror/internal/task/queue"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq/jobqfx"
 	"go.uber.org/fx"
 )
 
 type (
-	chromedpContext  = internaljob.ChromedpContext
+	chromedpContext  = internalqueue.ChromedpContext
 	chromedpCancelFn context.CancelFunc
 )
 
-var Module = fx.Module("job",
+var Module = fx.Module("queue",
 	jobqfx.Module,
 	fx.Provide(func() (chromedpContext, chromedpCancelFn) {
 		allocCtx, cancelFn := chromedp.NewExecAllocator(context.Background(),
@@ -38,17 +38,19 @@ var Module = fx.Module("job",
 		lc.Append(fx.StopHook(cancelFn))
 	}),
 	// Domain services used by workers
-	fx.Provide(internaljob.NewMentionHandler),
-	fx.Provide(internaljob.NewReplyTweetHandler),
+	fx.Provide(internalqueue.NewMentionHandler),
+	fx.Provide(internalqueue.NewReplyTweetHandler),
+	fx.Provide(internalqueue.NewThreadScrapeHandler),
 	// Register lifecycle hooks for proper startup/shutdown
 	fx.Invoke(registerJobLifecycle),
 )
 
 // registerJobLifecycle sets up proper startup and shutdown hooks for job processing
-func registerJobLifecycle(lc fx.Lifecycle, registry jobq.JobHandlerRegistry, mentionHandler *internaljob.MentionHandler, replyHandler *internaljob.ReplyTweetHandler) {
+func registerJobLifecycle(lc fx.Lifecycle, registry jobq.JobHandlerRegistry, mentionHandler *internalqueue.MentionHandler, replyHandler *internalqueue.ReplyTweetHandler, threadScrapeHandler *internalqueue.ThreadScrapeHandler) {
 	lc.Append(fx.StartHook(func(ctx context.Context) error {
-		registry.RegisterHandler(internaljob.TypeProcessMention, mentionHandler)
-		registry.RegisterHandler(internaljob.TypeReplyTweet, replyHandler)
+		registry.RegisterHandler(internalqueue.TypeProcessMention, mentionHandler)
+		registry.RegisterHandler(internalqueue.TypeReplyTweet, replyHandler)
+		registry.RegisterHandler(internalqueue.TypeThreadScrape, threadScrapeHandler)
 		return nil
 	}))
 }

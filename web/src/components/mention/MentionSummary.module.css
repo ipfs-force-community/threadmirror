@@ -59,12 +59,19 @@
     text-align: left;
 }
 
-.createdAt {
+.metaInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
     margin-left: auto;
+    flex-shrink: 0;
+}
+
+.createdAt {
     color: #657786;
     font-size: 14px;
     white-space: nowrap;
-    flex-shrink: 0;
 }
 
 .contentPreview {

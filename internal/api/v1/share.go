@@ -3,12 +3,12 @@ package v1
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/chromedp/chromedp"
 	"github.com/gin-gonic/gin"
-	v1errors "github.com/ipfs-force-community/threadmirror/internal/api/v1/errors"
 	"github.com/ipfs-force-community/threadmirror/internal/comm"
 )
 
@@ -16,25 +16,25 @@ import (
 func (h *V1Handler) GetShare(c *gin.Context, params GetShareParams) {
 	threadID := params.GetThreadId()
 	if threadID == "" {
-		_ = c.Error(v1errors.BadRequest(nil).WithCode(v1errors.ErrCodeBadRequest))
+		HandleBadRequestError(c, fmt.Errorf("thread_id parameter is required"))
 		return
 	}
 
 	// Fetch thread detail
 	thread, err := h.threadService.GetThreadByID(c.Request.Context(), threadID)
 	if err != nil {
-		_ = c.Error(v1errors.InternalServerError(err).WithCode(v1errors.ErrCodeInternalError))
+		HandleInternalServerError(c, err)
 		return
 	}
 	if thread == nil {
-		_ = c.Error(v1errors.NotFound(nil).WithCode(v1errors.ErrCodeNotFound))
+		HandleNotFoundError(c, fmt.Errorf("thread not found"))
 		return
 	}
 
 	// Render thread to HTML
 	html, err := comm.RenderThread(h.commonConfig.ThreadURLTemplate, threadID, thread, h.logger)
 	if err != nil {
-		_ = c.Error(v1errors.InternalServerError(err).WithCode(v1errors.ErrCodeInternalError))
+		HandleInternalServerError(c, err)
 		return
 	}
 
@@ -61,7 +61,7 @@ func (h *V1Handler) GetShare(c *gin.Context, params GetShareParams) {
 		chromedp.Sleep(1*time.Second),
 		chromedp.FullScreenshot(&buf, 100),
 	); err != nil {
-		_ = c.Error(v1errors.InternalServerError(err).WithCode(v1errors.ErrCodeInternalError))
+		HandleInternalServerError(c, err)
 		return
 	}
 

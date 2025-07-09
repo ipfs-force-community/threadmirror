@@ -1,0 +1,91 @@
+/* StatusBadge Component - Medium Style */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Size variants */
+.small {
+  padding: 2px 8px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.medium {
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+/* Status variants with Medium-inspired colors */
+.pending {
+  background-color: #fff3cd;
+  color: #856404;
+  border-color: #ffeaa7;
+}
+
+.scraping {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border-color: #b8daff;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.completed {
+  background-color: #d4edda;
+  color: #155724;
+  border-color: #c3e6cb;
+}
+
+.failed {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-color: #f5c6cb;
+}
+
+/* Icon styling */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.9em;
+}
+
+.text {
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* Hover effects for interactive badges */
+.statusBadge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Animation for scraping status */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.scraping .icon {
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+} 
