@@ -7,6 +7,178 @@ import (
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper/generated"
 )
 
+// isHashtagEqual compares two hashtags for equality based on text field
+func isHashtagEqual(a, b generated.Hashtag) bool {
+	textA, okA := a["text"]
+	textB, okB := b["text"]
+	return okA && okB && textA == textB
+}
+
+// isSymbolEqual compares two symbols for equality based on text field
+func isSymbolEqual(a, b generated.Symbol) bool {
+	textA, okA := a["text"]
+	textB, okB := b["text"]
+	return okA && okB && textA == textB
+}
+
+// isUserMentionEqual compares two user mentions for equality based on screen_name field
+func isUserMentionEqual(a, b generated.UserMention) bool {
+	screenNameA, okA := a["screen_name"]
+	screenNameB, okB := b["screen_name"]
+	return okA && okB && screenNameA == screenNameB
+}
+
+// isMediaEqual compares two media items for equality based on unique identifiers
+func isMediaEqual(a, b generated.Media) bool {
+	return a.IdStr == b.IdStr && a.MediaKey == b.MediaKey
+}
+
+// isUrlEqual compares two URLs for equality based on URL
+func isUrlEqual(a, b generated.Url) bool {
+	return a.Url == b.Url
+}
+
+// isTimestampEqual compares two timestamps for equality
+func isTimestampEqual(a, b generated.Timestamp) bool {
+	return a.Seconds == b.Seconds && a.Text == b.Text
+}
+
+// containsHashtag checks if a hashtag exists in a slice
+func containsHashtag(slice []generated.Hashtag, item generated.Hashtag) bool {
+	for _, h := range slice {
+		if isHashtagEqual(h, item) {
+			return true
+		}
+	}
+	return false
+}
+
+// containsSymbol checks if a symbol exists in a slice
+func containsSymbol(slice []generated.Symbol, item generated.Symbol) bool {
+	for _, s := range slice {
+		if isSymbolEqual(s, item) {
+			return true
+		}
+	}
+	return false
+}
+
+// containsUserMention checks if a user mention exists in a slice
+func containsUserMention(slice []generated.UserMention, item generated.UserMention) bool {
+	for _, u := range slice {
+		if isUserMentionEqual(u, item) {
+			return true
+		}
+	}
+	return false
+}
+
+// containsMedia checks if a media item exists in a slice
+func containsMedia(slice []generated.Media, item generated.Media) bool {
+	for _, m := range slice {
+		if isMediaEqual(m, item) {
+			return true
+		}
+	}
+	return false
+}
+
+// containsUrl checks if a URL exists in a slice
+func containsUrl(slice []generated.Url, item generated.Url) bool {
+	for _, u := range slice {
+		if isUrlEqual(u, item) {
+			return true
+		}
+	}
+	return false
+}
+
+// containsTimestamp checks if a timestamp exists in a slice
+func containsTimestamp(slice []generated.Timestamp, item generated.Timestamp) bool {
+	for _, t := range slice {
+		if isTimestampEqual(t, item) {
+			return true
+		}
+	}
+	return false
+}
+
+// MergeEntities merges two Entities, preserving all entities from both sources without duplication
+func MergeEntities(original, updated generated.Entities) generated.Entities {
+	merged := generated.Entities{
+		Hashtags:     make([]generated.Hashtag, 0),
+		Symbols:      make([]generated.Symbol, 0),
+		UserMentions: make([]generated.UserMention, 0),
+		Urls:         make([]generated.Url, 0),
+	}
+
+	// Merge hashtags - add all from original, then add new ones from updated
+	merged.Hashtags = append(merged.Hashtags, original.Hashtags...)
+	for _, h := range updated.Hashtags {
+		if !containsHashtag(merged.Hashtags, h) {
+			merged.Hashtags = append(merged.Hashtags, h)
+		}
+	}
+
+	// Merge symbols
+	merged.Symbols = append(merged.Symbols, original.Symbols...)
+	for _, s := range updated.Symbols {
+		if !containsSymbol(merged.Symbols, s) {
+			merged.Symbols = append(merged.Symbols, s)
+		}
+	}
+
+	// Merge user mentions
+	merged.UserMentions = append(merged.UserMentions, original.UserMentions...)
+	for _, u := range updated.UserMentions {
+		if !containsUserMention(merged.UserMentions, u) {
+			merged.UserMentions = append(merged.UserMentions, u)
+		}
+	}
+
+	// Merge URLs
+	merged.Urls = append(merged.Urls, original.Urls...)
+	for _, u := range updated.Urls {
+		if !containsUrl(merged.Urls, u) {
+			merged.Urls = append(merged.Urls, u)
+		}
+	}
+
+	// Merge media
+	var mergedMedia []generated.Media
+	if original.Media != nil {
+		mergedMedia = append(mergedMedia, *original.Media...)
+	}
+	if updated.Media != nil {
+		for _, m := range *updated.Media {
+			if !containsMedia(mergedMedia, m) {
+				mergedMedia = append(mergedMedia, m)
+			}
+		}
+	}
+	if len(mergedMedia) > 0 {
+		merged.Media = &mergedMedia
+	}
+
+	// Merge timestamps
+	var mergedTimestamps []generated.Timestamp
+	if original.Timestamps != nil {
+		mergedTimestamps = append(mergedTimestamps, *original.Timestamps...)
+	}
+	if updated.Timestamps != nil {
+		for _, t := range *updated.Timestamps {
+			if !containsTimestamp(mergedTimestamps, t) {
+				mergedTimestamps = append(mergedTimestamps, t)
+			}
+		}
+	}
+	if len(mergedTimestamps) > 0 {
+		merged.Timestamps = &mergedTimestamps
+	}
+
+	return merged
+}
+
 // User represents a simplified user structure for tweets
 type User struct {
 	ID              string    `json:"id"`
@@ -175,12 +347,14 @@ func convertGeneratedTweetToTweet(genTweet *generated.Tweet) (*Tweet, error) {
 	}
 
 	if genTweet.NoteTweet != nil {
-		// Long-form Note Tweet overrides legacy text and entities
+		// Long-form Note Tweet contains additional content and entities
 		note := genTweet.NoteTweet.NoteTweetResults.Result
 
-		// Replace text and entities with the content from the note tweet
+		// Update text with the note tweet content (note tweets usually contain the full text)
 		tweet.Text = note.Text
-		tweet.Entities = note.EntitySet
+
+		tweet.Entities = MergeEntities(tweet.Entities, note.EntitySet)
+
 		tweet.IsNoteTweet = true
 		tweet.RichText = note.Richtext
 	}

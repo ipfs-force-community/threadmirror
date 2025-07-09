@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -31,7 +31,7 @@ func Middleware(
 
 		jwtString := strings.TrimPrefix(authorization, "Bearer ")
 		if ai, err := v.Verify(jwtString); err != nil {
-			fmt.Println("[auth.middleware] verify token error:", err)
+			slog.Error("verify token error", "error", err)
 			errorHandler(c, http.StatusForbidden)
 		} else {
 			SetAuthInfo(c, ai)

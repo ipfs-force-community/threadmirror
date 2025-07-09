@@ -172,6 +172,9 @@ func (x *XScraper) doJson(req *http.Request, target any) error {
 			Body:       string(respBody),
 		}
 	}
+	if x.logger != nil {
+		x.logger.Debug("GraphQL response", "body", string(respBody))
+	}
 	if err := json.Unmarshal(respBody, target); err != nil {
 		return fmt.Errorf("unmarshal response body %s: %w", respBody, err)
 	}

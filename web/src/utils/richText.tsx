@@ -1,10 +1,10 @@
 import React from 'react';
-import type { TweetEntities, NoteTweetRichText, Url, UserMention } from '@client/models';
+import type { TweetEntities, NoteTweetRichText, Url, UserMention, Hashtag } from '@client/models';
 
 interface Range {
   start: number;
   end: number;
-  type: 'bold' | 'italic' | 'link' | 'mention';
+  type: 'bold' | 'italic' | 'link' | 'mention' | 'hashtag';
   data?: any;
 }
 
@@ -21,6 +21,12 @@ function buildEntityRanges(entities?: TweetEntities): Range[] {
   entities.userMentions?.forEach((m: UserMention) => {
     if (m.indices?.length === 2) {
       ranges.push({ start: m.indices[0], end: m.indices[1], type: 'mention', data: m.screenName });
+    }
+  });
+  // Hashtags
+  entities.hashtags?.forEach((h: Hashtag) => {
+    if (h.indices?.length === 2) {
+      ranges.push({ start: h.indices[0], end: h.indices[1], type: 'hashtag', data: h.text });
     }
   });
   return ranges;
@@ -90,6 +96,13 @@ export function renderTweetContent(text: string, entities?: TweetEntities, rich?
         node = (
           <a key={`mention-${idx}-${range.start}`} href={`https://twitter.com/${range.data}`} target="_blank" rel="noopener noreferrer">
             @{range.data}
+          </a>
+        );
+        break;
+      case 'hashtag':
+        node = (
+          <a key={`hashtag-${idx}-${range.start}`} href={`https://twitter.com/hashtag/${range.data}`} target="_blank" rel="noopener noreferrer">
+            #{range.data}
           </a>
         );
         break;

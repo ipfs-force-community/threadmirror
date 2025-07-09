@@ -23,7 +23,8 @@ import (
 const TypeReplyTweet = "reply_tweet"
 
 type ReplyTweetPayload struct {
-	MentionID string `json:"mention_id"`
+	MentionID               string `json:"mention_id"`
+	MentionAuthorScreenName string `json:"mention_author_screen_name"`
 }
 
 type ChromedpContext context.Context
@@ -100,7 +101,7 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 
 	threadURL := fmt.Sprintf(h.threadURLTemplate, mention.ThreadID)
 	replyText := fmt.Sprintf("%s\n\n#threadmirror", threadURL)
-	searchQuery := fmt.Sprintf("(%s) filter:replies", threadURL)
+	searchQuery := fmt.Sprintf("\"%s\" (to:%s) filter:replies", threadURL, payload.MentionAuthorScreenName)
 	// 先检查是否已经回复了该 tweet
 	var tweets []*xscraper.Tweet
 
