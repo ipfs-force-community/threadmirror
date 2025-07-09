@@ -106,10 +106,18 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 		"created_at", mention.CreatedAt.Format(time.RFC3339),
 	)
 
-	tweets, err := w.scrapers[0].GetTweets(ctx, mention.RestID)
+	// Use fallback helper with random delay between 100–1000ms
+	pool := xscraper.NewScraperPool(w.scrapers)
+	tweets, err := xscraper.TryWithResult(pool, func(sc *xscraper.XScraper) ([]*xscraper.Tweet, error) {
+		return xscraper.GetCompleteThread(ctx, sc, mention.RestID, 0)
+	})
+
 	if err != nil {
-		logger.Error("Failed to get tweets", "error", err)
 		return fmt.Errorf("failed to get tweets: %w", err)
+	}
+
+	if len(tweets) == 0 {
+		return fmt.Errorf("no tweets found for mention %s", mention.RestID)
 	}
 
 	if len(tweets) < 2 {

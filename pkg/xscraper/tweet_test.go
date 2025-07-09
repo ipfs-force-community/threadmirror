@@ -39,14 +39,14 @@ func TestGetTweets(t *testing.T) {
 	}, slog.New(slog.NewTextHandler(os.Stdout, nil)))
 	require.NoError(t, err)
 
-	tweets, err := scraper.GetTweets(context.Background(), "1939670365153657119")
+	tweetsResult, err := scraper.GetTweets(context.Background(), "1939670365153657119")
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
 
 	fmt.Println("--------------------------------")
-	if tweetsBytes, err := json.Marshal(tweets); err == nil {
+	if tweetsBytes, err := json.Marshal(tweetsResult); err == nil {
 		fmt.Println(string(tweetsBytes))
 	} else {
 		t.Fatal(err)
@@ -54,7 +54,7 @@ func TestGetTweets(t *testing.T) {
 	}
 
 	fmt.Println("--------------------------------")
-	for _, tweet := range tweets {
+	for _, tweet := range tweetsResult.Tweets {
 		fmt.Println(tweet.Text)
 	}
 }

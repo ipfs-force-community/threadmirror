@@ -11,8 +11,8 @@ import (
 	"github.com/samber/lo"
 )
 
-// GetTweets returns the tweets with the given ID
-func (x *XScraper) GetTweets(ctx context.Context, id string) ([]*Tweet, error) {
+// GetTweets returns the tweets with the given ID and completeness information
+func (x *XScraper) GetTweets(ctx context.Context, id string) (*TweetsResult, error) {
 	p := generated.GetTweetDetailParams{}
 	p.Variables.FocalTweetId = id
 	p.Variables.Referrer = "home"
@@ -72,16 +72,16 @@ func (x *XScraper) GetTweets(ctx context.Context, id string) ([]*Tweet, error) {
 		return nil, fmt.Errorf("tweet detail: %s", strings.Join(msgs, "; "))
 	}
 
-	tweets, err := convertTimelineToTweets(resp.Data.ThreadedConversationWithInjectionsV2)
+	tweetsResult, err := convertTimelineToTweets(resp.Data.ThreadedConversationWithInjectionsV2)
 	if err != nil {
 		return nil, fmt.Errorf("convert tweet: %w", err)
 	}
 
-	if len(tweets) == 0 {
+	if len(tweetsResult.Tweets) == 0 {
 		return nil, fmt.Errorf("no tweet found")
 	}
 
-	return tweets, nil
+	return tweetsResult, nil
 }
 
 // GetTweetDetail 调用 TweetDetail GraphQL接口，返回目标推文及其线程（可能包含多条推文）。
@@ -154,11 +154,11 @@ func (x *XScraper) GetTweetDetail(ctx context.Context, id string) ([]*Tweet, err
 		return nil, fmt.Errorf("tweet detail: %s", strings.Join(msgs, "; "))
 	}
 
-	tweets, err := convertTimelineToTweets(resp.Data.ThreadedConversationWithInjectionsV2)
+	tweetsResult, err := convertTimelineToTweets(resp.Data.ThreadedConversationWithInjectionsV2)
 	if err != nil {
 		return nil, fmt.Errorf("convert tweet: %w", err)
 	}
-	return tweets, nil
+	return tweetsResult.Tweets, nil
 }
 
 // GetTweetDetail returns the tweet with the given ID
@@ -295,12 +295,12 @@ func (x *XScraper) SearchTweets(ctx context.Context, query string, maxTweets int
 		return nil, fmt.Errorf("search tweets: %s", strings.Join(msgs, "; "))
 	}
 
-	tweets, err := convertTimelineToTweets(&resp.Data.SearchByRawQuery.SearchTimeline.Timeline)
+	tweetsResult, err := convertTimelineToTweets(&resp.Data.SearchByRawQuery.SearchTimeline.Timeline)
 	if err != nil {
 		return nil, fmt.Errorf("convert tweets: %w", err)
 	}
 
-	return tweets, nil
+	return tweetsResult.Tweets, nil
 }
 
 // GetMentions returns the recent mentions of the user

@@ -242,11 +242,14 @@ func NewMockXScraper() *MockXScraper {
 	}
 }
 
-func (m *MockXScraper) GetTweets(ctx context.Context, id string) ([]*xscraper.Tweet, error) {
+func (m *MockXScraper) GetTweets(ctx context.Context, id string) (*xscraper.TweetsResult, error) {
 	if m.ShouldReturnError {
 		return nil, &xscraper.BadRequestError{StatusCode: 404, Body: "Tweet not found"}
 	}
-	return m.MockTweets, nil
+	return &xscraper.TweetsResult{
+		Tweets:     m.MockTweets,
+		IsComplete: true, // Mock always returns complete results
+	}, nil
 }
 
 func (m *MockXScraper) GetTweetDetail(ctx context.Context, id string) ([]*xscraper.Tweet, error) {

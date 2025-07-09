@@ -102,30 +102,18 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 	threadURL := fmt.Sprintf(h.threadURLTemplate, mention.ThreadID)
 	replyText := fmt.Sprintf("%s\n\n#threadmirror", threadURL)
 	searchQuery := fmt.Sprintf("\"%s\" (to:%s) filter:replies", threadURL, payload.MentionAuthorScreenName)
-	// 先检查是否已经回复了该 tweet
+
 	var tweets []*xscraper.Tweet
 
-	scrapers := make([]*xscraper.XScraper, len(h.scrapers))
-	copy(scrapers, h.scrapers)
-
-	rand.Shuffle(len(scrapers), func(i, j int) {
-		scrapers[i], scrapers[j] = scrapers[j], scrapers[i]
+	pool := xscraper.NewScraperPool(h.scrapers)
+	searchRes, err := xscraper.TryWithResult(pool, func(sc *xscraper.XScraper) ([]*xscraper.Tweet, error) {
+		return sc.SearchTweets(ctx, searchQuery, 1)
 	})
-
-	valid := false
-	for _, scraper := range scrapers {
-		tweets, err = scraper.SearchTweets(ctx, searchQuery, 1)
-		if err != nil {
-			logger.Error("search tweets", "error", err, "search_query", searchQuery)
-			continue
-		}
-		valid = true
-		break
+	if err != nil {
+		return fmt.Errorf("no valid scraper found: %w", err)
 	}
 
-	if !valid {
-		return fmt.Errorf("no valid scraper found")
-	}
+	tweets = searchRes
 
 	if len(tweets) == 0 {
 		thread, err := h.threadService.GetThreadByID(ctx, mention.ThreadID)
@@ -149,34 +137,24 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 			return err
 		}
 
-		valid = false
-		for _, scraper := range scrapers {
+		// Use fallback to upload media and create tweet
+		_, err = xscraper.TryWithResult(pool, func(sc *xscraper.XScraper) (*xscraper.Tweet, error) {
 			// Upload the generated screenshot and obtain the media ID
-			uploadRes, err := scraper.UploadMedia(ctx, bytes.NewReader(buf), len(buf))
+			uploadRes, err := sc.UploadMedia(ctx, bytes.NewReader(buf), len(buf))
 			if err != nil {
-				logger.Error("upload media", "error", err)
-				continue
+				return nil, err
 			}
-
-			// Construct and send the tweet
-			tweet, err := scraper.CreateTweet(ctx, xscraper.NewTweet{
+			return sc.CreateTweet(ctx, xscraper.NewTweet{
 				Text:             replyText,
 				MediaIDs:         []string{uploadRes.MediaID},
 				TaggedUsers:      [][]string{},
 				InReplyToTweetId: &payload.MentionID,
 			})
-			if err != nil {
-				logger.Error("create tweet", "error", err)
-				continue
-			}
-			logger.Info("created tweet for mention", "tweet_id", tweet.RestID, "mention_id", payload.MentionID)
-			valid = true
-			break
+		})
+		if err != nil {
+			return fmt.Errorf("no valid scraper found: %w", err)
 		}
-
-		if !valid {
-			return fmt.Errorf("no valid scraper found")
-		}
+		logger.Info("created tweet for mention", "mention_id", payload.MentionID)
 	} else {
 		logger.Info("tweet already exists", "tweet_id", tweets[0].RestID, "mention_id", payload.MentionID, "search_query", searchQuery)
 	}

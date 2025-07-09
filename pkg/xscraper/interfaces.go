@@ -5,11 +5,11 @@ import (
 	"io"
 )
 
-// Scraper defines the interface for Twitter scraping operations
+// XScraperInterface defines the interface for Twitter scraping operations
 // This interface allows for easy mocking in tests
-type Scraper interface {
+type XScraperInterface interface {
 	// Tweet operations
-	GetTweets(ctx context.Context, id string) ([]*Tweet, error)
+	GetTweets(ctx context.Context, id string) (*TweetsResult, error)
 	GetTweetDetail(ctx context.Context, id string) ([]*Tweet, error)
 	GetTweetResultByRestId(ctx context.Context, id string) (*Tweet, error)
 	SearchTweets(ctx context.Context, query string, maxTweets int) ([]*Tweet, error)
@@ -28,4 +28,4 @@ type Scraper interface {
 }
 
 // Ensure XScraper implements the Scraper interface
-var _ Scraper = (*XScraper)(nil)
+var _ XScraperInterface = (*XScraper)(nil)

@@ -204,9 +204,9 @@ func TestMockComponents_Isolation(t *testing.T) {
 
 		// 测试正常操作
 		ctx := context.Background()
-		tweets, err := mock.GetTweets(ctx, "test-id")
+		tweetsResult, err := mock.GetTweets(ctx, "test-id")
 		require.NoError(t, err)
-		assert.Len(t, tweets, 1)
+		assert.Len(t, tweetsResult.Tweets, 1)
 
 		// 测试错误模式
 		mock.SetErrorMode(true)
@@ -216,9 +216,9 @@ func TestMockComponents_Isolation(t *testing.T) {
 
 		// 重置为正常模式
 		mock.SetErrorMode(false)
-		tweets, err = mock.GetTweets(ctx, "test-id")
+		tweetsResult, err = mock.GetTweets(ctx, "test-id")
 		require.NoError(t, err)
-		assert.Len(t, tweets, 1)
+		assert.Len(t, tweetsResult.Tweets, 1)
 	})
 
 	t.Run("LLMMock", func(t *testing.T) {

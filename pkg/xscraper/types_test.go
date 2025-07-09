@@ -238,17 +238,17 @@ func loadTestTweet(t interface {
 func TestTweetConversionWithRealData(t *testing.T) {
 	response := loadTestTweet(t)
 	// Test conversion
-	tweets, err := convertTimelineToTweets(response.Data.ThreadedConversationWithInjectionsV2)
+	tweetsResult, err := convertTimelineToTweets(response.Data.ThreadedConversationWithInjectionsV2)
 	if err != nil {
 		t.Fatalf("Failed to convert real tweet data: %v", err)
 	}
 
 	// Verify basic fields are populated
-	if len(tweets) == 0 {
+	if tweetsResult == nil || len(tweetsResult.Tweets) == 0 {
 		t.Fatal("No tweets returned")
 	}
 
-	tweet := tweets[0] // Get the first tweet
+	tweet := tweetsResult.Tweets[0] // Get the first tweet
 
 	if tweet.ID == "" {
 		t.Error("Tweet ID is empty")

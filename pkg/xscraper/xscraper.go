@@ -245,7 +245,7 @@ func (x *XScraper) doGraphQL(ctx context.Context, method, endpoint string, param
 
 	var berr *BadRequestError
 	if err != nil {
-		if errors.As(err, &berr) && berr.StatusCode == http.StatusUnauthorized || berr.StatusCode == http.StatusForbidden {
+		if errors.As(err, &berr) && (berr.StatusCode == http.StatusUnauthorized || berr.StatusCode == http.StatusForbidden) {
 			return errNotLoggedIn
 		}
 		return err

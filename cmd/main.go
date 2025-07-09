@@ -22,14 +22,14 @@ func main() {
 			&cli.BoolFlag{
 				Name:    "debug",
 				Value:   false,
-				EnvVars: []string{"TM_DEBUG"},
+				EnvVars: []string{"DEBUG", "TM_DEBUG"},
 				Usage:   "Enable debug mode",
 			},
 			&cli.StringFlag{
 				Name:    "log-level",
 				Aliases: []string{"loglevel"},
 				Value:   "info",
-				EnvVars: []string{"TM_LOG_LEVEL"},
+				EnvVars: []string{"TM_LOG_LEVEL", "LOG_LEVEL"},
 				Usage:   "Set log level",
 			},
 		},

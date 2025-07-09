@@ -231,8 +231,14 @@ type Tweet struct {
 	RichText          *generated.NoteTweetResultRichText `json:"richtext,omitempty"`
 }
 
-// convertTimelineToTweets converts a generated.Timeline to our Tweet struct
-func convertTimelineToTweets(timeline *generated.Timeline) ([]*Tweet, error) {
+// TweetsResult contains tweets and information about whether we've reached the beginning of the thread
+type TweetsResult struct {
+	Tweets     []*Tweet `json:"tweets"`
+	IsComplete bool     `json:"is_complete"` // true if we've reached the beginning of the thread
+}
+
+// convertTimelineToTweets converts a generated.Timeline to our TweetsResult struct
+func convertTimelineToTweets(timeline *generated.Timeline) (*TweetsResult, error) {
 	if timeline == nil {
 		return nil, fmt.Errorf("timeline is nil")
 	}
@@ -242,6 +248,8 @@ func convertTimelineToTweets(timeline *generated.Timeline) ([]*Tweet, error) {
 	}
 
 	var tweets []*Tweet
+	isComplete := false
+
 	convertAndAppendTweet := func(timelineTweet *generated.TimelineTweet) error {
 		if timelineTweet.TweetResults.Result == nil {
 			return nil
@@ -259,6 +267,15 @@ func convertTimelineToTweets(timeline *generated.Timeline) ([]*Tweet, error) {
 		tweets = append(tweets, tweet)
 
 		return nil
+	}
+
+	// First, check for TimelineTerminateTimeline instructions
+	for _, instruction := range timeline.Instructions {
+		terminateTimeline, err := instruction.AsTimelineTerminateTimeline()
+		if err == nil && terminateTimeline.Direction == "Top" {
+			isComplete = true
+			break
+		}
 	}
 
 	// Iterate through instructions to find TimelineAddEntries
@@ -296,7 +313,10 @@ func convertTimelineToTweets(timeline *generated.Timeline) ([]*Tweet, error) {
 		}
 	}
 
-	return tweets, nil
+	return &TweetsResult{
+		Tweets:     tweets,
+		IsComplete: isComplete,
+	}, nil
 }
 
 // convertGeneratedTweetToTweet converts generated.Tweet to our Tweet struct

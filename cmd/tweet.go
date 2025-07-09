@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
-	"os"
 
 	"github.com/ipfs-force-community/threadmirror/internal/config"
 	"github.com/ipfs-force-community/threadmirror/internal/repo/sqlrepo"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
+	"github.com/ipfs-force-community/threadmirror/pkg/log"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"github.com/urfave/cli/v2"
 )
@@ -21,7 +20,7 @@ var TweetCommand = &cli.Command{
 	Flags: config.GetDatabaseCLIFlags(),
 	Subcommands: []*cli.Command{
 		{
-			Name: "get-tweets",
+			Name: "get-thread",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:     "id",
@@ -34,7 +33,7 @@ var TweetCommand = &cli.Command{
 					return err
 				}
 
-				tweets, err := scraper.GetTweets(c.Context, c.String("id"))
+				tweets, err := xscraper.GetCompleteThread(c.Context, scraper, c.String("id"), 0)
 				if err != nil {
 					return err
 				}
@@ -105,8 +104,13 @@ var TweetCommand = &cli.Command{
 }
 
 func getScraper(c *cli.Context) (*xscraper.XScraper, error) {
+	logger, err := log.New(c.String("log-level"), c.Bool("debug"))
+	if err != nil {
+		return nil, err
+	}
+
 	dbConf := config.LoadDatabaseConfigFromCLI(c)
-	db, err := sql.New(dbConf.Driver, dbConf.DSN, slog.New(slog.NewTextHandler(os.Stdout, nil)))
+	db, err := sql.New(dbConf.Driver, dbConf.DSN, logger.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -132,5 +136,5 @@ func getScraper(c *cli.Context) (*xscraper.XScraper, error) {
 		},
 		Username: botCookie.Username,
 		Email:    botCookie.Email,
-	}, slog.New(slog.NewTextHandler(os.Stdout, nil)))
+	}, logger.Logger)
 }

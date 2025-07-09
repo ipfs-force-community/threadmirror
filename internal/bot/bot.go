@@ -121,31 +121,25 @@ func (tb *TwitterBot) run(ctx context.Context) {
 func (tb *TwitterBot) checkMentions(ctx context.Context) error {
 	tb.logger.Info("Checking for new mentions")
 
-	scrapers := make([]*xscraper.XScraper, len(tb.scrapers))
-	copy(scrapers, tb.scrapers)
-	rand.Shuffle(len(scrapers), func(i, j int) {
-		scrapers[i], scrapers[j] = scrapers[j], scrapers[i]
-	})
-
-	var mentions []*xscraper.Tweet
-	var err error
-	for i, scraper := range scrapers {
-		// Get recent mentions
-		mentions, err = scraper.GetMentionsByScreenName(ctx, tb.scrapers[0].LoginOpts.Username, func(tweet *xscraper.Tweet) bool {
+	pool := xscraper.NewScraperPool(tb.scrapers)
+	mentions, err := xscraper.TryWithResult(pool, func(sc *xscraper.XScraper) ([]*xscraper.Tweet, error) {
+		filter := func(tweet *xscraper.Tweet) bool {
 			if tb.excludeMentionAuthorPrefixLower == "" {
 				return true
 			}
 			return !strings.HasPrefix(strings.ToLower(tweet.Author.ScreenName), tb.excludeMentionAuthorPrefixLower)
-		})
-		if err != nil {
-			tb.logger.Error("failed to get mentions", "index", i, "error", err)
-			continue
 		}
-		if len(mentions) == 0 {
-			tb.logger.Info("No mentions found by scraper", "index", i)
-			continue
-		}
-		break
+		return sc.GetMentionsByScreenName(ctx, tb.scrapers[0].LoginOpts.Username, filter)
+	})
+
+	if err != nil {
+		tb.logger.Error("Failed to get mentions", "error", err)
+		return err
+	}
+
+	if len(mentions) == 0 {
+		tb.logger.Info("No mentions found")
+		return nil
 	}
 
 	tb.logger.Info("Found mentions", "count", len(mentions))
