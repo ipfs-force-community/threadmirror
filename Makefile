@@ -66,10 +66,11 @@ dev: ## Run development server
 	@echo "Starting development server..."
 	$(GO) run ./cmd/*.go  --debug server
 
-# Run tests
+# Run tests with testcontainers (default)
 .PHONY: test
-test: ## Run tests
-	@echo "Running tests..."
+test: ## Run tests with testcontainers (requires Docker)
+	@echo "Running tests with testcontainers..."
+	@echo "Note: Docker is required for these tests"
 	$(GO) test -v ./...
 
 # Clean build artifacts

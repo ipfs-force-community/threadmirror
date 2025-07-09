@@ -4,9 +4,11 @@ import (
 	"context"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
+	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"github.com/ipfs/go-cid"
 	"github.com/tmc/langchaingo/llms"
 	"gorm.io/datatypes"
@@ -118,12 +120,26 @@ type MockIPFSStorage struct{}
 
 func (m *MockIPFSStorage) Add(ctx context.Context, content io.ReadSeeker) (cid.Cid, error) {
 	// Return a fixed CID for testing
-	c, _ := cid.Parse("bafkreiabc123")
+	c, _ := cid.Parse("bafkreidivzimqfqtoqxkrpge6bjyhlvxqs3rhe73owtmdulaxr5do5in7u")
 	return c, nil
 }
 
 func (m *MockIPFSStorage) Get(ctx context.Context, cid cid.Cid) (io.ReadCloser, error) {
-	return io.NopCloser(strings.NewReader("mock content")), nil
+	// Return mock JSON tweets data
+	mockTweetsJSON := `[
+		{
+			"rest_id": "mock-tweet-1",
+			"created_at": "2024-01-01T12:00:00Z",
+			"text": "This is a mock tweet for testing",
+			"author": {
+				"rest_id": "mock-user-1",
+				"name": "Mock User",
+				"screen_name": "mockuser",
+				"profile_image_url": "https://example.com/avatar.jpg"
+			}
+		}
+	]`
+	return io.NopCloser(strings.NewReader(mockTweetsJSON)), nil
 }
 
 // MockMentionRepo is a mock implementation for MentionRepoInterface
@@ -180,4 +196,178 @@ func (m *MockMentionRepo) GetMentions(ctx context.Context, userID string, limit,
 
 func (m *MockMentionRepo) GetMentionsByUser(ctx context.Context, userID string, limit, offset int) ([]model.Mention, int64, error) {
 	return m.GetMentions(ctx, userID, limit, offset)
+}
+
+// MockXScraper is a mock implementation for xscraper.Scraper interface
+type MockXScraper struct {
+	// Configuration for mock behavior
+	ShouldReturnError bool
+	MockTweets        []*xscraper.Tweet
+	MockUsers         []*xscraper.User
+}
+
+func NewMockXScraper() *MockXScraper {
+	// Create some default mock data
+	mockUser := &xscraper.User{
+		RestID:          "mock-user-123",
+		ID:              "mock-user-123",
+		Name:            "Mock User",
+		ScreenName:      "mockuser",
+		ProfileImageURL: "https://example.com/avatar.jpg",
+		FollowersCount:  1000,
+		FriendsCount:    500,
+		StatusesCount:   250,
+		Verified:        false,
+		Description:     "This is a mock user for testing",
+		CreatedAt:       time.Now(),
+	}
+
+	mockTweet := &xscraper.Tweet{
+		RestID:    "mock-tweet-123",
+		ID:        "mock-tweet-123",
+		CreatedAt: time.Now(),
+		Text:      "This is a mock tweet for testing purposes #testtweet",
+		Author:    mockUser,
+		Stats: xscraper.TweetStats{
+			FavoriteCount: 10,
+			RetweetCount:  5,
+			ReplyCount:    2,
+		},
+	}
+
+	return &MockXScraper{
+		ShouldReturnError: false,
+		MockTweets:        []*xscraper.Tweet{mockTweet},
+		MockUsers:         []*xscraper.User{mockUser},
+	}
+}
+
+func (m *MockXScraper) GetTweets(ctx context.Context, id string) ([]*xscraper.Tweet, error) {
+	if m.ShouldReturnError {
+		return nil, &xscraper.BadRequestError{StatusCode: 404, Body: "Tweet not found"}
+	}
+	return m.MockTweets, nil
+}
+
+func (m *MockXScraper) GetTweetDetail(ctx context.Context, id string) ([]*xscraper.Tweet, error) {
+	if m.ShouldReturnError {
+		return nil, &xscraper.BadRequestError{StatusCode: 404, Body: "Tweet not found"}
+	}
+	return m.MockTweets, nil
+}
+
+func (m *MockXScraper) GetTweetResultByRestId(ctx context.Context, id string) (*xscraper.Tweet, error) {
+	if m.ShouldReturnError {
+		return nil, &xscraper.BadRequestError{StatusCode: 404, Body: "Tweet not found"}
+	}
+	if len(m.MockTweets) > 0 {
+		return m.MockTweets[0], nil
+	}
+	return nil, &xscraper.BadRequestError{StatusCode: 404, Body: "No mock tweets available"}
+}
+
+func (m *MockXScraper) SearchTweets(ctx context.Context, query string, maxTweets int) ([]*xscraper.Tweet, error) {
+	if m.ShouldReturnError {
+		return nil, &xscraper.BadRequestError{StatusCode: 400, Body: "Search failed"}
+	}
+
+	// Return mock tweets up to maxTweets limit
+	result := make([]*xscraper.Tweet, 0, maxTweets)
+	for i, tweet := range m.MockTweets {
+		if i >= maxTweets {
+			break
+		}
+		result = append(result, tweet)
+	}
+	return result, nil
+}
+
+func (m *MockXScraper) CreateTweet(ctx context.Context, newTweet xscraper.NewTweet) (*xscraper.Tweet, error) {
+	if m.ShouldReturnError {
+		return nil, &xscraper.BadRequestError{StatusCode: 400, Body: "Failed to create tweet"}
+	}
+
+	// Create a mock tweet based on the input
+	mockTweet := &xscraper.Tweet{
+		RestID:    "mock-created-tweet-123",
+		ID:        "mock-created-tweet-123",
+		CreatedAt: time.Now(),
+		Text:      newTweet.Text,
+		Author:    m.MockUsers[0], // Use first mock user
+		Stats: xscraper.TweetStats{
+			FavoriteCount: 0,
+			RetweetCount:  0,
+			ReplyCount:    0,
+		},
+	}
+
+	return mockTweet, nil
+}
+
+func (m *MockXScraper) GetMentions(ctx context.Context, filter func(*xscraper.Tweet) bool) ([]*xscraper.Tweet, error) {
+	if m.ShouldReturnError {
+		return nil, &xscraper.BadRequestError{StatusCode: 400, Body: "Failed to get mentions"}
+	}
+
+	var result []*xscraper.Tweet
+	for _, tweet := range m.MockTweets {
+		if filter == nil || filter(tweet) {
+			result = append(result, tweet)
+		}
+	}
+	return result, nil
+}
+
+func (m *MockXScraper) GetMentionsByScreenName(ctx context.Context, screenName string, filter func(*xscraper.Tweet) bool) ([]*xscraper.Tweet, error) {
+	if m.ShouldReturnError {
+		return nil, &xscraper.BadRequestError{StatusCode: 400, Body: "Failed to get mentions"}
+	}
+
+	// Mock mentions for the specified screen name
+	var result []*xscraper.Tweet
+	for _, tweet := range m.MockTweets {
+		// Simulate that this tweet mentions the screen name
+		if strings.Contains(tweet.Text, "@"+screenName) || filter == nil || filter(tweet) {
+			result = append(result, tweet)
+		}
+	}
+	return result, nil
+}
+
+func (m *MockXScraper) UploadMedia(ctx context.Context, mediaReader io.Reader, mediaSize int) (*xscraper.MediaUploadResult, error) {
+	if m.ShouldReturnError {
+		return nil, &xscraper.BadRequestError{StatusCode: 400, Body: "Failed to upload media"}
+	}
+
+	return &xscraper.MediaUploadResult{
+		MediaID: "mock-media-123456789",
+		Size:    uint(mediaSize),
+	}, nil
+}
+
+func (m *MockXScraper) Ready() bool {
+	return !m.ShouldReturnError // Ready if not configured to return errors
+}
+
+func (m *MockXScraper) WaitForReady(ctx context.Context) error {
+	if m.ShouldReturnError {
+		return ctx.Err() // Return context error if configured to fail
+	}
+	return nil // Always ready in mock
+}
+
+// SetErrorMode configures the mock to return errors for testing error scenarios
+func (m *MockXScraper) SetErrorMode(shouldError bool) {
+	m.ShouldReturnError = shouldError
+}
+
+// AddMockTweet adds a custom tweet to the mock data
+func (m *MockXScraper) AddMockTweet(tweet *xscraper.Tweet) {
+	m.MockTweets = append(m.MockTweets, tweet)
+}
+
+// ClearMockData clears all mock data
+func (m *MockXScraper) ClearMockData() {
+	m.MockTweets = []*xscraper.Tweet{}
+	m.MockUsers = []*xscraper.User{}
 }

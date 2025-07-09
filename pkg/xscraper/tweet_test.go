@@ -14,12 +14,17 @@ import (
 )
 
 func TestGetTweets(t *testing.T) {
+	// Skip this test if Twitter cookies are not available
+	cookiesPath := os.Getenv("TWITTER_COOKIES_PATH")
+	if cookiesPath == "" {
+		cookiesPath = "cookies.json"
+	}
+	if _, err := os.Stat(cookiesPath); os.IsNotExist(err) {
+		t.Skip("Skipping TestGetTweets: Twitter cookies file not found. Set TWITTER_COOKIES_PATH or create cookies.json")
+	}
+
 	scraper, err := New(LoginOptions{
 		LoadCookies: func(ctx context.Context) ([]*http.Cookie, error) {
-			cookiesPath := os.Getenv("TWITTER_COOKIES_PATH")
-			if cookiesPath == "" {
-				cookiesPath = "cookies.json"
-			}
 			cookiesBytes, err := os.ReadFile(cookiesPath)
 			if err != nil {
 				return nil, err
@@ -60,10 +65,21 @@ func TestCreateTweet(t *testing.T) {
 	accessToken := os.Getenv("TWITTER_ACCESS_TOKEN")
 	accessTokenSecret := os.Getenv("TWITTER_ACCESS_TOKEN_SECRET")
 
-	require.NotEmpty(t, apiKey, "TWITTER_API_KEY must be set")
-	require.NotEmpty(t, apiKeySecret, "TWITTER_API_KEY_SECRET must be set")
-	require.NotEmpty(t, accessToken, "TWITTER_ACCESS_TOKEN must be set")
-	require.NotEmpty(t, accessTokenSecret, "TWITTER_ACCESS_TOKEN_SECRET must be set")
+	// Skip this test if Twitter API credentials are not available
+	if apiKey == "" || apiKeySecret == "" || accessToken == "" || accessTokenSecret == "" {
+		t.Skip("Skipping TestCreateTweet: Twitter API credentials not set. Set TWITTER_API_KEY, TWITTER_API_KEY_SECRET, TWITTER_ACCESS_TOKEN, and TWITTER_ACCESS_TOKEN_SECRET")
+	}
+
+	// Also check for image path
+	imagePath := os.Getenv("TWEET_TEST_IMAGE_PATH")
+	if imagePath == "" {
+		t.Skip("Skipping TestCreateTweet: TWEET_TEST_IMAGE_PATH not set")
+	}
+
+	// Check if image file exists
+	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
+		t.Skip("Skipping TestCreateTweet: Test image file not found at " + imagePath)
+	}
 
 	scraper, err := New(LoginOptions{
 		LoadCookies: func(ctx context.Context) ([]*http.Cookie, error) {
@@ -90,8 +106,6 @@ func TestCreateTweet(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	imagePath := os.Getenv("TWEET_TEST_IMAGE_PATH")
-	require.NotEmpty(t, imagePath, "TWEET_TEST_IMAGE_PATH must be set")
 	f, err := os.Open(imagePath)
 	require.NoError(t, err)
 	r, err := scraper.UploadMedia(ctx, f, int(lo.Must(f.Stat()).Size()))

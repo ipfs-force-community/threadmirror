@@ -13,13 +13,11 @@ import (
 
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
-	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/tmc/langchaingo/llms"
 	"gorm.io/datatypes"
 )
@@ -189,18 +187,6 @@ func (m *MockIPFSStorage) Add(ctx context.Context, content io.ReadSeeker) (cid.C
 
 func (m *MockIPFSStorage) Get(ctx context.Context, c cid.Cid) (io.ReadCloser, error) {
 	return io.NopCloser(strings.NewReader("mock content")), nil
-}
-
-// setupTestDB creates an in-memory SQLite database for testing
-func setupTestDB(t *testing.T) *sql.DB {
-	db, err := sql.New("sqlite", ":memory:", slog.Default())
-	require.NoError(t, err)
-
-	// Migrate the schema
-	err = db.AutoMigrate(model.AllModels()...)
-	require.NoError(t, err)
-
-	return db
 }
 
 func createTestBot(t *testing.T) *TwitterBot {
