@@ -1,0 +1,92 @@
+.pageContainer {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+.breadcrumb {
+  margin-bottom: 2rem;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: #1a8917;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  font-weight: 500;
+}
+
+.backButton:hover {
+  background-color: #f0f8f0;
+}
+
+.backButton:focus {
+  outline: 2px solid #1a8917;
+  outline-offset: 2px;
+}
+
+.infoSection {
+  margin-top: 3rem;
+  padding: 2rem;
+  background: #f8fffe;
+  border-radius: 8px;
+  border: 1px solid #e6f7f1;
+}
+
+.infoSection h3 {
+  color: #242424;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.infoSection ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.infoSection li {
+  color: #757575;
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+  padding-left: 1.5rem;
+  position: relative;
+  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.infoSection li::before {
+  content: "✓";
+  color: #1a8917;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+@media (max-width: 768px) {
+  .pageContainer {
+    padding: 1rem 0.75rem;
+  }
+  
+  .infoSection {
+    margin-top: 2rem;
+    padding: 1.5rem;
+  }
+  
+  .infoSection h3 {
+    font-size: 18px;
+  }
+  
+  .infoSection li {
+    font-size: 14px;
+  }
+} 

@@ -205,6 +205,36 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /thread/scrape:
+    post:
+      summary: Scrape Twitter thread from URL (Async)
+      description: Queue a job to extract and save a Twitter thread from a given Twitter/X URL. Returns job information for tracking.
+      tags:
+        - Threads
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThreadScrapePostRequest'
+      responses:
+        '202':
+          description: Thread scraping job queued successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadScrapePost200Response'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Thread already exists in the system
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadScrapePost409Response'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
 components:
   securitySchemes:
     BearerAuth:
@@ -262,6 +292,10 @@ components:
         num_tweets:
           type: integer
           description: Number of tweets in the thread
+        status:
+          type: string
+          enum: [pending, scraping, completed, failed]
+          description: Current status of the mention processing
       required:
         - id
         - cid
@@ -270,6 +304,7 @@ components:
         - created_at
         - mention_create_at
         - num_tweets
+        - status
 
     ThreadDetail:
       type: object
@@ -297,6 +332,14 @@ components:
             $ref: '#/components/schemas/Tweet'
           description: Tweets associated with this Thread
           nullable: true
+        status:
+          type: string
+          enum: [pending, scraping, completed, failed]
+          description: Current status of the thread scraping process
+        author:
+          $ref: '#/components/schemas/ThreadAuthor'
+          description: Thread author information
+          nullable: true
       required:
         - id
         - cid
@@ -304,6 +347,7 @@ components:
         - created_at
         - num_tweets
         - tweets
+        - status
 
     ThreadAuthor:
       type: object
@@ -759,6 +803,44 @@ components:
           description: Richtext tag list defining formatting ranges
       required:
         - richtext_tags
+
+    ThreadScrapePostRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Twitter/X URL to scrape (e.g., https://twitter.com/user/status/123456789)
+          example: "https://twitter.com/elonmusk/status/1234567890123456789"
+      required:
+        - url
+
+    ThreadScrapePost200Response:
+      type: object
+      properties:
+        tweet_id:
+          type: string
+          description: Twitter tweet ID extracted from the URL
+        message:
+          type: string
+          description: Success message
+          example: "Thread scraping job has been queued"
+      required:
+        - tweet_id
+        - message
+
+    ThreadScrapePost409Response:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ThreadDetail'
+        message:
+          type: string
+          description: Message indicating thread already exists
+          example: "Thread already exists"
+      required:
+        - data
+        - message
 
   responses:
     Unauthorized:

@@ -47,13 +47,16 @@ var _ = Describe("ThreadService", func() {
 		// Initialize mock IPFS
 		mockIPFS = &testsuit.MockIPFSStorage{}
 
+		// Initialize mock LLM
+		mockLLM := &testsuit.MockLLM{}
+
 		// Setup logger
 		logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 			Level: slog.LevelWarn, // Reduce test noise
 		}))
 
 		// Create service
-		threadService = service.NewThreadService(threadRepo, mockIPFS, redisClient, logger)
+		threadService = service.NewThreadService(threadRepo, mockIPFS, mockLLM, redisClient, logger)
 	})
 
 	Describe("GetThreadByID", func() {
@@ -66,6 +69,7 @@ var _ = Describe("ThreadService", func() {
 				Summary:   "Test thread summary",
 				CID:       "bafkreidivzimqfqtoqxkrpge6bjyhlvxqs3rhe73owtmdulaxr5do5in7u",
 				NumTweets: 3,
+				Status:    model.ThreadStatusCompleted, // Set status to completed so tweets are loaded from IPFS
 			}
 			err := threadRepo.CreateThread(ctx, testThread)
 			Expect(err).ToNot(HaveOccurred())
@@ -110,17 +114,19 @@ var _ = Describe("ThreadService", func() {
 					Summary:   "Thread with empty CID",
 					CID:       "",
 					NumTweets: 1,
+					Status:    model.ThreadStatusCompleted, // Even completed threads with empty CID don't load tweets
 				}
 				err := threadRepo.CreateThread(ctx, emptyCIDThread)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("should return error when trying to load from IPFS", func() {
+			It("should return thread without tweets when CID is empty", func() {
 				result, err := threadService.GetThreadByID(ctx, "empty_cid_thread")
 
-				Expect(err).To(HaveOccurred())
-				Expect(result).To(BeNil())
-				Expect(err.Error()).To(ContainSubstring("load from ipfs"))
+				Expect(err).ToNot(HaveOccurred()) // Should not error, just return empty tweets
+				Expect(result).ToNot(BeNil())
+				Expect(result.ID).To(Equal("empty_cid_thread"))
+				Expect(result.Tweets).To(BeEmpty()) // Empty tweets when no CID
 			})
 		})
 
@@ -148,12 +154,14 @@ var _ = Describe("ThreadService", func() {
 						Summary:   "Second test thread",
 						CID:       "bafkreig7vfzqkdqkr3xdkhhh4n3t6n6q5j6x2kqb3j2rjvlq3d6bqdz5eu",
 						NumTweets: 2,
+						Status:    model.ThreadStatusCompleted,
 					},
 					{
 						ID:        "thread789",
 						Summary:   "Third test thread",
 						CID:       "bafkreidivzimqfqtoqxkrpge6bjyhlvxqs3rhe73owtmdulaxr5do5in7u",
 						NumTweets: 5,
+						Status:    model.ThreadStatusCompleted,
 					},
 				}
 
@@ -190,6 +198,7 @@ var _ = Describe("ThreadService", func() {
 				Summary:   "Cache test thread",
 				CID:       "bafkreidivzimqfqtoqxkrpge6bjyhlvxqs3rhe73owtmdulaxr5do5in7u",
 				NumTweets: 2,
+				Status:    model.ThreadStatusCompleted,
 			}
 			err := threadRepo.CreateThread(ctx, testThread)
 			Expect(err).ToNot(HaveOccurred())
@@ -231,6 +240,7 @@ var _ = Describe("ThreadService", func() {
 					Summary:   "Thread with malformed CID",
 					CID:       "invalid-cid-format",
 					NumTweets: 1,
+					Status:    model.ThreadStatusCompleted,
 				}
 				err := threadRepo.CreateThread(ctx, malformedCIDThread)
 				Expect(err).ToNot(HaveOccurred())
@@ -252,6 +262,7 @@ var _ = Describe("ThreadService", func() {
 					Summary:   "Thread for concurrent test",
 					CID:       "bafkreidivzimqfqtoqxkrpge6bjyhlvxqs3rhe73owtmdulaxr5do5in7u",
 					NumTweets: 1,
+					Status:    model.ThreadStatusCompleted,
 				}
 				err := threadRepo.CreateThread(ctx, concurrentThread)
 				Expect(err).ToNot(HaveOccurred())

@@ -11,7 +11,7 @@ import (
 	"go.uber.org/fx/fxevent"
 
 	"github.com/ipfs-force-community/threadmirror/internal/config"
-	"github.com/ipfs-force-community/threadmirror/internal/job"
+	"github.com/ipfs-force-community/threadmirror/internal/task/queue"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/redis"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/redis/redisfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
@@ -55,7 +55,7 @@ var ReplyCommand = &cli.Command{
 			}),
 			fx.Invoke(func(lc fx.Lifecycle, jobqClient jobq.JobQueueClient) {
 				lc.Append(fx.StartHook(func(ctx context.Context) error {
-					jobID, err := jobqClient.Enqueue(ctx, lo.Must(job.NewReplyTweetJob(c.String("mention-id"))))
+					jobID, err := jobqClient.Enqueue(ctx, lo.Must(queue.NewReplyTweetJob(c.String("mention-id"))))
 					if err != nil {
 						return fmt.Errorf("enqueue reply tweet job: %w", err)
 					}

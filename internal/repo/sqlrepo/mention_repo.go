@@ -22,11 +22,11 @@ func NewMentionRepo(db *sql.DB) *MentionRepo {
 
 // Mention CRUD operations
 
-// GetMentionByID retrieves a mention by ID
+// GetMentionByID retrieves a mention by ID with Thread preloaded
 func (r *MentionRepo) GetMentionByID(ctx context.Context, id string) (*model.Mention, error) {
 	db := sql.GetDBOrTx(ctx, r.db)
 	var mention model.Mention
-	err := db.Where("id = ?", id).First(&mention).Error
+	err := db.Preload("Thread").Where("id = ?", id).First(&mention).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errutil.ErrNotFound
@@ -39,7 +39,7 @@ func (r *MentionRepo) GetMentionByID(ctx context.Context, id string) (*model.Men
 func (r *MentionRepo) GetMentionByUserIDAndThreadID(ctx context.Context, userID, threadID string) (*model.Mention, error) {
 	db := sql.GetDBOrTx(ctx, r.db)
 	var mention model.Mention
-	err := db.Where("user_id = ? AND thread_id = ?", userID, threadID).First(&mention).Error
+	err := db.Preload("Thread").Where("user_id = ? AND thread_id = ?", userID, threadID).First(&mention).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errutil.ErrNotFound
@@ -53,6 +53,12 @@ func (r *MentionRepo) GetMentionByUserIDAndThreadID(ctx context.Context, userID,
 func (r *MentionRepo) CreateMention(ctx context.Context, mention *model.Mention) error {
 	db := sql.GetDBOrTx(ctx, r.db)
 	return db.Create(mention).Error
+}
+
+// UpdateMention updates an existing mention
+func (r *MentionRepo) UpdateMention(ctx context.Context, mention *model.Mention) error {
+	db := sql.GetDBOrTx(ctx, r.db)
+	return db.Save(mention).Error
 }
 
 // GetMentions retrieves mentions based on feed type with optional filtering
@@ -77,8 +83,8 @@ func (r *MentionRepo) GetMentions(
 		return nil, 0, err
 	}
 
-	// Get paginated results
-	err := query.Order("mentions.created_at DESC").Limit(limit).Offset(offset).Find(&mentions).Error
+	// Get paginated results with Thread preloaded
+	err := query.Preload("Thread").Order("mentions.created_at DESC").Limit(limit).Offset(offset).Find(&mentions).Error
 	if err != nil {
 		return nil, 0, err
 	}
@@ -104,8 +110,8 @@ func (r *MentionRepo) GetMentionsByUser(
 		return nil, 0, err
 	}
 
-	// Get paginated results
-	err := query.Order("created_at DESC").Limit(limit).Offset(offset).Find(&mentions).Error
+	// Get paginated results with Thread preloaded
+	err := query.Preload("Thread").Order("created_at DESC").Limit(limit).Offset(offset).Find(&mentions).Error
 	if err != nil {
 		return nil, 0, err
 	}

@@ -12,9 +12,10 @@ import (
 	"github.com/ipfs-force-community/threadmirror/i18n"
 	"github.com/ipfs-force-community/threadmirror/internal/bot/botfx"
 	"github.com/ipfs-force-community/threadmirror/internal/config"
-	"github.com/ipfs-force-community/threadmirror/internal/job/jobfx"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/internal/service/servicefx"
+	"github.com/ipfs-force-community/threadmirror/internal/task/cron/cronfx"
+	"github.com/ipfs-force-community/threadmirror/internal/task/queue/queuefx"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/redis"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/redis/redisfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql/sqlfx"
@@ -35,6 +36,7 @@ var BotCommand = &cli.Command{
 		config.GetDatabaseCLIFlags(),
 		config.GetRedisCLIFlags(),
 		config.GetBotCLIFlags(),
+		config.GetCronCLIFlags(),
 		config.GetLLMCLIFlags(),
 		config.GetIPFSCLIFlags(),
 	),
@@ -43,6 +45,7 @@ var BotCommand = &cli.Command{
 		dbConf := config.LoadDatabaseConfigFromCLI(c)
 		redisConf := config.LoadRedisConfigFromCLI(c)
 		botConf := config.LoadBotConfigFromCLI(c)
+		cronConf := config.LoadCronConfigFromCLI(c)
 		llmConf := config.LoadLLMConfigFromCLI(c)
 		ipfsConf := config.LoadIPFSConfigFromCLI(c)
 
@@ -63,6 +66,7 @@ var BotCommand = &cli.Command{
 			fx.Supply(llmConf),
 			fx.Supply(ipfsConf),
 			fx.Supply(botConf),
+			fx.Supply(cronConf),
 			fx.Supply(&logfx.Config{
 				Level:      c.String("log-level"),
 				LogDevMode: commonConfig.Debug,
@@ -75,7 +79,8 @@ var BotCommand = &cli.Command{
 			sqlfx.Module,
 			redisfx.Module,
 			servicefx.Module,
-			jobfx.Module,
+			queuefx.Module,
+			cronfx.Module,
 			fx.Provide(func(s *service.BotCookieService) []xscraper.LoginOptions {
 				loginOpts := make([]xscraper.LoginOptions, len(botConf.Credentials))
 				for i, cred := range botConf.Credentials {

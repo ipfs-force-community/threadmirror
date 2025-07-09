@@ -2,191 +2,26 @@ package bot
 
 import (
 	"context"
-	"encoding/json"
-	"io"
 	"log/slog"
 	"net/http"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/ipfs-force-community/threadmirror/internal/model"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/ipfs-force-community/threadmirror/internal/repo/sqlrepo"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
+	"github.com/ipfs-force-community/threadmirror/internal/testsuit"
 	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
-	"github.com/ipfs/go-cid"
-	"github.com/stretchr/testify/assert"
-	"github.com/tmc/langchaingo/llms"
-	"gorm.io/datatypes"
 )
 
-// mockJobQueueClient implements jobq.JobQueueClient for testing
 type mockJobQueueClient struct{}
 
 func (m *mockJobQueueClient) Enqueue(ctx context.Context, job *jobq.Job) (string, error) {
 	return "mock-job-id", nil
-}
-
-// MockProcessedMarkRepo is a mock implementation for testing
-type MockProcessedMarkRepo struct {
-	processedMarks map[string]bool
-}
-
-func NewMockProcessedMarkRepo() *MockProcessedMarkRepo {
-	return &MockProcessedMarkRepo{
-		processedMarks: make(map[string]bool),
-	}
-}
-
-func (m *MockProcessedMarkRepo) makeKey(key string, typ string) string {
-	return key + ":" + typ
-}
-
-func (m *MockProcessedMarkRepo) IsProcessed(ctx context.Context, key string, typ string) (bool, error) {
-	k := m.makeKey(key, typ)
-	return m.processedMarks[k], nil
-}
-
-func (m *MockProcessedMarkRepo) MarkProcessed(ctx context.Context, key string, typ string) error {
-	k := m.makeKey(key, typ)
-	m.processedMarks[k] = true
-	return nil
-}
-
-func (m *MockProcessedMarkRepo) BatchMarkProcessed(ctx context.Context, keys []string, typ string) error {
-	for _, key := range keys {
-		k := m.makeKey(key, typ)
-		m.processedMarks[k] = true
-	}
-	return nil
-}
-
-// MockBotCookieRepo is a mock implementation for testing
-// email:username -> JSON data
-type MockBotCookieRepo struct {
-	cookies map[string][]byte
-}
-
-func NewMockBotCookieRepo() *MockBotCookieRepo {
-	return &MockBotCookieRepo{
-		cookies: make(map[string][]byte),
-	}
-}
-
-func (m *MockBotCookieRepo) makeKey(email, username string) string {
-	return email + ":" + username
-}
-
-func (m *MockBotCookieRepo) GetCookies(ctx context.Context, email, username string) (datatypes.JSON, error) {
-	key := m.makeKey(email, username)
-	cookies, exists := m.cookies[key]
-	if !exists {
-		return nil, errutil.ErrNotFound // Simulate no cookies found
-	}
-	return datatypes.JSON(cookies), nil
-}
-
-func (m *MockBotCookieRepo) SaveCookies(ctx context.Context, email, username string, cookiesData interface{}) error {
-	key := m.makeKey(email, username)
-	data, err := json.Marshal(cookiesData)
-	if err != nil {
-		return err
-	}
-	m.cookies[key] = data
-	return nil
-}
-
-func (m *MockBotCookieRepo) GetLatestBotCookie(ctx context.Context) (*model.BotCookie, error) {
-	for key, data := range m.cookies {
-		parts := strings.SplitN(key, ":", 2)
-		email := parts[0]
-		username := ""
-		if len(parts) > 1 {
-			username = parts[1]
-		}
-		return &model.BotCookie{
-			Email:       email,
-			Username:    username,
-			CookiesData: datatypes.JSON(data),
-		}, nil
-	}
-	return nil, errutil.ErrNotFound
-}
-
-// MockMentionRepo is a mock implementation for MentionRepoInterface
-// Stores mentions in memory for testing
-type MockMentionRepo struct {
-	mentions map[string]*model.Mention
-}
-
-func NewMockMentionRepo() *MockMentionRepo {
-	return &MockMentionRepo{
-		mentions: make(map[string]*model.Mention),
-	}
-}
-
-func (m *MockMentionRepo) GetMentionByID(ctx context.Context, id string) (*model.Mention, error) {
-	mention, ok := m.mentions[id]
-	if !ok {
-		return nil, errutil.ErrNotFound
-	}
-	return mention, nil
-}
-
-func (m *MockMentionRepo) CreateMention(ctx context.Context, mention *model.Mention) error {
-	m.mentions[mention.ID] = mention
-	return nil
-}
-
-func (m *MockMentionRepo) GetMentions(ctx context.Context, userID string, limit, offset int) ([]model.Mention, int64, error) {
-	var result []model.Mention
-	for _, mention := range m.mentions {
-		if userID == "" || mention.UserID == userID {
-			result = append(result, *mention)
-		}
-	}
-	total := int64(len(result))
-	if offset > len(result) {
-		offset = len(result)
-	}
-	end := offset + limit
-	if end > len(result) {
-		end = len(result)
-	}
-	return result[offset:end], total, nil
-}
-
-func (m *MockMentionRepo) GetMentionsByUser(ctx context.Context, userID string, limit, offset int) ([]model.Mention, int64, error) {
-	return m.GetMentions(ctx, userID, limit, offset)
-}
-
-// MockLLM is a mock implementation for testing
-// Implements llm.Model (alias of llms.Model)
-type MockLLM struct{}
-
-func (m *MockLLM) GenerateContent(ctx context.Context, messages []llms.MessageContent, options ...llms.CallOption) (*llms.ContentResponse, error) {
-	return &llms.ContentResponse{
-		Choices: []*llms.ContentChoice{{Content: "Mock AI summary for testing"}},
-	}, nil
-}
-
-func (m *MockLLM) Call(ctx context.Context, prompt string, options ...llms.CallOption) (string, error) {
-	return "Mock AI summary for testing", nil
-}
-
-// MockIPFSStorage is a mock implementation for testing
-// Implements ipfs.Storage
-type MockIPFSStorage struct{}
-
-func (m *MockIPFSStorage) Add(ctx context.Context, content io.ReadSeeker) (cid.Cid, error) {
-	c, _ := cid.Parse("bafkreiabc123")
-	return c, nil
-}
-
-func (m *MockIPFSStorage) Get(ctx context.Context, c cid.Cid) (io.ReadCloser, error) {
-	return io.NopCloser(strings.NewReader("mock content")), nil
 }
 
 func createTestBot(t *testing.T) *TwitterBot {
@@ -203,7 +38,8 @@ func createTestBot(t *testing.T) *TwitterBot {
 		5*time.Minute, // checkInterval
 		jobQueueClient,
 		logger,
-		"threadmirror",
+		"threadmirror", // excludeMentionAuthorPrefix
+		"testbot",      // mentionUsername
 	)
 }
 
@@ -213,8 +49,16 @@ func TestGenerateResponse(t *testing.T) {
 }
 
 func TestProcessedMarkService(t *testing.T) {
-	mockRepo := NewMockProcessedMarkRepo()
-	processedMarkService := service.NewProcessedMarkService(mockRepo)
+	// Skip if containers not available
+	testsuit.SkipIfContainerUnavailable(t)
+
+	// Setup real database with testcontainers
+	suite := testsuit.SetupContainerTestSuite(t)
+	defer suite.TearDown(t)
+
+	// Use REAL ProcessedMarkRepo with real database
+	processedMarkRepo := sqlrepo.NewProcessedMarkRepo(suite.DB)
+	processedMarkService := service.NewProcessedMarkService(processedMarkRepo)
 	ctx := context.Background()
 
 	typeVal := "test_type"
@@ -243,8 +87,16 @@ func TestProcessedMarkService(t *testing.T) {
 }
 
 func TestBotCookieService(t *testing.T) {
-	mockRepo := NewMockBotCookieRepo()
-	botCookieService := service.NewBotCookieService(mockRepo)
+	// Skip if containers not available
+	testsuit.SkipIfContainerUnavailable(t)
+
+	// Setup real database with testcontainers
+	suite := testsuit.SetupContainerTestSuite(t)
+	defer suite.TearDown(t)
+
+	// Use REAL BotCookieRepo with real database
+	botCookieRepo := sqlrepo.NewBotCookieRepo(suite.DB)
+	botCookieService := service.NewBotCookieService(botCookieRepo)
 	ctx := context.Background()
 	testEmail := "test@example.com"
 	testUsername := "testbot"
@@ -280,7 +132,7 @@ func TestGetStats(t *testing.T) {
 	stats := bot.GetStats()
 
 	assert.Equal(t, true, stats["enabled"])
-	assert.Equal(t, "testbot", stats["username"])
+	assert.Equal(t, "testbot", stats["mention_username"])
 	assert.Equal(t, "5m0s", stats["check_interval"])
 	assert.Equal(t, true, stats["randomized"])
 	assert.Equal(t, "database", stats["storage_type"])

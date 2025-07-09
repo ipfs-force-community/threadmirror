@@ -11,10 +11,26 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// Defines values for MentionSummaryStatus.
+const (
+	MentionSummaryStatusCompleted MentionSummaryStatus = "completed"
+	MentionSummaryStatusFailed    MentionSummaryStatus = "failed"
+	MentionSummaryStatusPending   MentionSummaryStatus = "pending"
+	MentionSummaryStatusScraping  MentionSummaryStatus = "scraping"
+)
+
 // Defines values for NoteTweetRichTextTagRichtextTypes.
 const (
 	Bold   NoteTweetRichTextTagRichtextTypes = "Bold"
 	Italic NoteTweetRichTextTagRichtextTypes = "Italic"
+)
+
+// Defines values for ThreadDetailStatus.
+const (
+	ThreadDetailStatusCompleted ThreadDetailStatus = "completed"
+	ThreadDetailStatusFailed    ThreadDetailStatus = "failed"
+	ThreadDetailStatusPending   ThreadDetailStatus = "pending"
+	ThreadDetailStatusScraping  ThreadDetailStatus = "scraping"
 )
 
 // Error defines model for Error.
@@ -80,12 +96,18 @@ type MentionSummary struct {
 	MentionCreateAt time.Time `json:"mention_create_at"`
 
 	// NumTweets Number of tweets in the thread
-	NumTweets    int           `json:"num_tweets"`
-	ThreadAuthor *ThreadAuthor `json:"thread_author,omitempty"`
+	NumTweets int `json:"num_tweets"`
+
+	// Status Current status of the mention processing
+	Status       MentionSummaryStatus `json:"status"`
+	ThreadAuthor *ThreadAuthor        `json:"thread_author,omitempty"`
 
 	// ThreadId Thread unique identifier
 	ThreadId string `json:"thread_id"`
 }
+
+// MentionSummaryStatus Current status of the mention processing
+type MentionSummaryStatus string
 
 // NoteTweetRichText defines model for NoteTweetRichText.
 type NoteTweetRichText struct {
@@ -146,6 +168,8 @@ type ThreadAuthor struct {
 
 // ThreadDetail defines model for ThreadDetail.
 type ThreadDetail struct {
+	Author *ThreadAuthor `json:"author,omitempty"`
+
 	// Cid Content identifier (CID)
 	Cid string `json:"cid"`
 
@@ -161,8 +185,37 @@ type ThreadDetail struct {
 	// NumTweets Number of tweets in the thread
 	NumTweets int `json:"num_tweets"`
 
+	// Status Current status of the thread scraping process
+	Status ThreadDetailStatus `json:"status"`
+
 	// Tweets Tweets associated with this Thread
 	Tweets *[]Tweet `json:"tweets"`
+}
+
+// ThreadDetailStatus Current status of the thread scraping process
+type ThreadDetailStatus string
+
+// ThreadScrapePost200Response defines model for ThreadScrapePost200Response.
+type ThreadScrapePost200Response struct {
+	// Message Success message
+	Message string `json:"message"`
+
+	// TweetId Twitter tweet ID extracted from the URL
+	TweetId string `json:"tweet_id"`
+}
+
+// ThreadScrapePost409Response defines model for ThreadScrapePost409Response.
+type ThreadScrapePost409Response struct {
+	Data ThreadDetail `json:"data"`
+
+	// Message Message indicating thread already exists
+	Message string `json:"message"`
+}
+
+// ThreadScrapePostRequest defines model for ThreadScrapePostRequest.
+type ThreadScrapePostRequest struct {
+	// Url Twitter/X URL to scrape (e.g., https://twitter.com/user/status/123456789)
+	Url string `json:"url"`
 }
 
 // Timestamp defines model for Timestamp.
@@ -394,3 +447,6 @@ type GetShareParams struct {
 }
 
 func (p *GetShareParams) GetThreadId() string { return p.ThreadId }
+
+// PostThreadScrapeJSONRequestBody defines body for PostThreadScrape for application/json ContentType.
+type PostThreadScrapeJSONRequestBody = ThreadScrapePostRequest

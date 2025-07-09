@@ -2,14 +2,17 @@ package v1
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	v1errors "github.com/ipfs-force-community/threadmirror/internal/api/v1/errors"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
+	"github.com/ipfs-force-community/threadmirror/internal/task/queue"
+	"github.com/ipfs-force-community/threadmirror/pkg/auth"
 	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
+	"github.com/ipfs-force-community/threadmirror/pkg/util"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
-	"github.com/ipfs-force-community/threadmirror/pkg/xscraper/generated"
 	"github.com/samber/lo"
 )
 
@@ -41,6 +44,17 @@ func (h *V1Handler) convertThreadDetailToAPI(thread *service.ThreadDetail) Threa
 		})
 	}
 
+	// Convert author if available
+	var apiAuthor *ThreadAuthor
+	if thread.Author != nil {
+		apiAuthor = &ThreadAuthor{
+			Id:              thread.Author.ID,
+			Name:            thread.Author.Name,
+			ScreenName:      thread.Author.ScreenName,
+			ProfileImageUrl: thread.Author.ProfileImageURL,
+		}
+	}
+
 	return ThreadDetail{
 		Id:             thread.ID,
 		Cid:            thread.CID,
@@ -48,6 +62,8 @@ func (h *V1Handler) convertThreadDetailToAPI(thread *service.ThreadDetail) Threa
 		NumTweets:      thread.NumTweets,
 		CreatedAt:      thread.CreatedAt,
 		Tweets:         &apiTweets,
+		Status:         ThreadDetailStatus(thread.Status),
+		Author:         apiAuthor,
 	}
 }
 
@@ -57,107 +73,17 @@ func (h *V1Handler) convertXScraperTweetToAPI(tweet *xscraper.Tweet) Tweet {
 		return Tweet{}
 	}
 
-	// Convert author
-	var author *TweetUser
-	if tweet.Author != nil {
-		author = &TweetUser{
-			Id:              tweet.Author.ID,
-			RestId:          tweet.Author.RestID,
-			Name:            tweet.Author.Name,
-			ScreenName:      tweet.Author.ScreenName,
-			ProfileImageUrl: tweet.Author.ProfileImageURL,
-			Description:     tweet.Author.Description,
-			FollowersCount:  tweet.Author.FollowersCount,
-			FriendsCount:    tweet.Author.FriendsCount,
-			StatusesCount:   tweet.Author.StatusesCount,
-			CreatedAt:       tweet.Author.CreatedAt,
-			Verified:        tweet.Author.Verified,
-			IsBlueVerified:  tweet.Author.IsBlueVerified,
-		}
-	}
+	// Convert components using dedicated converter functions
+	author := convertTweetAuthor(tweet.Author)
+	entities := convertTweetEntities(&tweet.Entities)
+	stats := convertTweetStats(tweet.Stats)
+	richtext := convertTweetRichText(tweet.RichText)
 
-	// Convert entities
-	entities := &TweetEntities{
-		Hashtags: lo.Map(tweet.Entities.Hashtags, func(h generated.Hashtag, _ int) Hashtag {
-			return Hashtag{
-				Text:    h["text"].(string),
-				Indices: toIntSlice(h["indices"]),
-			}
-		}),
-		Symbols: lo.Map(tweet.Entities.Symbols, func(s generated.Symbol, _ int) Symbol {
-			return Symbol{
-				Text:    s["text"].(string),
-				Indices: toIntSlice(s["indices"]),
-			}
-		}),
-		Urls: lo.Map(tweet.Entities.Urls, func(u generated.Url, _ int) Url {
-			return Url{
-				DisplayUrl:  u.DisplayUrl,
-				ExpandedUrl: u.ExpandedUrl,
-				Indices:     u.Indices,
-				Url:         u.Url,
-			}
-		}),
-		UserMentions: lo.Map(tweet.Entities.UserMentions, func(m generated.UserMention, _ int) UserMention {
-			return UserMention{
-				Id:         m["id_str"].(string),
-				ScreenName: m["screen_name"].(string),
-				Name:       m["name"].(string),
-				Indices:    toIntSlice(m["indices"]),
-			}
-		}),
-	}
-
-	// Convert media
-	if tweet.Entities.Media != nil && len(*tweet.Entities.Media) > 0 {
-		media := lo.Map(*tweet.Entities.Media, func(m generated.Media, _ int) Media {
-			return Media{
-				IdStr:         m.IdStr,
-				MediaKey:      m.MediaKey,
-				Type:          string(m.Type),
-				Url:           m.Url,
-				DisplayUrl:    m.DisplayUrl,
-				ExpandedUrl:   m.ExpandedUrl,
-				MediaUrlHttps: m.MediaUrlHttps,
-				Indices:       m.Indices,
-			}
-		})
-		entities.Media = &media
-	}
-
-	// Convert stats
-	stats := TweetStats{
-		ReplyCount:    tweet.Stats.ReplyCount,
-		RetweetCount:  tweet.Stats.RetweetCount,
-		FavoriteCount: tweet.Stats.FavoriteCount,
-		QuoteCount:    tweet.Stats.QuoteCount,
-		BookmarkCount: tweet.Stats.BookmarkCount,
-	}
-	if tweet.Stats.ViewCount > 0 {
-		stats.ViewCount = &tweet.Stats.ViewCount
-	}
-
-	// Convert quoted tweet if exists
+	// Convert quoted tweet recursively if exists
 	var quotedTweet *Tweet
 	if tweet.QuotedTweet != nil {
 		quoted := h.convertXScraperTweetToAPI(tweet.QuotedTweet)
 		quotedTweet = &quoted
-	}
-
-	// Convert richtext if exists
-	apiRichtext := NoteTweetRichText{
-		RichtextTags: []NoteTweetRichTextTag{},
-	}
-	if tweet.RichText != nil {
-		apiRichtext.RichtextTags = lo.Map(tweet.RichText.RichtextTags, func(tag generated.NoteTweetResultRichTextTag, _ int) NoteTweetRichTextTag {
-			return NoteTweetRichTextTag{
-				FromIndex: tag.FromIndex,
-				ToIndex:   tag.ToIndex,
-				RichtextTypes: lo.Map(tag.RichtextTypes, func(t generated.NoteTweetResultRichTextTagRichtextTypes, _ int) NoteTweetRichTextTagRichtextTypes {
-					return NoteTweetRichTextTagRichtextTypes(t)
-				}),
-			}
-		})
 	}
 
 	return Tweet{
@@ -182,23 +108,71 @@ func (h *V1Handler) convertXScraperTweetToAPI(tweet *xscraper.Tweet) Tweet {
 		IsTranslatable:    tweet.IsTranslatable,
 		Views:             &tweet.Views,
 		IsNoteTweet:       tweet.IsNoteTweet,
-		Richtext:          apiRichtext,
+		Richtext:          richtext,
 	}
 }
 
-func toIntSlice(v interface{}) []int {
-	arr, ok := v.([]interface{})
-	if !ok {
-		return nil
+// PostThreadScrape handles POST /thread/scrape
+func (h *V1Handler) PostThreadScrape(c *gin.Context) {
+	var req PostThreadScrapeJSONRequestBody
+	if err := c.ShouldBindJSON(&req); err != nil {
+		HandleBadRequestError(c, err)
+		return
 	}
-	res := make([]int, 0, len(arr))
-	for _, x := range arr {
-		switch val := x.(type) {
-		case int:
-			res = append(res, val)
-		case float64:
-			res = append(res, int(val))
-		}
+
+	// Get current user ID
+	currentUserID := auth.CurrentUserID(c)
+	if currentUserID == "" {
+		_ = c.Error(v1errors.Forbidden(fmt.Errorf("user not authenticated")))
+		return
 	}
-	return res
+
+	// Parse Twitter URL to extract tweet ID
+	tweetID, err := util.ExtractTweetID(req.Url)
+	if err != nil {
+		HandleBadRequestError(c, err)
+		return
+	}
+
+	// Check if thread already exists
+	existingThread, err := h.threadService.GetThreadByID(c.Request.Context(), tweetID)
+	if err != nil && !errors.Is(err, errutil.ErrNotFound) {
+		HandleInternalServerError(c, err)
+		return
+	}
+
+	// If thread already exists, return it with 409 status
+	if existingThread != nil {
+		c.JSON(http.StatusConflict, gin.H{
+			"data":    h.convertThreadDetailToAPI(existingThread),
+			"message": "Thread already exists",
+		})
+		return
+	}
+
+	// Create mention record and pending thread
+	_, err = h.mentionService.CreateMention(c.Request.Context(), currentUserID, tweetID)
+	if err != nil {
+		HandleInternalServerError(c, err)
+		return
+	}
+
+	// Create and enqueue thread scrape job
+	job, err := queue.NewThreadScrapeJob(tweetID)
+	if err != nil {
+		HandleInternalServerError(c, err)
+		return
+	}
+
+	jobID, err := h.jobQueueClient.Enqueue(c.Request.Context(), job)
+	if err != nil {
+		HandleInternalServerError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{
+		"job_id":   jobID,
+		"tweet_id": tweetID,
+		"message":  "Thread scraping job has been queued and mention created",
+	})
 }

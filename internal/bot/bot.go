@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ipfs-force-community/threadmirror/internal/job"
+	"github.com/ipfs-force-community/threadmirror/internal/task/queue"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 )
@@ -25,6 +25,9 @@ type TwitterBot struct {
 	// Lower-cased prefix of author screen names to exclude from processing
 	excludeMentionAuthorPrefixLower string
 
+	// Username to monitor for mentions
+	mentionUsername string
+
 	// Control channels
 	stopCh  chan struct{}
 	stopped chan struct{}
@@ -37,13 +40,20 @@ func NewTwitterBot(
 	jobQueueClient jobq.JobQueueClient,
 	logger *slog.Logger,
 	excludeMentionAuthorPrefix string,
+	mentionUsername string,
 ) *TwitterBot {
+	// If mentionUsername is empty, use the first scraper's username as fallback
+	if mentionUsername == "" && len(scrapers) > 0 {
+		mentionUsername = scrapers[0].LoginOpts.Username
+	}
+
 	return &TwitterBot{
 		checkInterval:                   checkInterval,
 		scrapers:                        scrapers,
 		jobQueueClient:                  jobQueueClient,
 		logger:                          logger,
 		excludeMentionAuthorPrefixLower: strings.ToLower(excludeMentionAuthorPrefix),
+		mentionUsername:                 mentionUsername,
 		stopCh:                          make(chan struct{}),
 		stopped:                         make(chan struct{}),
 	}
@@ -129,7 +139,7 @@ func (tb *TwitterBot) checkMentions(ctx context.Context) error {
 			}
 			return !strings.HasPrefix(strings.ToLower(tweet.Author.ScreenName), tb.excludeMentionAuthorPrefixLower)
 		}
-		return sc.GetMentionsByScreenName(ctx, tb.scrapers[0].LoginOpts.Username, filter)
+		return sc.GetMentionsByScreenName(ctx, tb.mentionUsername, filter)
 	})
 
 	if err != nil {
@@ -160,7 +170,7 @@ func (tb *TwitterBot) checkMentions(ctx context.Context) error {
 
 // enqueueMentionJob enqueues a mention for processing as a job
 func (tb *TwitterBot) enqueueMentionJob(ctx context.Context, mention *xscraper.Tweet) error {
-	job, err := job.NewMentionJob(mention)
+	job, err := queue.NewMentionJob(mention)
 	if err != nil {
 		tb.logger.Error("Failed to create mention job", "error", err)
 		return err
@@ -176,15 +186,11 @@ func (tb *TwitterBot) enqueueMentionJob(ctx context.Context, mention *xscraper.T
 
 // GetStats returns bot statistics
 func (tb *TwitterBot) GetStats() map[string]interface{} {
-	username := ""
-	if len(tb.scrapers) > 0 {
-		username = tb.scrapers[0].LoginOpts.Username
-	}
 	return map[string]interface{}{
-		"enabled":        true, // Bot is always enabled now
-		"username":       username,
-		"check_interval": tb.checkInterval.String(),
-		"randomized":     true,       // Intervals are randomized with ±30% jitter
-		"storage_type":   "database", // Now using database storage for both processed mentions and cookies
+		"enabled":          true, // Bot is always enabled now
+		"mention_username": tb.mentionUsername,
+		"check_interval":   tb.checkInterval.String(),
+		"randomized":       true,       // Intervals are randomized with ±30% jitter
+		"storage_type":     "database", // Now using database storage for both processed mentions and cookies
 	}
 }
