@@ -86,9 +86,10 @@ func NewServer(
 
 func (s *Server) Start(ctx context.Context) error {
 	s.logger.Info("Starting HTTP server", "address", s.HttpServer.Addr)
-	s.HttpServer.BaseContext = func(net.Listener) context.Context {
-		return ctx
-	}
+	// TODO: 添加 BaseContext 到 fx
+	// s.HttpServer.BaseContext = func(net.Listener) context.Context {
+	// 	return ctx
+	// }
 	addr := s.HttpServer.Addr
 	if addr == "" {
 		addr = ":http"

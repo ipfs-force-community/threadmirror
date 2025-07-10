@@ -85,7 +85,7 @@ func (s *ThreadService) GetThreadByID(ctx context.Context, id string) (*ThreadDe
 	// Load tweets from IPFS (only if completed and has CID)
 	var tweets []*xscraper.Tweet
 	if thread.Status == model.ThreadStatusCompleted && thread.CID != "" {
-		tweets, err = s.loadTweetsFromIPFS(context.Background(), thread.CID)
+		tweets, err = s.loadTweetsFromIPFS(ctx, thread.CID)
 		if err != nil {
 			return nil, fmt.Errorf("load from ipfs %s: %w", thread.CID, err)
 		}

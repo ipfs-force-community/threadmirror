@@ -2,6 +2,7 @@ package queuefx
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/chromedp/chromedp"
 	internalqueue "github.com/ipfs-force-community/threadmirror/internal/task/queue"
@@ -15,7 +16,7 @@ type (
 )
 
 var Module = fx.Module("queue",
-	fx.Provide(func() (chromedpContext, chromedpCancelFn) {
+	fx.Provide(func(logger *slog.Logger) (chromedpContext, chromedpCancelFn) {
 		allocCtx, cancelFn := chromedp.NewExecAllocator(context.Background(),
 			chromedp.NoFirstRun,
 			chromedp.NoDefaultBrowserCheck,
@@ -26,7 +27,7 @@ var Module = fx.Module("queue",
 			chromedp.Flag("disable-extensions", true),
 			chromedp.Flag("hide-scrollbars", true),
 		)
-		chromedpCtx, cancelFn2 := chromedp.NewContext(allocCtx)
+		chromedpCtx, cancelFn2 := chromedp.NewContext(allocCtx, chromedp.WithDebugf(logger.Info))
 		return chromedpContext(chromedpCtx), chromedpCancelFn(func() {
 			cancelFn2()
 			cancelFn()

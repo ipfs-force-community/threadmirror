@@ -1,0 +1,17 @@
+{
+  "name": "Thread Mirror",
+  "short_name": "ThreadMirror",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fffceb",
+  "theme_color": "#fffceb",
+  "description": "Mirror and archive Twitter/X threads with a Medium-style UI.",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "lang": "zh-CN"
+} 

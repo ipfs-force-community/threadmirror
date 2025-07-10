@@ -10,6 +10,7 @@ import (
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/internal/task/cron"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
+	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"go.uber.org/fx"
 )
 
@@ -17,6 +18,7 @@ import (
 var Module = fx.Module("cron",
 	fx.Provide(newCronScheduler),
 	fx.Provide(newThreadStatusCleanupHandler),
+	fx.Provide(newMentionCheckHandler),
 	fx.Invoke(registerCronLifecycle),
 )
 
@@ -47,11 +49,32 @@ func newThreadStatusCleanupHandler(
 	)
 }
 
+// newMentionCheckHandler creates a mention check handler
+func newMentionCheckHandler(
+	logger *slog.Logger,
+	scrapers []*xscraper.XScraper,
+	jobQueueClient jobq.JobQueueClient,
+	cronConfig *config.CronConfig,
+) *cron.MentionCheckHandler {
+	mentionConfig := cron.MentionCheckConfig{
+		ExcludeMentionAuthorPrefix: cronConfig.MentionCheck.ExcludeMentionAuthorPrefix,
+		MentionUsername:            cronConfig.MentionCheck.MentionUsername,
+	}
+
+	return cron.NewMentionCheckHandler(
+		logger,
+		scrapers,
+		jobQueueClient,
+		mentionConfig,
+	)
+}
+
 // registerCronLifecycle registers cron jobs and manages their lifecycle
 func registerCronLifecycle(
 	lc fx.Lifecycle,
 	scheduler gocron.Scheduler,
 	threadStatusCleanup *cron.ThreadStatusCleanupHandler,
+	mentionCheck *cron.MentionCheckHandler,
 	cronConfig *config.CronConfig,
 	logger *slog.Logger,
 ) {
@@ -78,6 +101,31 @@ func registerCronLifecycle(
 					return err
 				}
 				logger.Info("Scheduled thread status cleanup", "interval_minutes", intervalMinutes)
+			}
+
+			// Schedule mention check with random intervals
+			if cronConfig.MentionCheck.EnabledIntervalMinutes > 0 {
+				baseInterval := time.Duration(cronConfig.MentionCheck.EnabledIntervalMinutes) * time.Minute
+				randomizeRange := time.Duration(cronConfig.MentionCheck.RandomizeIntervalMinutes) * time.Minute
+
+				_, err := scheduler.NewJob(
+					gocron.DurationRandomJob(baseInterval, baseInterval+randomizeRange),
+					gocron.NewTask(func() {
+						ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+						defer cancel()
+
+						if err := mentionCheck.Execute(ctx); err != nil {
+							logger.Error("Mention check failed", "error", err)
+						}
+					}),
+				)
+				if err != nil {
+					return err
+				}
+				logger.Info("Scheduled mention check with random intervals",
+					"base_interval_minutes", cronConfig.MentionCheck.EnabledIntervalMinutes,
+					"randomize_range_minutes", cronConfig.MentionCheck.RandomizeIntervalMinutes,
+				)
 			}
 
 			// Start the scheduler

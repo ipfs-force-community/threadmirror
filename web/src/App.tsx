@@ -6,13 +6,18 @@ import MentionDetail from '@pages/MentionDetail';
 import TwitterScraperPage from '@pages/TwitterScraper';
 import UserLgoinOut from '@components/UserLoginOut';
 import './App.css';
+import { isUserLoggedIn } from '@utils/cookie';
 
 // Floating Action Button Component
 const FloatingActionButton = () => {
   const location = useLocation();
   
-  // Don't show the FAB on the scraper page itself
+  // 不在 /scrape 页面显示
   if (location.pathname === '/scrape') {
+    return null;
+  }
+  // 未登录不显示按钮
+  if (!isUserLoggedIn()) {
     return null;
   }
 

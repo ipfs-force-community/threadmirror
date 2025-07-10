@@ -10,7 +10,6 @@ import (
 	"go.uber.org/fx/fxevent"
 
 	"github.com/ipfs-force-community/threadmirror/i18n"
-	"github.com/ipfs-force-community/threadmirror/internal/bot/botfx"
 	"github.com/ipfs-force-community/threadmirror/internal/config"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/internal/service/servicefx"
@@ -31,7 +30,7 @@ import (
 
 var BotCommand = &cli.Command{
 	Name:  "bot",
-	Usage: "Start the bot",
+	Usage: "Start the bot (now runs as cron tasks)",
 	Flags: util.MergeSlices(
 		config.GetCommonCLIFlags(),
 		config.GetDatabaseCLIFlags(),
@@ -50,13 +49,7 @@ var BotCommand = &cli.Command{
 		llmConf := config.LoadLLMConfigFromCLI(c)
 		ipfsConf := config.LoadIPFSConfigFromCLI(c)
 
-		// baseContext, cancel := context.WithCancel(context.Background())
-
 		fxApp := fx.New(
-			// fx.Supply(baseContext),
-			// fx.Invoke(func(ctx context.Context, lc fx.Lifecycle) {
-			// 	lc.Append(fx.StopHook(cancel))
-			// }),
 			// Provide the configuration
 			fx.Supply(commonConfig),
 			fx.Supply(&redis.RedisConfig{
@@ -110,7 +103,6 @@ var BotCommand = &cli.Command{
 			ipfsfx.Module,
 			xscraperfx.Module,
 			i18nfx.Module(&i18n.LocaleFS),
-			botfx.Module(botConf.Enable),
 			fx.WithLogger(func(logger *slog.Logger) fxevent.Logger {
 				return &fxevent.SlogLogger{Logger: logger}
 			}),

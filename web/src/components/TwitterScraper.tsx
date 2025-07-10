@@ -141,7 +141,7 @@ const TwitterScraper: React.FC<TwitterScraperProps> = ({ onThreadScraped }) => {
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://twitter.com/user/status/123456789"
+              placeholder="https://x.com/user/status/123456789"
               className={`${styles.input} ${error ? styles.inputError : ''}`}
               disabled={loading}
             />

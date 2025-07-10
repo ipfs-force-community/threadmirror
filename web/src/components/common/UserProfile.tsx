@@ -1,6 +1,6 @@
 import './UserProfile.css';
 import { TweetUser } from '@client/index';
-import defaultProfile from '../default_profile.png';
+import defaultProfile from '../../default_profile.png';
 
 interface UserProfileProps {
     profile: TweetUser;
@@ -24,7 +24,7 @@ const UserProfileComponent = ({ profile, sample }: UserProfileProps) => {
                 </h2>
                 {/* 第二行：screen_name */}
                 <p style={{ fontSize: '14px', color: '#1da1f2', margin: '0 0 5px 0' }} >
-                    <a href={`https://twitter.com/${profile.screenName}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#1da1f2' }}>
+                    <a href={`https://x.com/${profile.screenName}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#1da1f2' }}>
                         @{profile.screenName}
                     </a>
                 </p>

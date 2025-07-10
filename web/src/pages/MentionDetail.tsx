@@ -123,12 +123,14 @@ const MentionDetail = () => {
     <div className={styles.container}>
       <UserProfileComponent profile={author} sample={true} />
       
-      <div className={styles.statusBar}>
-        <StatusBadge status={detail?.status as any} size="medium" />
-        <span className={styles.statusText}>
-          Thread processing status: {detail?.status}
-        </span>
-      </div>
+      {detail?.status !== 'completed' && (
+        <div className={styles.statusBar}>
+          <StatusBadge status={detail?.status as any} size="medium" />
+          <span className={styles.statusText}>
+            Thread processing status: {detail?.status}
+          </span>
+        </div>
+      )}
 
       <div className={styles.actionBar}>
         <button 
@@ -143,7 +145,7 @@ const MentionDetail = () => {
       <div className={styles.metaBar}>
         {detail?.tweets?.[0] && (
           <a
-            href={`https://twitter.com/${author.screenName}/status/${detail.tweets[0].id}`}
+            href={`https://x.com/${author.screenName}/status/${detail.tweets[0].id}`}
             target="_blank"
             rel="noopener noreferrer"
             className={styles.sourceLink}

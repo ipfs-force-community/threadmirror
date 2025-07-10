@@ -94,14 +94,14 @@ export function renderTweetContent(text: string, entities?: TweetEntities, rich?
         break;
       case 'mention':
         node = (
-          <a key={`mention-${idx}-${range.start}`} href={`https://twitter.com/${range.data}`} target="_blank" rel="noopener noreferrer">
+          <a key={`mention-${idx}-${range.start}`} href={`https://x.com/${range.data}`} target="_blank" rel="noopener noreferrer">
             @{range.data}
           </a>
         );
         break;
       case 'hashtag':
         node = (
-          <a key={`hashtag-${idx}-${range.start}`} href={`https://twitter.com/hashtag/${range.data}`} target="_blank" rel="noopener noreferrer">
+          <a key={`hashtag-${idx}-${range.start}`} href={`https://x.com/hashtag/${range.data}`} target="_blank" rel="noopener noreferrer">
             #{range.data}
           </a>
         );

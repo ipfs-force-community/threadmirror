@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -39,7 +38,7 @@ func (h *V1Handler) GetShare(c *gin.Context, params GetShareParams) {
 	}
 
 	// Take screenshot using chromedp
-	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(),
+	allocCtx, cancelAlloc := chromedp.NewExecAllocator(c.Request.Context(),
 		chromedp.NoFirstRun,
 		chromedp.NoDefaultBrowserCheck,
 		chromedp.NoSandbox,
@@ -51,7 +50,7 @@ func (h *V1Handler) GetShare(c *gin.Context, params GetShareParams) {
 	)
 	defer cancelAlloc()
 
-	ctx, cancel := chromedp.NewContext(allocCtx)
+	ctx, cancel := chromedp.NewContext(allocCtx, chromedp.WithDebugf(h.logger.Info))
 	defer cancel()
 
 	var buf []byte

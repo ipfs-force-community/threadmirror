@@ -58,12 +58,20 @@ type BotCredential struct {
 type CronConfig struct {
 	// Thread status cleanup configuration
 	ThreadStatusCleanup struct {
-		EnabledIntervalMinutes int `mapstructure:"enabled_interval_minutes" default:"15"`
-		ScrapingTimeoutMinutes int `mapstructure:"scraping_timeout_minutes" default:"30"`
-		PendingTimeoutMinutes  int `mapstructure:"pending_timeout_minutes" default:"60"`
-		RetryDelayMinutes      int `mapstructure:"retry_delay_minutes" default:"15"`
-		MaxRetries             int `mapstructure:"max_retries" default:"3"`
-	} `mapstructure:"thread_status_cleanup"`
+		EnabledIntervalMinutes int
+		ScrapingTimeoutMinutes int
+		PendingTimeoutMinutes  int
+		RetryDelayMinutes      int
+		MaxRetries             int
+	}
+
+	// Mention check configuration
+	MentionCheck struct {
+		EnabledIntervalMinutes     int
+		RandomizeIntervalMinutes   int
+		ExcludeMentionAuthorPrefix string
+		MentionUsername            string
+	}
 }
 
 // BotConfig holds Twitter bot configuration
@@ -123,17 +131,28 @@ func LoadAuth0ConfigFromCLI(c *cli.Context) *Auth0Config {
 func LoadCronConfigFromCLI(c *cli.Context) *CronConfig {
 	return &CronConfig{
 		ThreadStatusCleanup: struct {
-			EnabledIntervalMinutes int `mapstructure:"enabled_interval_minutes" default:"15"`
-			ScrapingTimeoutMinutes int `mapstructure:"scraping_timeout_minutes" default:"30"`
-			PendingTimeoutMinutes  int `mapstructure:"pending_timeout_minutes" default:"60"`
-			RetryDelayMinutes      int `mapstructure:"retry_delay_minutes" default:"15"`
-			MaxRetries             int `mapstructure:"max_retries" default:"3"`
+			EnabledIntervalMinutes int
+			ScrapingTimeoutMinutes int
+			PendingTimeoutMinutes  int
+			RetryDelayMinutes      int
+			MaxRetries             int
 		}{
 			EnabledIntervalMinutes: c.Int("thread-cleanup-interval-minutes"),
 			ScrapingTimeoutMinutes: c.Int("thread-scraping-timeout-minutes"),
 			PendingTimeoutMinutes:  c.Int("thread-pending-timeout-minutes"),
 			RetryDelayMinutes:      c.Int("thread-retry-delay-minutes"),
 			MaxRetries:             c.Int("thread-max-retries"),
+		},
+		MentionCheck: struct {
+			EnabledIntervalMinutes     int
+			RandomizeIntervalMinutes   int
+			ExcludeMentionAuthorPrefix string
+			MentionUsername            string
+		}{
+			EnabledIntervalMinutes:     c.Int("mention-check-interval-minutes"),
+			RandomizeIntervalMinutes:   c.Int("mention-check-randomize-interval-minutes"),
+			ExcludeMentionAuthorPrefix: c.String("mention-check-exclude-author-prefix"),
+			MentionUsername:            c.String("mention-check-username"),
 		},
 	}
 }
@@ -332,6 +351,30 @@ func GetCronCLIFlags() []cli.Flag {
 			Value:   5,
 			Usage:   "Maximum number of retries for failed thread status updates",
 			EnvVars: []string{"THREAD_MAX_RETRIES"},
+		},
+		&cli.IntFlag{
+			Name:    "mention-check-interval-minutes",
+			Value:   2,
+			Usage:   "Base interval in minutes for checking mentions",
+			EnvVars: []string{"MENTION_CHECK_INTERVAL_MINUTES"},
+		},
+		&cli.IntFlag{
+			Name:    "mention-check-randomize-interval-minutes",
+			Value:   1,
+			Usage:   "Randomization range in minutes for mention check interval (+/-)",
+			EnvVars: []string{"MENTION_CHECK_RANDOMIZE_INTERVAL_MINUTES"},
+		},
+		&cli.StringFlag{
+			Name:    "mention-check-exclude-author-prefix",
+			Value:   "threadmirror",
+			Usage:   "Prefix of author screen names to exclude from mention processing",
+			EnvVars: []string{"MENTION_CHECK_EXCLUDE_AUTHOR_PREFIX"},
+		},
+		&cli.StringFlag{
+			Name:    "mention-check-username",
+			Value:   "threadmirror",
+			Usage:   "Username to monitor for mentions (if empty, uses first credential's username)",
+			EnvVars: []string{"MENTION_CHECK_USERNAME"},
 		},
 	}
 }

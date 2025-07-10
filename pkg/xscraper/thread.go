@@ -25,11 +25,20 @@ func GetCompleteThread(ctx context.Context, scraper XScraperInterface, tweetID s
 			return nil, fmt.Errorf("attempt %d failed: %w", attempts, err)
 		}
 
-		// 添加新推文（去重）
+		// 截断并添加新推文（去重）- 合并逻辑
+		var oldestTweet *Tweet
+		if len(tweetsResult.Tweets) > 0 {
+			oldestTweet = tweetsResult.Tweets[0]
+		}
 		for _, tweet := range tweetsResult.Tweets {
+			// 添加新推文（去重）
 			if tweet.RestID != "" && !seenTweetIDs[tweet.RestID] {
 				allTweets = append(allTweets, tweet)
 				seenTweetIDs[tweet.RestID] = true
+			}
+			// 如果找到目标推文，截断到这里
+			if tweet.RestID == tweetID {
+				break
 			}
 		}
 
@@ -39,7 +48,6 @@ func GetCompleteThread(ctx context.Context, scraper XScraperInterface, tweetID s
 		}
 
 		// 若未完整，则尝试获取最早一条推文的父级推文 ID，用于下一次查询
-		oldestTweet := tweetsResult.Tweets[0]
 
 		// 无法找到更早的推文，终止循环
 		if oldestTweet == nil || !oldestTweet.IsReply {

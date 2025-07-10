@@ -142,7 +142,7 @@ const UserLgoinOut = () => {
                         <div className={styles.user_info_container}>
                             <span className={styles.user_name_text}>{displayUser.name}</span>
                             <span className={styles.user_nickname}>
-                                <a href={`https://twitter.com/${displayUser.nickname}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#1da1f2' }}>
+                                <a href={`https://x.com/${displayUser.nickname}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#1da1f2' }}>
                                     @{displayUser.nickname}
                                 </a>
                             </span>

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
@@ -111,7 +112,7 @@ func (s *MentionService) CreateMention(
 				// Create new thread in pending status
 				thread = &model.Thread{
 					ID:        threadID,
-					Summary:   "Scraping in progress...",
+					Summary:   "",
 					CID:       "",
 					NumTweets: 0,
 					Status:    model.ThreadStatusPending,
@@ -140,7 +141,11 @@ func (s *MentionService) CreateMention(
 		if mentionID != nil {
 			mention.ID = *mentionID
 		} else {
-			mention.ID = threadID + "_" + userID // Composite ID for user mention of thread
+			uuid, err := uuid.NewV7()
+			if err != nil {
+				return fmt.Errorf("failed to generate mention ID: %w", err)
+			}
+			mention.ID = uuid.String()
 		}
 
 		if err := s.mentionRepo.CreateMention(ctx, mention); err != nil {
