@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	v1errors "github.com/ipfs-force-community/threadmirror/internal/api/v1/errors"
@@ -151,7 +152,7 @@ func (h *V1Handler) PostThreadScrape(c *gin.Context) {
 	}
 
 	// Create mention record and pending thread
-	_, err = h.mentionService.CreateMention(c.Request.Context(), currentUserID, tweetID)
+	_, err = h.mentionService.CreateMention(c.Request.Context(), currentUserID, tweetID, nil, time.Now())
 	if err != nil {
 		HandleInternalServerError(c, err)
 		return

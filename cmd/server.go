@@ -17,6 +17,7 @@ import (
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql/sqlfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/i18n/i18nfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/ipfs/ipfsfx"
+	"github.com/ipfs-force-community/threadmirror/pkg/jobq/jobqfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/llm/llmfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/log/logfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/util"
@@ -78,6 +79,7 @@ var ServerCommand = &cli.Command{
 			llmfx.Module,
 			ipfsfx.Module,
 			xscraperfx.Module,
+			jobqfx.ModuleClient,
 			i18nfx.Module(&i18n.LocaleFS),
 			authfx.ModuleAuth0(auth0Conf),
 			fx.WithLogger(func(logger *slog.Logger) fxevent.Logger {

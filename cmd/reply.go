@@ -49,7 +49,7 @@ var ReplyCommand = &cli.Command{
 			}),
 			logfx.Module,
 			redisfx.Module,
-			jobqfx.Module,
+			jobqfx.ModuleClient,
 			fx.WithLogger(func(logger *slog.Logger) fxevent.Logger {
 				return &fxevent.SlogLogger{Logger: logger}
 			}),

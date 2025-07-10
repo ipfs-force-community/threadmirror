@@ -6,7 +6,6 @@ import (
 	"github.com/chromedp/chromedp"
 	internalqueue "github.com/ipfs-force-community/threadmirror/internal/task/queue"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
-	"github.com/ipfs-force-community/threadmirror/pkg/jobq/jobqfx"
 	"go.uber.org/fx"
 )
 
@@ -16,7 +15,6 @@ type (
 )
 
 var Module = fx.Module("queue",
-	jobqfx.Module,
 	fx.Provide(func() (chromedpContext, chromedpCancelFn) {
 		allocCtx, cancelFn := chromedp.NewExecAllocator(context.Background(),
 			chromedp.NoFirstRun,

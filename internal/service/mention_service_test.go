@@ -71,7 +71,7 @@ var _ = Describe("MentionService", func() {
 			threadID := "thread123"
 
 			// Act
-			mention, err := mentionService.CreateMention(ctx, userID, threadID)
+			mention, err := mentionService.CreateMention(ctx, userID, threadID, nil, time.Now())
 
 			// Assert
 			Expect(err).ToNot(HaveOccurred())
@@ -91,11 +91,11 @@ var _ = Describe("MentionService", func() {
 			threadID := "thread123"
 
 			// Create first mention
-			_, err := mentionService.CreateMention(ctx, userID, threadID)
+			_, err := mentionService.CreateMention(ctx, userID, threadID, nil, time.Now())
 			Expect(err).ToNot(HaveOccurred())
 
 			// Act - try to create same mention again
-			_, err = mentionService.CreateMention(ctx, userID, threadID)
+			_, err = mentionService.CreateMention(ctx, userID, threadID, nil, time.Now())
 
 			// Assert
 			Expect(err).ToNot(HaveOccurred()) // Should return existing mention, not error

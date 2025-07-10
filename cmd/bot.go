@@ -21,6 +21,7 @@ import (
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql/sqlfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/i18n/i18nfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/ipfs/ipfsfx"
+	"github.com/ipfs-force-community/threadmirror/pkg/jobq/jobqfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/llm/llmfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/log/logfx"
 	"github.com/ipfs-force-community/threadmirror/pkg/util"
@@ -79,6 +80,8 @@ var BotCommand = &cli.Command{
 			sqlfx.Module,
 			redisfx.Module,
 			servicefx.Module,
+			jobqfx.ModuleClient,
+			jobqfx.ModuleServer,
 			queuefx.Module,
 			cronfx.Module,
 			fx.Provide(func(s *service.BotCookieService) []xscraper.LoginOptions {

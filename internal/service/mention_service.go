@@ -80,6 +80,8 @@ func NewMentionService(
 func (s *MentionService) CreateMention(
 	ctx context.Context,
 	userID, threadID string,
+	mentionID *string,
+	mentionCreateAt time.Time,
 ) (*MentionSummary, error) {
 	var result *model.Mention
 
@@ -130,10 +132,15 @@ func (s *MentionService) CreateMention(
 
 		// Create mention record
 		mention = &model.Mention{
-			ID:              threadID + "_" + userID, // Composite ID for user mention of thread
 			UserID:          userID,
 			ThreadID:        threadID,
-			MentionCreateAt: time.Now(),
+			MentionCreateAt: mentionCreateAt,
+		}
+
+		if mentionID != nil {
+			mention.ID = *mentionID
+		} else {
+			mention.ID = threadID + "_" + userID // Composite ID for user mention of thread
 		}
 
 		if err := s.mentionRepo.CreateMention(ctx, mention); err != nil {
