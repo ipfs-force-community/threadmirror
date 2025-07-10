@@ -50,7 +50,7 @@ func (h *V1Handler) GetShare(c *gin.Context, params GetShareParams) {
 	)
 	defer cancelAlloc()
 
-	ctx, cancel := chromedp.NewContext(allocCtx, chromedp.WithDebugf(h.logger.Info))
+	ctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
 
 	var buf []byte

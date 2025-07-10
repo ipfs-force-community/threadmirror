@@ -37,7 +37,7 @@ const TwitterScraper: React.FC<TwitterScraperProps> = ({ onThreadScraped }) => {
     }
 
     if (!validateTwitterUrl(url.trim())) {
-      setError('Please enter a valid Twitter/X URL (e.g., https://twitter.com/user/status/123456789)');
+      setError('Please enter a valid Twitter/X URL (e.g., https://x.com/user/status/123456789)');
       return;
     }
 

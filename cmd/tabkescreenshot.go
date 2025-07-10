@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
 	"os"
 	"time"
 
@@ -39,7 +38,7 @@ var TakeScreenshotCommand = &cli.Command{
 		)
 		defer cancelFn1()
 
-		chromedpCtx, cancelFn2 := chromedp.NewContext(allocCtx, chromedp.WithDebugf(log.Printf))
+		chromedpCtx, cancelFn2 := chromedp.NewContext(allocCtx)
 		defer cancelFn2()
 
 		var buf []byte

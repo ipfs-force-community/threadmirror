@@ -2,7 +2,6 @@ package queue
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
 
@@ -22,7 +21,7 @@ func TestScreenshot(t *testing.T) {
 	)
 	defer cancelFn1()
 
-	chromedpCtx, cancelFn2 := chromedp.NewContext(allocCtx, chromedp.WithDebugf(log.Printf))
+	chromedpCtx, cancelFn2 := chromedp.NewContext(allocCtx)
 	defer cancelFn2()
 
 	var buf []byte

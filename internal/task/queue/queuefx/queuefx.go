@@ -27,7 +27,7 @@ var Module = fx.Module("queue",
 			chromedp.Flag("disable-extensions", true),
 			chromedp.Flag("hide-scrollbars", true),
 		)
-		chromedpCtx, cancelFn2 := chromedp.NewContext(allocCtx, chromedp.WithDebugf(logger.Info))
+		chromedpCtx, cancelFn2 := chromedp.NewContext(allocCtx)
 		return chromedpContext(chromedpCtx), chromedpCancelFn(func() {
 			cancelFn2()
 			cancelFn()

@@ -16,7 +16,7 @@ const UserMentions = () => {
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const queryLimit = 10;
   const [pagination, setPagination] = useState({
-    offset: 0,
+    offset: 0, // offset 表示已加载条数
     total: 0,
   });
   const observer = useRef<IntersectionObserver | null>(null);
@@ -40,10 +40,10 @@ const UserMentions = () => {
     setLoading(true);
     try {
       const currentLimit = isInitialLoad ? calculateInitialLoadCount() : queryLimit;
-
+      // offset 直接用 mentions.length，表示已加载条数
       const response = await fetchGetMentions({
         limit: currentLimit,
-        offset: pagination.offset / queryLimit,
+        offset: mentions.length,
       });
 
       const responseData = response.data || [];
@@ -58,7 +58,7 @@ const UserMentions = () => {
 
       setPagination(prev => ({
         ...prev,
-        offset: mentions?.length || 0,
+        // offset 不再更新，始终用 mentions.length 作为 offset
         total: response.meta?.total || prev.total
       }));
 
@@ -67,7 +67,7 @@ const UserMentions = () => {
         responseData.length === currentLimit &&
         (
           response.meta?.total === undefined ||
-          pagination.offset + responseData.length < response.meta.total
+          mentions.length + responseData.length < response.meta.total
         )
       );
 
@@ -91,7 +91,7 @@ const UserMentions = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchGetMentions, loading, hasMore, pagination, isLoggedIn, apiErrorOccurred, mentions?.length, queryLimit, isInitialLoad, calculateInitialLoadCount]);
+  }, [fetchGetMentions, loading, hasMore, isLoggedIn, apiErrorOccurred, mentions, queryLimit, isInitialLoad, calculateInitialLoadCount]);
 
   const resetError = useCallback(() => {
     setError(null);
