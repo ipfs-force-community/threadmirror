@@ -129,9 +129,7 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 	logger.Info("🤖 Enqueued thread scrape job", "scrape_job_id", scrapeJobID)
 
 	// Step 3: Create reply tweet job (keep existing logic)
-	// Note: mention database ID format is threadID + "_" + userID
-	mentionDatabaseID := threadID + "_" + mentionUserID
-	replyJob, err := NewReplyTweetJob(mentionDatabaseID)
+	replyJob, err := NewReplyTweetJob(mention.RestID, mention.Author.ScreenName)
 	if err != nil {
 		logger.Error("Failed to create reply tweet job", "error", err)
 		return fmt.Errorf("create reply tweet job: %w", err)
@@ -144,7 +142,7 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 	}
 
 	logger.Info("🤖 Mention processed successfully with unified architecture",
-		"mention_id", mentionDatabaseID,
+		"mention_id", mention.RestID,
 		"mention_tweet_id", mention.RestID,
 		"thread_id", threadID,
 		"scrape_job_id", scrapeJobID,

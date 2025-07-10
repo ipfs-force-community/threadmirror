@@ -61,8 +61,11 @@ func NewReplyTweetHandler(
 }
 
 // NewReplyTweetJob creates a new job for reply tweet for a mention.
-func NewReplyTweetJob(mentionID string) (*jobq.Job, error) {
-	payload, err := json.Marshal(ReplyTweetPayload{MentionID: mentionID})
+func NewReplyTweetJob(mentionID, mentionAuthorScreenName string) (*jobq.Job, error) {
+	payload, err := json.Marshal(ReplyTweetPayload{
+		MentionID:               mentionID,
+		MentionAuthorScreenName: mentionAuthorScreenName,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal image payload: %w", err)
 	}
