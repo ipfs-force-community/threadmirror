@@ -16,6 +16,10 @@ const FloatingActionButton = () => {
   if (location.pathname === '/scrape') {
     return null;
   }
+  // 不在 /thread/ 详情页面显示
+  if (location.pathname.startsWith('/thread/')) {
+    return null;
+  }
   // 未登录不显示按钮
   if (!isUserLoggedIn()) {
     return null;
