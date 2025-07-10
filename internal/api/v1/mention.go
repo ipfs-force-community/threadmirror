@@ -54,6 +54,13 @@ func (h *V1Handler) convertMentionSummaryToAPI(mention service.MentionSummary) M
 		}
 	}
 
+	var status MentionSummaryStatus
+	if mention.RetryCount >= h.commonConfig.ThreadMaxRetries-1 {
+		status = MentionSummaryStatusFailed
+	} else {
+		status = MentionSummaryStatus(mention.Status)
+	}
+
 	return MentionSummary{
 		Id:              mention.ID,
 		Cid:             mention.CID,
@@ -63,6 +70,6 @@ func (h *V1Handler) convertMentionSummaryToAPI(mention service.MentionSummary) M
 		CreatedAt:       mention.CreatedAt,
 		MentionCreateAt: mention.MentionCreateAt,
 		NumTweets:       mention.NumTweets,
-		Status:          MentionSummaryStatus(mention.Status),
+		Status:          status,
 	}
 }

@@ -32,8 +32,9 @@ type MentionSummary struct {
 	ThreadAuthor    *ThreadAuthor `json:"thread_author"`
 	CreatedAt       time.Time     `json:"created_at"`
 	MentionCreateAt time.Time     `json:"mention_create_at"`
-	NumTweets       int           `json:"numTweets"`
+	NumTweets       int           `json:"num_tweets"`
 	Status          string        `json:"status"`
+	RetryCount      int           `json:"retry_count"`
 }
 
 // MentionRepoInterface defines the interface for mention repo operations
@@ -226,5 +227,6 @@ func (s *MentionService) buildMentionSummary(mention *model.Mention) *MentionSum
 		MentionCreateAt: mention.MentionCreateAt,
 		NumTweets:       NumTweets,
 		Status:          string(thread.Status),
+		RetryCount:      thread.RetryCount,
 	}
 }
