@@ -9,6 +9,7 @@ import {
     isUserLoggedIn
 } from '@utils/cookie';
 import styles from "./UserLoginOut.module.css";
+import defaultProfile from '../default_profile.png';
 
 const UserLgoinOut = () => {
     const { user, error, getAccessTokenSilently, loginWithRedirect, logout, isAuthenticated, isLoading: auth0Loading } = useAuth0();
@@ -124,9 +125,15 @@ const UserLgoinOut = () => {
             <div className={styles.user_container}>
                 {isFullyLoggedIn && displayUser && (
                     <div className={styles.user_profile} >
-                        {displayUser.picture && (
+                        {displayUser.picture ? (
                             <img
                                 src={displayUser.picture}
+                                alt="User Avatar"
+                                className={styles.user_avatar}
+                            />
+                        ) : (
+                            <img
+                                src={defaultProfile}
                                 alt="User Avatar"
                                 className={styles.user_avatar}
                             />

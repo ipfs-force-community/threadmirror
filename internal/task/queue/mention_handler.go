@@ -142,7 +142,6 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 	}
 
 	logger.Info("🤖 Mention processed successfully with unified architecture",
-		"mention_id", mention.RestID,
 		"mention_tweet_id", mention.RestID,
 		"thread_id", threadID,
 		"scrape_job_id", scrapeJobID,

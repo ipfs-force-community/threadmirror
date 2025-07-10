@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import styles from './MentionSummary.module.css';
 import { MentionSummary as MentionData } from '@src/client/models';
 import StatusBadge from '@components/common/StatusBadge';
+import defaultProfile from '../default_profile.png';
 
 const MentionSummaryComponent: React.FC<{ mention: MentionData }> = ({ mention }) => {
     const formatDate = (date: Date) => {
@@ -44,7 +45,7 @@ const MentionSummaryComponent: React.FC<{ mention: MentionData }> = ({ mention }
         <div className={styles.mentionContainer}>
             <div className={styles.mentionHeader}>
                 <img
-                    src={mention?.threadAuthor?.profileImageUrl}
+                    src={mention?.threadAuthor?.profileImageUrl || defaultProfile}
                     alt={`${mention?.threadAuthor?.name} profile`}
                     className={styles.profileImage}
                 />

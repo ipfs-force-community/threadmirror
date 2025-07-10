@@ -1,5 +1,6 @@
 import './UserProfile.css';
 import { TweetUser } from '@client/index';
+import defaultProfile from '../default_profile.png';
 
 interface UserProfileProps {
     profile: TweetUser;
@@ -11,7 +12,7 @@ const UserProfileComponent = ({ profile, sample }: UserProfileProps) => {
         <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '15px' }}>
             {/* 头像部分 */}
             <img
-                src={profile.profileImageUrl}
+                src={profile.profileImageUrl || defaultProfile}
                 alt="Profile"
                 style={{ width: '80px', height: '80px', borderRadius: '50%', marginRight: '15px' }}
             />
