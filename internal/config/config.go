@@ -92,10 +92,17 @@ type BotConfig struct {
 }
 
 func LoadCommonConfigFromCLI(c *cli.Context) *CommonConfig {
+	var threadMaxRetries int
+	if c.IsSet("common-thread-max-retries") {
+		threadMaxRetries = c.Int("common-thread-max-retries")
+	} else {
+		threadMaxRetries = c.Int("thread-max-retries")
+	}
+
 	return &CommonConfig{
 		ThreadURLTemplate: c.String("thread-url-template"),
 		Debug:             c.Bool("debug"),
-		ThreadMaxRetries:  c.Int("thread-max-retries"),
+		ThreadMaxRetries:  threadMaxRetries,
 	}
 }
 
@@ -231,10 +238,10 @@ func GetCommonCLIFlags() []cli.Flag {
 			Value:   "https://threadmirror.xyz/thread/%s",
 		},
 		&cli.IntFlag{
-			Name:    "thread-max-retries",
+			Name:    "common-thread-max-retries",
 			Usage:   "Maximum number of retries for thread status updates",
-			EnvVars: []string{"THREAD_MAX_RETRIES"},
-			Value:   5,
+			EnvVars: []string{"COMMON_THREAD_MAX_RETRIES"},
+			Value:   0,
 		},
 	}
 }
