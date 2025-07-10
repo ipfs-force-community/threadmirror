@@ -241,7 +241,6 @@ func GetCommonCLIFlags() []cli.Flag {
 			Name:    "common-thread-max-retries",
 			Usage:   "Maximum number of retries for thread status updates",
 			EnvVars: []string{"COMMON_THREAD_MAX_RETRIES"},
-			Value:   0,
 		},
 	}
 }
