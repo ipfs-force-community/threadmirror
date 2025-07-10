@@ -13,6 +13,7 @@ import (
 type CommonConfig struct {
 	ThreadURLTemplate string
 	Debug             bool
+	ThreadMaxRetries  int
 }
 
 // ServerConfig holds server configuration
@@ -94,6 +95,7 @@ func LoadCommonConfigFromCLI(c *cli.Context) *CommonConfig {
 	return &CommonConfig{
 		ThreadURLTemplate: c.String("thread-url-template"),
 		Debug:             c.Bool("debug"),
+		ThreadMaxRetries:  c.Int("thread-max-retries"),
 	}
 }
 
@@ -227,6 +229,12 @@ func GetCommonCLIFlags() []cli.Flag {
 			Usage:   "Thread URL template, e.g. https://threadmirror.xyz/thread/%s",
 			EnvVars: []string{"THREAD_URL_TEMPLATE"},
 			Value:   "https://threadmirror.xyz/thread/%s",
+		},
+		&cli.IntFlag{
+			Name:    "thread-max-retries",
+			Usage:   "Maximum number of retries for thread status updates",
+			EnvVars: []string{"THREAD_MAX_RETRIES"},
+			Value:   5,
 		},
 	}
 }

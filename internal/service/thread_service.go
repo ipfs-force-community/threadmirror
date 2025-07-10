@@ -32,9 +32,10 @@ type ThreadDetail struct {
 	CreatedAt      time.Time         `json:"created_at"`
 
 	// New fields for status and author
-	Status  string        `json:"status"`
-	Version int           `json:"version"`
-	Author  *ThreadAuthor `json:"author,omitempty"`
+	Status     string        `json:"status"`
+	RetryCount int           `json:"retry_count"`
+	Version    int           `json:"version"`
+	Author     *ThreadAuthor `json:"author,omitempty"`
 }
 
 type ThreadRepoInterface interface {
@@ -110,6 +111,7 @@ func (s *ThreadService) GetThreadByID(ctx context.Context, id string) (*ThreadDe
 		Tweets:         tweets,
 		CreatedAt:      thread.CreatedAt,
 		Status:         string(thread.Status),
+		RetryCount:     thread.RetryCount,
 		Version:        thread.Version,
 		Author:         author,
 	}, nil

@@ -56,6 +56,13 @@ func (h *V1Handler) convertThreadDetailToAPI(thread *service.ThreadDetail) Threa
 		}
 	}
 
+	var status ThreadDetailStatus
+	if thread.RetryCount >= h.commonConfig.ThreadMaxRetries-1 {
+		status = ThreadDetailStatusFailed
+	} else {
+		status = ThreadDetailStatus(thread.Status)
+	}
+
 	return ThreadDetail{
 		Id:             thread.ID,
 		Cid:            thread.CID,
@@ -63,7 +70,7 @@ func (h *V1Handler) convertThreadDetailToAPI(thread *service.ThreadDetail) Threa
 		NumTweets:      thread.NumTweets,
 		CreatedAt:      thread.CreatedAt,
 		Tweets:         &apiTweets,
-		Status:         ThreadDetailStatus(thread.Status),
+		Status:         status,
 		Author:         apiAuthor,
 	}
 }
