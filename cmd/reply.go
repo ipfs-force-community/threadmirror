@@ -31,6 +31,11 @@ var ReplyCommand = &cli.Command{
 				Usage:   "The ID of the mention to reply to",
 				EnvVars: []string{"MENTION_ID"},
 			},
+			&cli.StringFlag{
+				Name:    "mention-author-screen-name",
+				Usage:   "The screen name of the author of the mention to reply to",
+				EnvVars: []string{"MENTION_AUTHOR_SCREEN_NAME"},
+			},
 		},
 	),
 	Action: func(c *cli.Context) error {
@@ -55,7 +60,7 @@ var ReplyCommand = &cli.Command{
 			}),
 			fx.Invoke(func(lc fx.Lifecycle, jobqClient jobq.JobQueueClient) {
 				lc.Append(fx.StartHook(func(ctx context.Context) error {
-					jobID, err := jobqClient.Enqueue(ctx, lo.Must(queue.NewReplyTweetJob(c.String("mention-id"))))
+					jobID, err := jobqClient.Enqueue(ctx, lo.Must(queue.NewReplyTweetJob(c.String("mention-id"), c.String("mention-author-screen-name"))))
 					if err != nil {
 						return fmt.Errorf("enqueue reply tweet job: %w", err)
 					}
