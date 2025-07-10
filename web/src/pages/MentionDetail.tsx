@@ -145,7 +145,7 @@ const MentionDetail = () => {
       <div className={styles.metaBar}>
         {detail?.tweets?.[0] && (
           <a
-            href={`https://x.com/${author.screenName}/status/${detail.tweets[0].id}`}
+            href={`https://x.com/${author.screenName}/status/${detail.tweets[detail.tweets.length - 1].id}`}
             target="_blank"
             rel="noopener noreferrer"
             className={styles.sourceLink}
