@@ -89,6 +89,9 @@ type BotConfig struct {
 
 	// Username to monitor for mentions (if empty, uses first credential's username)
 	MentionUsername string
+
+	// Whether to enable image replies when creating tweet responses
+	EnableImageReply bool
 }
 
 func LoadCommonConfigFromCLI(c *cli.Context) *CommonConfig {
@@ -195,6 +198,7 @@ func LoadBotConfigFromCLI(c *cli.Context) *BotConfig {
 		CheckInterval:              c.Duration("bot-check-interval"),
 		ExcludeMentionAuthorPrefix: c.String("bot-exclude-mention-author-prefix"),
 		MentionUsername:            c.String("bot-mention-username"),
+		EnableImageReply:           c.Bool("bot-enable-image-reply"),
 	}
 }
 
@@ -459,6 +463,12 @@ func GetBotCLIFlags() []cli.Flag {
 			Name:    "bot-mention-username",
 			Usage:   "Username to monitor for mentions (if empty, uses first credential's username)",
 			EnvVars: []string{"BOT_MENTION_USERNAME"},
+		},
+		&cli.BoolFlag{
+			Name:    "bot-enable-image-reply",
+			Usage:   "Enable image replies when responding to mentions",
+			EnvVars: []string{"BOT_ENABLE_IMAGE_REPLY"},
+			Value:   true,
 		},
 	}
 }

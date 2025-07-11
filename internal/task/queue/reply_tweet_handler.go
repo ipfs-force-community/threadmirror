@@ -34,6 +34,7 @@ type ReplyTweetHandler struct {
 	processedMarkService *service.ProcessedMarkService
 	scrapers             []*xscraper.XScraper
 	threadURLTemplate    string
+	enableImageReply     bool
 }
 
 // NewReplyTweetHandler constructs an ReplyTweetHandler.
@@ -44,6 +45,7 @@ func NewReplyTweetHandler(
 	processedMarkService *service.ProcessedMarkService,
 	scrapers []*xscraper.XScraper,
 	commonConfig *config.CommonConfig,
+	botConfig *config.BotConfig,
 ) *ReplyTweetHandler {
 	return &ReplyTweetHandler{
 		logger:               logger.With("job_handler", "reply tweet"),
@@ -52,6 +54,7 @@ func NewReplyTweetHandler(
 		processedMarkService: processedMarkService,
 		scrapers:             scrapers,
 		threadURLTemplate:    commonConfig.ThreadURLTemplate,
+		enableImageReply:     botConfig.EnableImageReply,
 	}
 }
 
@@ -119,37 +122,40 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 			return fmt.Errorf("get thread by id %s: %w", mention.ThreadID, err)
 		}
 
-		html, err := comm.RenderThread(h.threadURLTemplate, mention.ThreadID, thread, logger)
-		if err != nil {
-			return fmt.Errorf("render thread id %s: %w", mention.ThreadID, err)
-		}
-
 		var buf []byte = nil
 
-		// Create independent chromedp context for this job to avoid lifecycle issues
-		allocCtx, cancelAlloc := chromedp.NewExecAllocator(ctx,
-			chromedp.NoFirstRun,
-			chromedp.NoDefaultBrowserCheck,
-			chromedp.NoSandbox,
-			chromedp.Flag("no-sandbox", true),
-			chromedp.Flag("headless", true),
-			chromedp.Flag("disable-default-apps", true),
-			chromedp.Flag("disable-extensions", true),
-			chromedp.Flag("hide-scrollbars", true),
-		)
-		defer cancelAlloc()
+		// Generate image only if image reply is enabled
+		if h.enableImageReply {
+			html, err := comm.RenderThread(h.threadURLTemplate, mention.ThreadID, thread, logger)
+			if err != nil {
+				return fmt.Errorf("render thread id %s: %w", mention.ThreadID, err)
+			}
 
-		chromedpCtx, cancelChromedp := chromedp.NewContext(allocCtx)
-		defer cancelChromedp()
+			// Create independent chromedp context for this job to avoid lifecycle issues
+			allocCtx, cancelAlloc := chromedp.NewExecAllocator(ctx,
+				chromedp.NoFirstRun,
+				chromedp.NoDefaultBrowserCheck,
+				chromedp.NoSandbox,
+				chromedp.Flag("no-sandbox", true),
+				chromedp.Flag("headless", true),
+				chromedp.Flag("disable-default-apps", true),
+				chromedp.Flag("disable-extensions", true),
+				chromedp.Flag("hide-scrollbars", true),
+			)
+			defer cancelAlloc()
 
-		err = chromedp.Run(chromedpCtx,
-			chromedp.EmulateViewport(485, 0),
-			chromedp.Navigate("data:text/html;base64,"+base64.StdEncoding.EncodeToString([]byte(html))),
-			chromedp.Sleep(1*time.Second),
-			chromedp.FullScreenshot(&buf, 100),
-		)
-		if err != nil {
-			logger.Error("failed to screenshot thread", "error", err)
+			chromedpCtx, cancelChromedp := chromedp.NewContext(allocCtx)
+			defer cancelChromedp()
+
+			err = chromedp.Run(chromedpCtx,
+				chromedp.EmulateViewport(485, 0),
+				chromedp.Navigate("data:text/html;base64,"+base64.StdEncoding.EncodeToString([]byte(html))),
+				chromedp.Sleep(1*time.Second),
+				chromedp.FullScreenshot(&buf, 100),
+			)
+			if err != nil {
+				logger.Error("failed to screenshot thread", "error", err)
+			}
 		}
 
 		// Use fallback to upload media and create tweet
