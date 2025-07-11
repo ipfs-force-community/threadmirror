@@ -91,7 +91,7 @@ const UserMentions = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchGetMentions, loading, hasMore, isLoggedIn, apiErrorOccurred, mentions, queryLimit, isInitialLoad, calculateInitialLoadCount]);
+  }, [fetchGetMentions, loading, hasMore, isLoggedIn, apiErrorOccurred, mentions.length, queryLimit, isInitialLoad, calculateInitialLoadCount]);
 
   const resetError = useCallback(() => {
     setError(null);
