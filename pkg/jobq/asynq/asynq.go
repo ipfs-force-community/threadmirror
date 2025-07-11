@@ -59,15 +59,7 @@ func NewAsynqServer(redisClient redis.UniversalClient, logger *slog.Logger) *Asy
 					"error", err,
 				)
 			}),
-			HealthCheckFunc: func(err error) {
-				if err != nil {
-					logger.Error("Asynq health check failed", "error", err)
-				}
-			},
 			LogLevel: asynq.InfoLevel,
-			BaseContext: func() context.Context {
-				return context.Background()
-			},
 		},
 	)
 

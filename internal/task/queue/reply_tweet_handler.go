@@ -27,14 +27,11 @@ type ReplyTweetPayload struct {
 	MentionAuthorScreenName string `json:"mention_author_screen_name"`
 }
 
-type ChromedpContext context.Context
-
 type ReplyTweetHandler struct {
 	logger               *slog.Logger
 	mentionService       *service.MentionService
 	threadService        *service.ThreadService
 	processedMarkService *service.ProcessedMarkService
-	chromedpCtx          ChromedpContext
 	scrapers             []*xscraper.XScraper
 	threadURLTemplate    string
 }
@@ -46,7 +43,6 @@ func NewReplyTweetHandler(
 	threadService *service.ThreadService,
 	processedMarkService *service.ProcessedMarkService,
 	scrapers []*xscraper.XScraper,
-	chromedpCtx ChromedpContext,
 	commonConfig *config.CommonConfig,
 ) *ReplyTweetHandler {
 	return &ReplyTweetHandler{
@@ -54,7 +50,6 @@ func NewReplyTweetHandler(
 		mentionService:       mentionService,
 		threadService:        threadService,
 		processedMarkService: processedMarkService,
-		chromedpCtx:          chromedpCtx,
 		scrapers:             scrapers,
 		threadURLTemplate:    commonConfig.ThreadURLTemplate,
 	}
@@ -130,7 +125,24 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 		}
 
 		var buf []byte = nil
-		err = chromedp.Run(h.chromedpCtx,
+
+		// Create independent chromedp context for this job to avoid lifecycle issues
+		allocCtx, cancelAlloc := chromedp.NewExecAllocator(ctx,
+			chromedp.NoFirstRun,
+			chromedp.NoDefaultBrowserCheck,
+			chromedp.NoSandbox,
+			chromedp.Flag("no-sandbox", true),
+			chromedp.Flag("headless", true),
+			chromedp.Flag("disable-default-apps", true),
+			chromedp.Flag("disable-extensions", true),
+			chromedp.Flag("hide-scrollbars", true),
+		)
+		defer cancelAlloc()
+
+		chromedpCtx, cancelChromedp := chromedp.NewContext(allocCtx)
+		defer cancelChromedp()
+
+		err = chromedp.Run(chromedpCtx,
 			chromedp.EmulateViewport(485, 0),
 			chromedp.Navigate("data:text/html;base64,"+base64.StdEncoding.EncodeToString([]byte(html))),
 			chromedp.Sleep(1*time.Second),
