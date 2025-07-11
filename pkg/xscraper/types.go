@@ -229,8 +229,46 @@ type Tweet struct {
 	Views             int                                `json:"views,omitempty"`
 	IsNoteTweet       bool                               `json:"is_note_tweet"`
 	RichText          *generated.NoteTweetResultRichText `json:"richtext,omitempty"`
+	DisplayTextRange  []int                              `json:"display_text_range,omitempty"`
 }
 
+// GetDisplayableText returns the actual text that should be displayed to users,
+// using display_text_range to exclude media URLs and other placeholder content
+func (t *Tweet) GetDisplayableText() string {
+	if len(t.DisplayTextRange) != 2 {
+		return t.Text
+	}
+
+	start, end := t.DisplayTextRange[0], t.DisplayTextRange[1]
+	if start >= end || start < 0 {
+		return ""
+	}
+
+	// Convert to runes for proper Unicode handling
+	runes := []rune(t.Text)
+	if start >= len(runes) {
+		return ""
+	}
+	if end > len(runes) {
+		end = len(runes)
+	}
+
+	return string(runes[start:end])
+}
+
+// Example usage:
+//
+// Pure media tweet:
+// - full_text: "https://t.co/abcd1234"
+// - display_text_range: [0, 0]
+// - IsMediaOnlyTweet() returns true
+// - GetDisplayableText() returns ""
+//
+// Tweet with text and media:
+// - full_text: "Check this out! https://t.co/abcd1234"
+// - display_text_range: [0, 15]
+// - IsMediaOnlyTweet() returns false
+// - GetDisplayableText() returns "Check this out!"
 // TweetsResult contains tweets and information about whether we've reached the beginning of the thread
 type TweetsResult struct {
 	Tweets     []*Tweet `json:"tweets"`
@@ -338,6 +376,7 @@ func convertGeneratedTweetToTweet(genTweet *generated.Tweet) (*Tweet, error) {
 		tweet.IsQuoteStatus = legacy.IsQuoteStatus
 		tweet.Lang = legacy.Lang
 		tweet.PossiblySensitive = legacy.PossiblySensitive != nil && *legacy.PossiblySensitive
+		tweet.DisplayTextRange = legacy.DisplayTextRange
 
 		// Parse created at
 		if createdAt, err := time.Parse(time.RubyDate, string(legacy.CreatedAt)); err == nil {

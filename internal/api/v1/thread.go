@@ -94,11 +94,18 @@ func (h *V1Handler) convertXScraperTweetToAPI(tweet *xscraper.Tweet) Tweet {
 		quotedTweet = &quoted
 	}
 
+	// Convert DisplayTextRange if exists
+	var displayTextRange *[]int
+	if len(tweet.DisplayTextRange) > 0 {
+		displayTextRange = &tweet.DisplayTextRange
+	}
+
 	return Tweet{
 		Id:                tweet.ID,
 		RestId:            tweet.RestID,
 		Text:              tweet.Text,
 		CreatedAt:         tweet.CreatedAt,
+		DisplayTextRange:  displayTextRange,
 		Author:            author,
 		Entities:          entities,
 		Stats:             stats,

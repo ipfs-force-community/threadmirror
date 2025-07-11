@@ -31,7 +31,7 @@
 	<div class="summary" style="font-size: 1rem; color: #7c6f4b; background: #f7f3e3; border-radius: 12px; padding: 10px 16px; margin-bottom: 18px; width: 100%; text-align: center; line-height: 1.6; word-break: break-all">AI Summary: {{.ContentPreview}}</div>
     <div class="content">
       {{range .Tweets}}
-      <section class="tweet">{{ linkify .Text .Entities }}{{with .Entities.Media}}{{range .}}<img class="poster-img" src="{{.MediaUrlHttps}}" />{{end}}{{end}}</section>
+      <section class="tweet">{{ linkify (displayText .) .Entities }}{{with .Entities.Media}}{{range .}}<img class="poster-img" src="{{.MediaUrlHttps}}" />{{end}}{{end}}</section>
       {{end}}
     </div>
     <img class="qrcode-img" src="{{ qrcode .ID }}">

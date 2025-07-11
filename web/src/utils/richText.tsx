@@ -1,5 +1,5 @@
 import React from 'react';
-import type { TweetEntities, NoteTweetRichText, Url, UserMention, Hashtag } from '@client/models';
+import type { TweetEntities, NoteTweetRichText, Url, UserMention, Hashtag, Tweet } from '@client/models';
 
 interface Range {
   start: number;
@@ -147,4 +147,17 @@ export function renderTweetContent(text: string, entities?: TweetEntities, rich?
   pushText(unicodeAwareSlice(text, cursor, Array.from(text).length));
 
   return result;
+}
+
+/**
+ * Gets the actual displayable text from a tweet, excluding media URLs and other entities.
+ * Uses display_text_range to determine what text should be shown to users.
+ */
+export function getDisplayableText(tweet: Tweet): string {
+  if (!tweet.displayTextRange || tweet.displayTextRange.length !== 2) {
+    return tweet.text;
+  }
+  
+  const [start, end] = tweet.displayTextRange;
+  return unicodeAwareSlice(tweet.text, start, end);
 }

@@ -10,12 +10,16 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper/generated"
 )
 
 func RenderThread(threadURLTemplate, threadID string, data any, logger *slog.Logger) (template.HTML, error) {
 	funcMap := template.FuncMap{
 		"linkify": linkifyTweetText,
+		"displayText": func(tweet *xscraper.Tweet) string {
+			return tweet.GetDisplayableText()
+		},
 		"qrcode": func(threadID string) template.URL {
 			b, err := GenQrcode(threadURLTemplate, threadID)
 			if err != nil {

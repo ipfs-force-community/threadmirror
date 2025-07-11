@@ -387,6 +387,14 @@ components:
           type: string
           format: date-time
           description: Tweet creation timestamp
+        display_text_range:
+          type: array
+          items:
+            type: integer
+          minItems: 2
+          maxItems: 2
+          description: Start and end indices of the text that should be displayed (excludes media URLs)
+          nullable: true
         author:
           $ref: '#/components/schemas/TweetUser'
         entities:

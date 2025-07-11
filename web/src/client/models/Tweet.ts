@@ -73,6 +73,12 @@ export interface Tweet {
      */
     createdAt: Date;
     /**
+     * Start and end indices of the text that should be displayed (excludes media URLs)
+     * @type {Array<number>}
+     * @memberof Tweet
+     */
+    displayTextRange?: Array<number> | null;
+    /**
      * 
      * @type {TweetUser}
      * @memberof Tweet
@@ -218,6 +224,7 @@ export function TweetFromJSONTyped(json: any, ignoreDiscriminator: boolean): Twe
         'restId': json['rest_id'],
         'text': json['text'],
         'createdAt': (new Date(json['created_at'])),
+        'displayTextRange': json['display_text_range'] == null ? undefined : json['display_text_range'],
         'author': json['author'] == null ? undefined : TweetUserFromJSON(json['author']),
         'entities': json['entities'] == null ? undefined : TweetEntitiesFromJSON(json['entities']),
         'stats': TweetStatsFromJSON(json['stats']),
@@ -254,6 +261,7 @@ export function TweetToJSONTyped(value?: Tweet | null, ignoreDiscriminator: bool
         'rest_id': value['restId'],
         'text': value['text'],
         'created_at': ((value['createdAt']).toISOString()),
+        'display_text_range': value['displayTextRange'],
         'author': TweetUserToJSON(value['author']),
         'entities': TweetEntitiesToJSON(value['entities']),
         'stats': TweetStatsToJSON(value['stats']),

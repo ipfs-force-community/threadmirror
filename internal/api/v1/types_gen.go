@@ -238,8 +238,11 @@ type Tweet struct {
 	ConversationId string `json:"conversation_id"`
 
 	// CreatedAt Tweet creation timestamp
-	CreatedAt time.Time      `json:"created_at"`
-	Entities  *TweetEntities `json:"entities,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+
+	// DisplayTextRange Start and end indices of the text that should be displayed (excludes media URLs)
+	DisplayTextRange *[]int         `json:"display_text_range"`
+	Entities         *TweetEntities `json:"entities,omitempty"`
 
 	// HasBirdwatchNotes Whether this tweet has Birdwatch notes
 	HasBirdwatchNotes bool `json:"has_birdwatch_notes"`
