@@ -147,9 +147,10 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 				// Upload the generated screenshot and obtain the media ID
 				uploadRes, err := sc.UploadMedia(ctx, bytes.NewReader(buf), len(buf))
 				if err != nil {
-					return nil, err
+					logger.Error("failed to upload media", "error", err)
+				} else {
+					mediaIDs = append(mediaIDs, uploadRes.MediaID)
 				}
-				mediaIDs = append(mediaIDs, uploadRes.MediaID)
 			}
 
 			return sc.CreateTweet(ctx, xscraper.NewTweet{
