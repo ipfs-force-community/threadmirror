@@ -129,7 +129,7 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 			return fmt.Errorf("render thread id %s: %w", mention.ThreadID, err)
 		}
 
-		var buf []byte
+		var buf []byte = nil
 		err = chromedp.Run(h.chromedpCtx,
 			chromedp.EmulateViewport(485, 0),
 			chromedp.Navigate("data:text/html;base64,"+base64.StdEncoding.EncodeToString([]byte(html))),
@@ -137,19 +137,24 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 			chromedp.FullScreenshot(&buf, 100),
 		)
 		if err != nil {
-			return err
+			logger.Error("failed to screenshot thread", "error", err)
 		}
 
 		// Use fallback to upload media and create tweet
 		_, err = xscraper.TryWithResult(pool, func(sc *xscraper.XScraper) (*xscraper.Tweet, error) {
-			// Upload the generated screenshot and obtain the media ID
-			uploadRes, err := sc.UploadMedia(ctx, bytes.NewReader(buf), len(buf))
-			if err != nil {
-				return nil, err
+			mediaIDs := []string{}
+			if len(buf) > 0 {
+				// Upload the generated screenshot and obtain the media ID
+				uploadRes, err := sc.UploadMedia(ctx, bytes.NewReader(buf), len(buf))
+				if err != nil {
+					return nil, err
+				}
+				mediaIDs = append(mediaIDs, uploadRes.MediaID)
 			}
+
 			return sc.CreateTweet(ctx, xscraper.NewTweet{
 				Text:             replyText,
-				MediaIDs:         []string{uploadRes.MediaID},
+				MediaIDs:         mediaIDs,
 				TaggedUsers:      [][]string{},
 				InReplyToTweetId: &payload.MentionID,
 			})

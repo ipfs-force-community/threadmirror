@@ -88,14 +88,14 @@
 .mediaImage {
   max-width: 100%;
   height: auto;
-  border-radius: 6px;
-  border: 1px solid #e1e8ed;
-  transition: transform 0.2s;
+  /* border-radius: 6px; */
+  /* border: 1px solid #e1e8ed; */
+  /* transition: transform 0.2s; */
 }
-
+/* 
 .mediaImage:hover {
-  transform: scale(1.02); /* 鼠标悬停时轻微放大 */
-}
+  transform: scale(1.02);
+} */
 
 /* 错误处理样式 */
 .errorContainer {
