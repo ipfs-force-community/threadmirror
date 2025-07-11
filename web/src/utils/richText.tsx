@@ -8,6 +8,29 @@ interface Range {
   data?: any;
 }
 
+/**
+ * Substring function that works with Unicode code points (characters) instead of UTF-16 code units.
+ * This mimics Go's rune-based string slicing to ensure compatibility with backend entity indices.
+ */
+function unicodeAwareSlice(text: string, start: number, end: number): string {
+  if (start < 0 || end < start) {
+    return '';
+  }
+  
+  // Convert string to array of characters (code points)
+  const chars = Array.from(text);
+  
+  if (start >= chars.length) {
+    return '';
+  }
+  
+  if (end > chars.length) {
+    end = chars.length;
+  }
+  
+  return chars.slice(start, end).join('');
+}
+
 function buildEntityRanges(entities?: TweetEntities): Range[] {
   const ranges: Range[] = [];
   if (!entities) return ranges;
@@ -79,9 +102,10 @@ export function renderTweetContent(text: string, entities?: TweetEntities, rich?
     if (range.start < cursor) {
       return; // overlapping already handled
     }
-    // plain text before range
-    pushText(text.slice(cursor, range.start));
-    const sliceRaw = text.slice(range.start, range.end);
+    // plain text before range - use Unicode-aware slicing
+    pushText(unicodeAwareSlice(text, cursor, range.start));
+    const sliceRaw = unicodeAwareSlice(text, range.start, range.end);
+
     const slice = decodeHtml(sliceRaw);
     let node: React.ReactNode = slice;
     switch (range.type) {
@@ -119,8 +143,8 @@ export function renderTweetContent(text: string, entities?: TweetEntities, rich?
     cursor = range.end;
   });
 
-  // remaining text
-  pushText(text.slice(cursor));
+  // remaining text - use Unicode-aware slicing
+  pushText(unicodeAwareSlice(text, cursor, Array.from(text).length));
 
   return result;
 }
