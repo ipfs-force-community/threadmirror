@@ -10,9 +10,11 @@ import {
 } from '@utils/cookie';
 import styles from "./UserLoginOut.module.css";
 import defaultProfile from '../default_profile.png';
+import { useAuthContext } from '../AuthContext';
 
 const UserLgoinOut = () => {
     const { user, error, getAccessTokenSilently, loginWithRedirect, logout, isAuthenticated, isLoading: auth0Loading } = useAuth0();
+    const { setIsLoggedIn } = useAuthContext();
     const [localUser, setLocalUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const lastErrorRef = useRef<string | null>(null);
@@ -44,13 +46,14 @@ const UserLgoinOut = () => {
 
                 saveAuthCookies(token, userToStore);
                 setLocalUser(user);
+                setIsLoggedIn(true); // 登录后同步 context
                 return true;
             } catch (error) {
                 console.error("Authentication data save failed", error);
             }
         }
         return false;
-    }, [user, getAccessTokenSilently]);
+    }, [user, getAccessTokenSilently, setIsLoggedIn]);
 
     useEffect(() => {
         const initAuth = async () => {
@@ -60,13 +63,17 @@ const UserLgoinOut = () => {
 
             if (!restored && user) {
                 await saveAuthData();
+            } else if (restored) {
+                setIsLoggedIn(true); // 恢复登录状态
+            } else {
+                setIsLoggedIn(false);
             }
 
             setIsLoading(false);
         };
 
         initAuth();
-    }, [user, restoreUserFromCookies, saveAuthData]);
+    }, [user, restoreUserFromCookies, saveAuthData, setIsLoggedIn]);
 
     useEffect(() => {
         if (error && error.message) {
@@ -90,6 +97,7 @@ const UserLgoinOut = () => {
     const handleLogout = () => {
         clearAuthCookies();
         setLocalUser(null);
+        setIsLoggedIn(false); // 登出时同步 context
         logout({ logoutParams: { returnTo: window.location.origin } });
     };
 
