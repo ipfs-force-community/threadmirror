@@ -1,0 +1,30 @@
+{
+  "name": "threadmirror-extension",
+  "description": "ThreadMirror browser extension with Auth0 authentication",
+  "private": true,
+  "version": "1.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "build:prod": "NODE_ENV=production wxt build",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "compile": "tsc --noEmit",
+    "postinstall": "wxt prepare",
+    "clean": "rm -rf .output .wxt node_modules/.cache",
+    "type-check": "tsc --noEmit",
+    "check-config": "node check-config.cjs",
+    "setup": "node check-config.cjs && npm run build"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.0",
+    "typescript": "^5.8.3",
+    "wxt": "^0.20.7"
+  },
+  "dependencies": {
+    "@webext-core/messaging": "^2.3.0"
+  }
+}
