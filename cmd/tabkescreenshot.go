@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"os"
-	"time"
 
 	"github.com/chromedp/chromedp"
+	"github.com/ipfs-force-community/threadmirror/pkg/util"
 	"github.com/urfave/cli/v2"
 )
 
@@ -26,28 +26,11 @@ var TakeScreenshotCommand = &cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) error {
-		allocCtx, cancelFn1 := chromedp.NewExecAllocator(context.Background(),
-			chromedp.NoFirstRun,
-			chromedp.NoDefaultBrowserCheck,
-			chromedp.NoSandbox,
-			chromedp.Flag("no-sandbox", true),
-			chromedp.Flag("headless", true),
-			chromedp.Flag("disable-default-apps", true),
-			chromedp.Flag("disable-extensions", true),
-			chromedp.Flag("hide-scrollbars", true),
-		)
-		defer cancelFn1()
+		opts := util.DefaultScreenshotOptions()
+		opts.Scale = 3
+		opts.AdditionalOptions = chromedp.DefaultExecAllocatorOptions[:]
 
-		chromedpCtx, cancelFn2 := chromedp.NewContext(allocCtx)
-		defer cancelFn2()
-
-		var buf []byte
-		err := chromedp.Run(chromedpCtx,
-			chromedp.EmulateViewport(485, 0),
-			chromedp.Navigate(c.String("url")),
-			chromedp.Sleep(1*time.Second),
-			chromedp.FullScreenshot(&buf, 100),
-		)
+		buf, err := util.TakeScreenshotFromURL(context.Background(), c.String("url"), opts)
 		if err != nil {
 			return err
 		}

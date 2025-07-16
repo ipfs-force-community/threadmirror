@@ -3,7 +3,6 @@ package queue
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,12 +10,12 @@ import (
 	"math/rand/v2"
 	"time"
 
-	"github.com/chromedp/chromedp"
 	"github.com/ipfs-force-community/threadmirror/internal/comm"
 	"github.com/ipfs-force-community/threadmirror/internal/config"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
+	"github.com/ipfs-force-community/threadmirror/pkg/util"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 )
 
@@ -131,28 +130,8 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 				return fmt.Errorf("render thread id %s: %w", mention.ThreadID, err)
 			}
 
-			// Create independent chromedp context for this job to avoid lifecycle issues
-			allocCtx, cancelAlloc := chromedp.NewExecAllocator(ctx,
-				chromedp.NoFirstRun,
-				chromedp.NoDefaultBrowserCheck,
-				chromedp.NoSandbox,
-				chromedp.Flag("no-sandbox", true),
-				chromedp.Flag("headless", true),
-				chromedp.Flag("disable-default-apps", true),
-				chromedp.Flag("disable-extensions", true),
-				chromedp.Flag("hide-scrollbars", true),
-			)
-			defer cancelAlloc()
-
-			chromedpCtx, cancelChromedp := chromedp.NewContext(allocCtx)
-			defer cancelChromedp()
-
-			err = chromedp.Run(chromedpCtx,
-				chromedp.EmulateViewport(485, 0),
-				chromedp.Navigate("data:text/html;base64,"+base64.StdEncoding.EncodeToString([]byte(html))),
-				chromedp.Sleep(1*time.Second),
-				chromedp.FullScreenshot(&buf, 100),
-			)
+			// Take screenshot using utility function
+			buf, err = util.TakeScreenshotFromHTML(ctx, string(html), nil)
 			if err != nil {
 				logger.Error("failed to screenshot thread", "error", err)
 			}

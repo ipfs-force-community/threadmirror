@@ -18,9 +18,10 @@ type AsynqClient struct {
 
 // NewAsynqClient creates a new AsynqClient.
 func NewAsynqClient(redisClient redis.UniversalClient, defaultOptions ...asynq.Option) *AsynqClient {
+	allOptions := append([]asynq.Option{asynq.MaxRetry(1)}, defaultOptions...)
 	return &AsynqClient{
 		Client:         asynq.NewClientFromRedisClient(redisClient),
-		defaultOptions: defaultOptions,
+		defaultOptions: allOptions,
 	}
 }
 
@@ -51,7 +52,8 @@ func NewAsynqServer(redisClient redis.UniversalClient, logger *slog.Logger) *Asy
 			Queues: map[string]int{
 				"default": 1,
 			},
-			RetryDelayFunc: asynq.DefaultRetryDelayFunc,
+			// 移除RetryDelayFunc以完全关闭重试功能
+			// RetryDelayFunc: asynq.DefaultRetryDelayFunc,
 			ErrorHandler: asynq.ErrorHandlerFunc(func(ctx context.Context, task *asynq.Task, err error) {
 				logger.Error("Job processing failed",
 					"job_type", task.Type(),

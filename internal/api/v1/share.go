@@ -1,14 +1,12 @@
 package v1
 
 import (
-	"encoding/base64"
 	"fmt"
 	"net/http"
-	"time"
 
-	"github.com/chromedp/chromedp"
 	"github.com/gin-gonic/gin"
 	"github.com/ipfs-force-community/threadmirror/internal/comm"
+	"github.com/ipfs-force-community/threadmirror/pkg/util"
 )
 
 // GetShare implements the /share endpoint.
@@ -37,29 +35,9 @@ func (h *V1Handler) GetShare(c *gin.Context, params GetShareParams) {
 		return
 	}
 
-	// Take screenshot using chromedp
-	allocCtx, cancelAlloc := chromedp.NewExecAllocator(c.Request.Context(),
-		chromedp.NoFirstRun,
-		chromedp.NoDefaultBrowserCheck,
-		chromedp.NoSandbox,
-		chromedp.Flag("no-sandbox", true),
-		chromedp.Flag("headless", true),
-		chromedp.Flag("disable-default-apps", true),
-		chromedp.Flag("disable-extensions", true),
-		chromedp.Flag("hide-scrollbars", true),
-	)
-	defer cancelAlloc()
-
-	ctx, cancel := chromedp.NewContext(allocCtx)
-	defer cancel()
-
-	var buf []byte
-	if err := chromedp.Run(ctx,
-		chromedp.EmulateViewport(485, 0),
-		chromedp.Navigate("data:text/html;base64,"+base64.StdEncoding.EncodeToString([]byte(html))),
-		chromedp.Sleep(1*time.Second),
-		chromedp.FullScreenshot(&buf, 100),
-	); err != nil {
+	// Take screenshot using utility function
+	buf, err := util.TakeScreenshotFromHTML(c.Request.Context(), string(html), nil)
+	if err != nil {
 		HandleInternalServerError(c, err)
 		return
 	}
