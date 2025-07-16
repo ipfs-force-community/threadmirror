@@ -14,7 +14,7 @@ type ScreenshotOptions struct {
 	ViewportWidth int
 	// ViewportHeight sets the viewport height (default: 0 for auto)
 	ViewportHeight int
-	// Scale sets the device scale factor (default: 3)
+	// Scale sets the device scale factor (default: 2)
 	Scale float64
 	// WaitDuration sets how long to wait before taking screenshot (default: 1 second)
 	WaitDuration time.Duration
@@ -29,7 +29,7 @@ func DefaultScreenshotOptions() *ScreenshotOptions {
 	return &ScreenshotOptions{
 		ViewportWidth:  485,
 		ViewportHeight: 0,
-		Scale:          3,
+		Scale:          2,
 		WaitDuration:   1 * time.Second,
 		Quality:        100,
 	}

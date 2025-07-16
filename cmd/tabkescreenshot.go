@@ -24,10 +24,15 @@ var TakeScreenshotCommand = &cli.Command{
 			Usage: "the path to save the screenshot",
 			Value: "screenshot.png",
 		},
+		&cli.Float64Flag{
+			Name:  "scale",
+			Usage: "the scale of the screenshot",
+			Value: 2,
+		},
 	},
 	Action: func(c *cli.Context) error {
 		opts := util.DefaultScreenshotOptions()
-		opts.Scale = 3
+		opts.Scale = c.Float64("scale")
 		opts.AdditionalOptions = chromedp.DefaultExecAllocatorOptions[:]
 
 		buf, err := util.TakeScreenshotFromURL(context.Background(), c.String("url"), opts)
