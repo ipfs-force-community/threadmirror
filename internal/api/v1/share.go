@@ -35,8 +35,14 @@ func (h *V1Handler) GetShare(c *gin.Context, params GetShareParams) {
 		return
 	}
 
+	// Prepare screenshot options
+	opts := util.DefaultScreenshotOptions()
+	if params.GetScale() != nil {
+		opts.Scale = float64(*params.GetScale())
+	}
+
 	// Take screenshot using utility function
-	buf, err := util.TakeScreenshotFromHTML(c.Request.Context(), string(html), nil)
+	buf, err := util.TakeScreenshotFromHTML(c.Request.Context(), string(html), opts)
 	if err != nil {
 		HandleInternalServerError(c, err)
 		return

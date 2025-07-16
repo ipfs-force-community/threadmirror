@@ -447,9 +447,13 @@ func (p *GetRenderParams) GetThreadId() string { return p.ThreadId }
 type GetShareParams struct {
 	// ThreadId The thread id to generate the share image
 	ThreadId string `form:"thread_id" json:"thread_id"`
+
+	// Scale The device scale factor for the screenshot (default 2)
+	Scale *float32 `form:"scale,omitempty" json:"scale,omitempty"`
 }
 
 func (p *GetShareParams) GetThreadId() string { return p.ThreadId }
+func (p *GetShareParams) GetScale() *float32  { return p.Scale }
 
 // PostThreadScrapeJSONRequestBody defines body for PostThreadScrape for application/json ContentType.
 type PostThreadScrapeJSONRequestBody = ThreadScrapePostRequest

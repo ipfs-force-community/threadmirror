@@ -190,6 +190,16 @@ paths:
           description: The thread id to generate the share image
           schema:
             type: string
+        - name: scale
+          in: query
+          required: false
+          description: The device scale factor for the screenshot (default 2)
+          schema:
+            type: number
+            format: float
+            default: 2
+            minimum: 0.1
+            maximum: 5
       responses:
         '200':
           description: Share image (PNG)
