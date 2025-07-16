@@ -181,6 +181,12 @@ export interface Tweet {
      */
     isNoteTweet: boolean;
     /**
+     * Multi-language translations of the displayable text
+     * @type {{ [key: string]: string; }}
+     * @memberof Tweet
+     */
+    translations?: { [key: string]: string; } | null;
+    /**
      * 
      * @type {NoteTweetRichText}
      * @memberof Tweet
@@ -242,6 +248,7 @@ export function TweetFromJSONTyped(json: any, ignoreDiscriminator: boolean): Twe
         'isTranslatable': json['is_translatable'],
         'views': json['views'] == null ? undefined : json['views'],
         'isNoteTweet': json['is_note_tweet'],
+        'translations': json['translations'] == null ? undefined : json['translations'],
         'richtext': NoteTweetRichTextFromJSON(json['richtext']),
     };
 }
@@ -279,6 +286,7 @@ export function TweetToJSONTyped(value?: Tweet | null, ignoreDiscriminator: bool
         'is_translatable': value['isTranslatable'],
         'views': value['views'],
         'is_note_tweet': value['isNoteTweet'],
+        'translations': value['translations'],
         'richtext': NoteTweetRichTextToJSON(value['richtext']),
     };
 }

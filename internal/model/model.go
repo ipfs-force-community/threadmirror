@@ -9,6 +9,7 @@ func AllModels() []any {
 		&BotCookie{},
 		&Mention{},
 		&Thread{},
+		&Translation{}, // Translation table references Thread
 		// Add new models here as they are created
 	}
 }

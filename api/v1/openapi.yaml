@@ -150,7 +150,7 @@ paths:
   /render:
     get:
       summary: Render thread as HTML
-      description: Render a thread as an HTML page for the given thread_id
+      description: Render a thread as an HTML page for the given thread_id, optionally in a translated language
       security: []
       tags:
         - Render
@@ -161,6 +161,22 @@ paths:
           description: The thread id to render
           schema:
             type: string
+        - name: lang
+          in: query
+          required: false
+          description: Language code for translated content (if available)
+          schema:
+            type: string
+            pattern: '^[a-z]{2}$'
+            example: 'zh'
+        - name: source_lang
+          in: query
+          required: false
+          description: Source language code (auto-detected if not provided)
+          schema:
+            type: string
+            pattern: '^[a-z]{2}$'
+            example: 'en'
       responses:
         '200':
           description: Rendered HTML page
@@ -179,7 +195,7 @@ paths:
   /share:
     get:
       summary: Download share image
-      description: Download a long image representation of the thread for sharing
+      description: Download a long image representation of the thread for sharing, optionally in a translated language
       security: []
       tags:
         - Share
@@ -200,6 +216,22 @@ paths:
             default: 2
             minimum: 0.1
             maximum: 5
+        - name: lang
+          in: query
+          required: false
+          description: Language code for translated content (if available)
+          schema:
+            type: string
+            pattern: '^[a-z]{2}$'
+            example: 'zh'
+        - name: source_lang
+          in: query
+          required: false
+          description: Source language code (auto-detected if not provided)
+          schema:
+            type: string
+            pattern: '^[a-z]{2}$'
+            example: 'en'
       responses:
         '200':
           description: Share image (PNG)
@@ -214,6 +246,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+
+
 
   /thread/scrape:
     post:
@@ -457,6 +491,16 @@ components:
         is_note_tweet:
           type: boolean
           description: Whether this is a long-form Note Tweet
+        translations:
+          type: object
+          description: Multi-language translations of the displayable text
+          additionalProperties:
+            type: string
+          example:
+            zh: "这是推文的中文翻译"
+            ja: "これはツイートの日本語翻訳です"
+            ko: "이것은 트윗의 한국어 번역입니다"
+          nullable: true
         richtext:
           $ref: '#/components/schemas/NoteTweetRichText'
           description: Rich text formatting information for Note Tweet
@@ -776,6 +820,8 @@ components:
         - total
         - limit
         - offset
+
+
 
     Error:
       type: object

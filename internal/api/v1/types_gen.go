@@ -289,6 +289,9 @@ type Tweet struct {
 	// Text Tweet text content
 	Text string `json:"text"`
 
+	// Translations Multi-language translations of the displayable text
+	Translations *map[string]string `json:"translations"`
+
 	// Views Number of views
 	Views *int `json:"views"`
 }
@@ -439,9 +442,17 @@ func (p *GetQrcodeParams) GetThreadId() string { return p.ThreadId }
 type GetRenderParams struct {
 	// ThreadId The thread id to render
 	ThreadId string `form:"thread_id" json:"thread_id"`
+
+	// Lang Language code for translated content (if available)
+	Lang *string `form:"lang,omitempty" json:"lang,omitempty"`
+
+	// SourceLang Source language code (auto-detected if not provided)
+	SourceLang *string `form:"source_lang,omitempty" json:"source_lang,omitempty"`
 }
 
-func (p *GetRenderParams) GetThreadId() string { return p.ThreadId }
+func (p *GetRenderParams) GetThreadId() string    { return p.ThreadId }
+func (p *GetRenderParams) GetLang() *string       { return p.Lang }
+func (p *GetRenderParams) GetSourceLang() *string { return p.SourceLang }
 
 // GetShareParams defines parameters for GetShare.
 type GetShareParams struct {
@@ -450,10 +461,18 @@ type GetShareParams struct {
 
 	// Scale The device scale factor for the screenshot (default 2)
 	Scale *float32 `form:"scale,omitempty" json:"scale,omitempty"`
+
+	// Lang Language code for translated content (if available)
+	Lang *string `form:"lang,omitempty" json:"lang,omitempty"`
+
+	// SourceLang Source language code (auto-detected if not provided)
+	SourceLang *string `form:"source_lang,omitempty" json:"source_lang,omitempty"`
 }
 
-func (p *GetShareParams) GetThreadId() string { return p.ThreadId }
-func (p *GetShareParams) GetScale() *float32  { return p.Scale }
+func (p *GetShareParams) GetThreadId() string    { return p.ThreadId }
+func (p *GetShareParams) GetScale() *float32     { return p.Scale }
+func (p *GetShareParams) GetLang() *string       { return p.Lang }
+func (p *GetShareParams) GetSourceLang() *string { return p.SourceLang }
 
 // PostThreadScrapeJSONRequestBody defines body for PostThreadScrape for application/json ContentType.
 type PostThreadScrapeJSONRequestBody = ThreadScrapePostRequest

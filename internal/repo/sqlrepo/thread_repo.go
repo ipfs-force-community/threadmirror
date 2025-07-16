@@ -236,3 +236,76 @@ func (r *ThreadRepo) GetFailedThreadsForRetry(ctx context.Context, retryDelay ti
 
 	return threads, err
 }
+
+// GetThreadWithTranslationsByID retrieves a thread by ID with preloaded translations
+func (r *ThreadRepo) GetThreadWithTranslationsByID(ctx context.Context, id string) (*model.Thread, error) {
+	db := sql.GetDBOrTx(ctx, r.db)
+	var thread model.Thread
+
+	err := db.Preload("Translation").Where("id = ?", id).First(&thread).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, errutil.ErrNotFound
+		}
+		return nil, fmt.Errorf("get thread with translations: %w", err)
+	}
+
+	return &thread, nil
+}
+
+// CreateTranslation creates a new translation
+func (r *ThreadRepo) CreateTranslation(ctx context.Context, translation *model.Translation) error {
+	db := sql.GetDBOrTx(ctx, r.db)
+	if err := db.Create(translation).Error; err != nil {
+		return fmt.Errorf("create translation: %w", err)
+	}
+	return nil
+}
+
+// GetTranslation retrieves a translation by ID
+func (r *ThreadRepo) GetTranslation(ctx context.Context, translationID string) (*model.Translation, error) {
+	db := sql.GetDBOrTx(ctx, r.db)
+	var translation model.Translation
+	if err := db.Where("id = ?", translationID).First(&translation).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, errutil.ErrNotFound
+		}
+		return nil, fmt.Errorf("get translation by id: %w", err)
+	}
+	return &translation, nil
+}
+
+// GetThreadTranslation retrieves a translation by thread ID and language pair
+func (r *ThreadRepo) GetThreadTranslation(ctx context.Context, threadID, sourceLanguage, targetLanguage string) (*model.Translation, error) {
+	db := sql.GetDBOrTx(ctx, r.db)
+	var translation model.Translation
+	if err := db.
+		Where("thread_id = ? AND source_language = ? AND target_language = ?", threadID, sourceLanguage, targetLanguage).
+		First(&translation).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get translation by thread and languages: %w", err)
+	}
+	return &translation, nil
+}
+
+// ListTranslations retrieves all translations for a specific thread with pagination
+func (r *ThreadRepo) ListTranslations(ctx context.Context, threadID string, limit, offset int) ([]*model.Translation, int64, error) {
+	db := sql.GetDBOrTx(ctx, r.db)
+	var total int64
+	if err := db.Model(&model.Translation{}).Where("thread_id = ?", threadID).Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("count translations by thread: %w", err)
+	}
+
+	var translations []*model.Translation
+	if err := db.
+		Where("thread_id = ?", threadID).
+		Limit(limit).
+		Offset(offset).
+		Find(&translations).Error; err != nil {
+		return nil, 0, fmt.Errorf("get translations by thread: %w", err)
+	}
+
+	return translations, total, nil
+}

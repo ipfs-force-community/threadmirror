@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	v1errors "github.com/ipfs-force-community/threadmirror/internal/api/v1/errors"
+	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/internal/task/queue"
 	"github.com/ipfs-force-community/threadmirror/pkg/auth"
@@ -22,26 +23,27 @@ var ErrCodeThreadNotFound = v1errors.NewErrorCode(14001, "thread not found")
 
 // GetMentionsId handles GET /mentions/{id}
 func (h *V1Handler) GetThreadId(c *gin.Context, id string) {
-	thread, err := h.threadService.GetThreadByID(c.Request.Context(), id)
+	threadDetail, err := h.threadService.GetThreadByID(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, errutil.ErrNotFound) {
 			_ = c.Error(v1errors.NotFound(err).WithCode(ErrCodeThreadNotFound))
 			return
 		}
-		_ = c.Error(v1errors.InternalServerError(err).WithCode(ErrCodeFailedToGetMention))
+		HandleInternalServerError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data": h.convertThreadDetailToAPI(thread),
-	})
+	// Convert ThreadDetail to API format with translations
+	apiThread := h.convertThreadDetailToAPI(threadDetail)
+
+	c.JSON(http.StatusOK, gin.H{"data": apiThread})
 }
 
 func (h *V1Handler) convertThreadDetailToAPI(thread *service.ThreadDetail) ThreadDetail {
 	var apiTweets []Tweet
 	if len(thread.Tweets) > 0 {
-		apiTweets = lo.Map(thread.Tweets, func(tweet *xscraper.Tweet, _ int) Tweet {
-			return h.convertXScraperTweetToAPI(tweet)
+		apiTweets = lo.Map(thread.Tweets, func(tweetWithTranslation *model.TweetWithTranslation, _ int) Tweet {
+			return h.convertTweetWithTranslationToAPI(tweetWithTranslation)
 		})
 	}
 
@@ -125,6 +127,23 @@ func (h *V1Handler) convertXScraperTweetToAPI(tweet *xscraper.Tweet) Tweet {
 		IsNoteTweet:       tweet.IsNoteTweet,
 		Richtext:          richtext,
 	}
+}
+
+// convertTweetWithTranslationToAPI converts TweetWithTranslation to API Tweet type
+func (h *V1Handler) convertTweetWithTranslationToAPI(tweetWithTranslation *model.TweetWithTranslation) Tweet {
+	if tweetWithTranslation == nil || tweetWithTranslation.Tweet == nil {
+		return Tweet{}
+	}
+
+	// Convert the underlying tweet using existing method
+	apiTweet := h.convertXScraperTweetToAPI(tweetWithTranslation.Tweet)
+
+	// Add translation information if available
+	if len(tweetWithTranslation.Translations) > 0 {
+		apiTweet.Translations = &tweetWithTranslation.Translations
+	}
+
+	return apiTweet
 }
 
 // PostThreadScrape handles POST /thread/scrape

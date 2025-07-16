@@ -17,6 +17,8 @@ import * as runtime from '../runtime';
 
 export interface RenderGetRequest {
     threadId: string;
+    lang?: string;
+    sourceLang?: string;
 }
 
 /**
@@ -25,7 +27,7 @@ export interface RenderGetRequest {
 export class RenderApi extends runtime.BaseAPI {
 
     /**
-     * Render a thread as an HTML page for the given thread_id
+     * Render a thread as an HTML page for the given thread_id, optionally in a translated language
      * Render thread as HTML
      */
     async renderGetRaw(requestParameters: RenderGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<string>> {
@@ -40,6 +42,14 @@ export class RenderApi extends runtime.BaseAPI {
 
         if (requestParameters['threadId'] != null) {
             queryParameters['thread_id'] = requestParameters['threadId'];
+        }
+
+        if (requestParameters['lang'] != null) {
+            queryParameters['lang'] = requestParameters['lang'];
+        }
+
+        if (requestParameters['sourceLang'] != null) {
+            queryParameters['source_lang'] = requestParameters['sourceLang'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -62,7 +72,7 @@ export class RenderApi extends runtime.BaseAPI {
     }
 
     /**
-     * Render a thread as an HTML page for the given thread_id
+     * Render a thread as an HTML page for the given thread_id, optionally in a translated language
      * Render thread as HTML
      */
     async renderGet(requestParameters: RenderGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<string> {

@@ -20,13 +20,14 @@ import (
 
 var _ = Describe("ThreadService", func() {
 	var (
-		threadService *service.ThreadService
-		threadRepo    service.ThreadRepoInterface
-		mockIPFS      *testsuit.MockIPFSStorage
-		db            *sql.DB
-		redisClient   *redis.Client
-		logger        *slog.Logger
-		ctx           context.Context
+		threadService   *service.ThreadService
+		threadRepo      service.ThreadRepoInterface
+		translationRepo service.TranslationRepoInterface
+		mockIPFS        *testsuit.MockIPFSStorage
+		db              *sql.DB
+		redisClient     *redis.Client
+		logger          *slog.Logger
+		ctx             context.Context
 	)
 
 	BeforeEach(func() {
@@ -43,6 +44,7 @@ var _ = Describe("ThreadService", func() {
 
 		// Initialize repo with database
 		threadRepo = sqlrepo.NewThreadRepo(db)
+		translationRepo = sqlrepo.NewTranslationRepo(db)
 
 		// Initialize mock IPFS
 		mockIPFS = &testsuit.MockIPFSStorage{}
@@ -56,7 +58,7 @@ var _ = Describe("ThreadService", func() {
 		}))
 
 		// Create service
-		threadService = service.NewThreadService(threadRepo, mockIPFS, mockLLM, redisClient, logger)
+		threadService = service.NewThreadService(threadRepo, translationRepo, mockIPFS, mockLLM, redisClient, logger)
 	})
 
 	Describe("GetThreadByID", func() {

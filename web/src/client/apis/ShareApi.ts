@@ -17,6 +17,9 @@ import * as runtime from '../runtime';
 
 export interface ShareGetRequest {
     threadId: string;
+    scale?: number;
+    lang?: string;
+    sourceLang?: string;
 }
 
 /**
@@ -25,7 +28,7 @@ export interface ShareGetRequest {
 export class ShareApi extends runtime.BaseAPI {
 
     /**
-     * Download a long image representation of the thread for sharing
+     * Download a long image representation of the thread for sharing, optionally in a translated language
      * Download share image
      */
     async shareGetRaw(requestParameters: ShareGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Blob>> {
@@ -40,6 +43,18 @@ export class ShareApi extends runtime.BaseAPI {
 
         if (requestParameters['threadId'] != null) {
             queryParameters['thread_id'] = requestParameters['threadId'];
+        }
+
+        if (requestParameters['scale'] != null) {
+            queryParameters['scale'] = requestParameters['scale'];
+        }
+
+        if (requestParameters['lang'] != null) {
+            queryParameters['lang'] = requestParameters['lang'];
+        }
+
+        if (requestParameters['sourceLang'] != null) {
+            queryParameters['source_lang'] = requestParameters['sourceLang'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -58,7 +73,7 @@ export class ShareApi extends runtime.BaseAPI {
     }
 
     /**
-     * Download a long image representation of the thread for sharing
+     * Download a long image representation of the thread for sharing, optionally in a translated language
      * Download share image
      */
     async shareGet(requestParameters: ShareGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Blob> {

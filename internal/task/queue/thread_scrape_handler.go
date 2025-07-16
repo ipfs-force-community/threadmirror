@@ -22,24 +22,27 @@ type ThreadScrapePayload struct {
 }
 
 type ThreadScrapeHandler struct {
-	mentionService *service.MentionService
-	threadService  *service.ThreadService
-	scrapers       []*xscraper.XScraper
-	logger         *slog.Logger
+	mentionService     *service.MentionService
+	threadService      *service.ThreadService
+	translationService *service.TranslationService
+	scrapers           []*xscraper.XScraper
+	logger             *slog.Logger
 }
 
 // NewThreadScrapeHandler constructs a ThreadScrapeHandler.
 func NewThreadScrapeHandler(
 	mentionService *service.MentionService,
 	threadService *service.ThreadService,
+	translationService *service.TranslationService,
 	scrapers []*xscraper.XScraper,
 	logger *slog.Logger,
 ) *ThreadScrapeHandler {
 	return &ThreadScrapeHandler{
-		mentionService: mentionService,
-		threadService:  threadService,
-		scrapers:       scrapers,
-		logger:         logger.With("job_handler", "thread_scrape"),
+		mentionService:     mentionService,
+		threadService:      threadService,
+		translationService: translationService,
+		scrapers:           scrapers,
+		logger:             logger.With("job_handler", "thread_scrape"),
 	}
 }
 
@@ -155,6 +158,11 @@ func (h *ThreadScrapeHandler) HandleJob(ctx context.Context, j *jobq.Job) error 
 
 	logger.Info("🤖 Thread updated successfully with scraped data")
 
+	// Auto-translate to popular languages after successful scraping
+	if h.translationService != nil {
+		h.autoTranslateThread(ctx, payload.TweetID, tweets, logger)
+	}
+
 	logger.Info("🤖 Thread scrape completed successfully",
 		"thread_id", payload.TweetID,
 		"tweets_count", len(tweets),
@@ -179,4 +187,28 @@ func (h *ThreadScrapeHandler) getCompleteThreadFromTweetID(ctx context.Context, 
 	}
 
 	return tweets, nil
+}
+
+// autoTranslateThread automatically translates thread to popular target languages
+func (h *ThreadScrapeHandler) autoTranslateThread(ctx context.Context, threadID string, tweets []*xscraper.Tweet, logger *slog.Logger) {
+	// Define popular target languages for auto-translation
+	targetLanguages := []string{"zh", "en", "ja", "ko", "es", "fr"}
+
+	for _, targetLang := range targetLanguages {
+		go func(lang string) {
+			_, err := h.translationService.TranslateThread(ctx, threadID, lang, tweets)
+			if err != nil {
+				logger.Warn("Auto-translation failed",
+					"thread_id", threadID,
+					"target_language", lang,
+					"error", err,
+				)
+			} else {
+				logger.Info("Auto-translation completed",
+					"thread_id", threadID,
+					"target_language", lang,
+				)
+			}
+		}(targetLang)
+	}
 }

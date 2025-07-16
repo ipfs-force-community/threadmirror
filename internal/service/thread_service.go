@@ -13,23 +13,24 @@ import (
 	"github.com/eko/gocache/lib/v4/cache"
 	"github.com/eko/gocache/lib/v4/store"
 	redis_store "github.com/eko/gocache/store/redis/v4"
-	"github.com/ipfs-force-community/threadmirror/internal/model"
 	wrRedis "github.com/ipfs-force-community/threadmirror/pkg/database/redis"
+	"github.com/ipfs/go-cid"
+
+	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"github.com/ipfs-force-community/threadmirror/pkg/ipfs"
 	"github.com/ipfs-force-community/threadmirror/pkg/llm"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
-	"github.com/ipfs/go-cid"
 	"github.com/tmc/langchaingo/llms"
 )
 
 type ThreadDetail struct {
-	ID             string            `json:"id"`
-	CID            string            `json:"cid"`
-	ContentPreview string            `json:"content_preview"`
-	NumTweets      int               `json:"numTweets"`
-	Tweets         []*xscraper.Tweet `json:"tweets,omitempty"`
-	CreatedAt      time.Time         `json:"created_at"`
+	ID             string                        `json:"id"`
+	CID            string                        `json:"cid"`
+	ContentPreview string                        `json:"content_preview"`
+	NumTweets      int                           `json:"numTweets"`
+	Tweets         []*model.TweetWithTranslation `json:"tweets,omitempty"`
+	CreatedAt      time.Time                     `json:"created_at"`
 
 	// New fields for status and author
 	Status     string        `json:"status"`
@@ -40,6 +41,7 @@ type ThreadDetail struct {
 
 type ThreadRepoInterface interface {
 	GetThreadByID(ctx context.Context, id string) (*model.Thread, error)
+	GetThreadWithTranslationsByID(ctx context.Context, id string) (*model.Thread, error)
 	CreateThread(ctx context.Context, thread *model.Thread) error
 	UpdateThread(ctx context.Context, thread *model.Thread) error
 	GetTweetsByIDs(ctx context.Context, ids []string) (map[string]*model.Thread, error)
@@ -71,25 +73,40 @@ type ThreadService struct {
 	logger     *slog.Logger
 }
 
-func NewThreadService(threadRepo ThreadRepoInterface, storage ipfs.Storage, llmModel llm.Model, redisClientWrapper *wrRedis.Client, logger *slog.Logger) *ThreadService {
-	redisStore := redis_store.NewRedis(redisClientWrapper.Client)
+func NewThreadService(
+	threadRepo ThreadRepoInterface,
+	storage ipfs.Storage,
+	llmModel llm.Model,
+	redisClientWrapper *wrRedis.Client,
+	logger *slog.Logger,
+) *ThreadService {
+	redisStore := redis_store.NewRedis(redisClientWrapper)
 	cacheManager := cache.New[TweetSlice](redisStore)
-	return &ThreadService{threadRepo: threadRepo, storage: storage, cache: cacheManager, llm: llmModel, logger: logger}
+	return &ThreadService{
+		threadRepo: threadRepo,
+		storage:    storage,
+		cache:      cacheManager,
+		llm:        llmModel,
+		logger:     logger,
+	}
 }
 
 func (s *ThreadService) GetThreadByID(ctx context.Context, id string) (*ThreadDetail, error) {
-	thread, err := s.threadRepo.GetThreadByID(ctx, id)
+	thread, err := s.threadRepo.GetThreadWithTranslationsByID(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("get thread: %w", err)
+		return nil, fmt.Errorf("get thread with translations: %w", err)
 	}
 
 	// Load tweets from IPFS (only if completed and has CID)
-	var tweets []*xscraper.Tweet
+	var tweetsWithTranslation []*model.TweetWithTranslation
 	if thread.Status == model.ThreadStatusCompleted && thread.CID != "" {
-		tweets, err = s.loadTweetsFromIPFS(ctx, thread.CID)
+		tweets, err := s.loadTweetsFromIPFS(ctx, thread.CID)
 		if err != nil {
 			return nil, fmt.Errorf("load from ipfs %s: %w", thread.CID, err)
 		}
+
+		// Add translation information to tweets using the preloaded translations
+		tweetsWithTranslation = s.addTranslationsToTweets(tweets, thread.Translation)
 	}
 
 	// Build author info if available
@@ -108,7 +125,7 @@ func (s *ThreadService) GetThreadByID(ctx context.Context, id string) (*ThreadDe
 		CID:            thread.CID,
 		ContentPreview: thread.Summary,
 		NumTweets:      thread.NumTweets,
-		Tweets:         tweets,
+		Tweets:         tweetsWithTranslation,
 		CreatedAt:      thread.CreatedAt,
 		Status:         string(thread.Status),
 		RetryCount:     thread.RetryCount,
@@ -334,4 +351,35 @@ Please provide a Chinese summary:`, jsonTweets)
 	}
 	// Filter out invalid UTF-8 characters
 	return strings.TrimSpace(summary), nil
+}
+
+// addTranslationsToTweets wraps tweets with translation information using preloaded translation
+func (s *ThreadService) addTranslationsToTweets(tweets []*xscraper.Tweet, translation *model.Translation) []*model.TweetWithTranslation {
+	result := make([]*model.TweetWithTranslation, len(tweets))
+
+	// Create a map: tweetID -> language -> translatedText
+	translationMap := make(map[string]map[string]string)
+
+	if translation != nil {
+		// Unmarshal TweetTexts from JSON
+		var tweetTexts []model.TweetText
+		if err := json.Unmarshal(translation.TweetTexts, &tweetTexts); err == nil {
+			for _, tweetText := range tweetTexts {
+				if translationMap[tweetText.TweetID] == nil {
+					translationMap[tweetText.TweetID] = make(map[string]string)
+				}
+				translationMap[tweetText.TweetID][translation.TargetLanguage] = tweetText.TranslatedText
+			}
+		}
+	}
+
+	// Wrap tweets with translation information
+	for i, tweet := range tweets {
+		result[i] = &model.TweetWithTranslation{
+			Tweet:        tweet,
+			Translations: translationMap[tweet.ID],
+		}
+	}
+
+	return result
 }
