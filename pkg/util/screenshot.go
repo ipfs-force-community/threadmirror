@@ -14,7 +14,7 @@ type ScreenshotOptions struct {
 	ViewportWidth int
 	// ViewportHeight sets the viewport height (default: 0 for auto)
 	ViewportHeight int
-	// Scale sets the device scale factor (default: 1)
+	// Scale sets the device scale factor (default: 3)
 	Scale float64
 	// WaitDuration sets how long to wait before taking screenshot (default: 1 second)
 	WaitDuration time.Duration
