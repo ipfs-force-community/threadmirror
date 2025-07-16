@@ -34,6 +34,7 @@ type ReplyTweetHandler struct {
 	scrapers             []*xscraper.XScraper
 	threadURLTemplate    string
 	enableImageReply     bool
+	screenshotScale      float64
 }
 
 // NewReplyTweetHandler constructs an ReplyTweetHandler.
@@ -54,6 +55,7 @@ func NewReplyTweetHandler(
 		scrapers:             scrapers,
 		threadURLTemplate:    commonConfig.ThreadURLTemplate,
 		enableImageReply:     botConfig.EnableImageReply,
+		screenshotScale:      botConfig.ScreenshotScale,
 	}
 }
 
@@ -130,8 +132,12 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 				return fmt.Errorf("render thread id %s: %w", mention.ThreadID, err)
 			}
 
+			// Create screenshot options with configured scale
+			screenshotOpts := util.DefaultScreenshotOptions()
+			screenshotOpts.Scale = h.screenshotScale
+
 			// Take screenshot using utility function
-			buf, err = util.TakeScreenshotFromHTML(ctx, string(html), nil)
+			buf, err = util.TakeScreenshotFromHTML(ctx, string(html), screenshotOpts)
 			if err != nil {
 				logger.Error("failed to screenshot thread", "error", err)
 			}

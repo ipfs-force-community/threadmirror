@@ -92,6 +92,9 @@ type BotConfig struct {
 
 	// Whether to enable image replies when creating tweet responses
 	EnableImageReply bool
+
+	// Screenshot scale factor for image replies (default: 2.0)
+	ScreenshotScale float64
 }
 
 func LoadCommonConfigFromCLI(c *cli.Context) *CommonConfig {
@@ -199,6 +202,7 @@ func LoadBotConfigFromCLI(c *cli.Context) *BotConfig {
 		ExcludeMentionAuthorPrefix: c.String("bot-exclude-mention-author-prefix"),
 		MentionUsername:            c.String("bot-mention-username"),
 		EnableImageReply:           c.Bool("bot-enable-image-reply"),
+		ScreenshotScale:            c.Float64("bot-screenshot-scale"),
 	}
 }
 
@@ -469,6 +473,12 @@ func GetBotCLIFlags() []cli.Flag {
 			Usage:   "Enable image replies when responding to mentions",
 			EnvVars: []string{"BOT_ENABLE_IMAGE_REPLY"},
 			Value:   true,
+		},
+		&cli.Float64Flag{
+			Name:    "bot-screenshot-scale",
+			Usage:   "Screenshot scale factor for image replies (default: 2.0)",
+			EnvVars: []string{"BOT_SCREENSHOT_SCALE"},
+			Value:   2.0,
 		},
 	}
 }
