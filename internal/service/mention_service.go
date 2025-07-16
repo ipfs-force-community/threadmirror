@@ -15,6 +15,11 @@ import (
 	"gorm.io/gorm"
 )
 
+// Mention Service Errors
+var (
+	ErrMentionAlreadyExists = errors.New("mention already exists")
+)
+
 // MentionAuthor represents the author information in mentions
 type ThreadAuthor struct {
 	ID              string `json:"id"`
@@ -101,9 +106,8 @@ func (s *MentionService) CreateMention(
 			}
 		}
 		if mention != nil {
-			// Mention exists, Thread is already preloaded by repo
-			result = mention
-			return nil
+			// Mention exists, return error instead of the existing mention
+			return ErrMentionAlreadyExists
 		}
 
 		// Create or get thread in pending status

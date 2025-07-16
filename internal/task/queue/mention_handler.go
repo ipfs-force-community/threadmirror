@@ -3,6 +3,7 @@ package queue
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -107,6 +108,10 @@ func (w *MentionHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 	// Create mention record (this will create a pending thread and trigger ThreadScrapeJob)
 	_, err := w.mentionService.CreateMention(ctx, mentionUserID, threadID, &mention.RestID, mention.CreatedAt)
 	if err != nil {
+		if errors.Is(err, service.ErrMentionAlreadyExists) {
+			logger.Info("Mention already exists, skipping duplicate processing")
+			return nil
+		}
 		logger.Error("Failed to create mention record", "error", err)
 		return fmt.Errorf("failed to create mention from URL: %w", err)
 	}

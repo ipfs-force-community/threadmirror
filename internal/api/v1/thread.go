@@ -149,25 +149,15 @@ func (h *V1Handler) PostThreadScrape(c *gin.Context) {
 		return
 	}
 
-	// Check if thread already exists
-	existingThread, err := h.threadService.GetThreadByID(c.Request.Context(), tweetID)
-	if err != nil && !errors.Is(err, errutil.ErrNotFound) {
-		HandleInternalServerError(c, err)
-		return
-	}
-
-	// If thread already exists, return it with 409 status
-	if existingThread != nil {
-		c.JSON(http.StatusConflict, gin.H{
-			"data":    h.convertThreadDetailToAPI(existingThread),
-			"message": "Thread already exists",
-		})
-		return
-	}
-
-	// Create mention record and pending thread
+	// Create mention record and pending thread (will check for user-specific duplicates)
 	_, err = h.mentionService.CreateMention(c.Request.Context(), currentUserID, tweetID, nil, time.Now())
 	if err != nil {
+		if errors.Is(err, service.ErrMentionAlreadyExists) {
+			c.JSON(http.StatusConflict, gin.H{
+				"message": "You already have a mention for this thread",
+			})
+			return
+		}
 		HandleInternalServerError(c, err)
 		return
 	}

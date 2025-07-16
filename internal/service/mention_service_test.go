@@ -76,7 +76,7 @@ var _ = Describe("MentionService", func() {
 			// Assert
 			Expect(err).ToNot(HaveOccurred())
 			Expect(mention).ToNot(BeNil())
-			Expect(mention.ID).To(Equal("thread123_user123"))
+			Expect(mention.ID).ToNot(BeEmpty()) // UUID should be generated
 			Expect(mention.ThreadID).To(Equal("thread123"))
 
 			// Verify thread was created with pending status
@@ -98,7 +98,8 @@ var _ = Describe("MentionService", func() {
 			_, err = mentionService.CreateMention(ctx, userID, threadID, nil, time.Now())
 
 			// Assert
-			Expect(err).ToNot(HaveOccurred()) // Should return existing mention, not error
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(service.ErrMentionAlreadyExists))
 		})
 	})
 
@@ -137,21 +138,21 @@ var _ = Describe("MentionService", func() {
 			// Create test mentions after threads exist
 			mentions := []*model.Mention{
 				{
-					ID:              "thread1_user1",
+					ID:              "01981234-5678-7abc-8def-123456789abc", // Standard UUID format (36 chars)
 					UserID:          "user1",
 					ThreadID:        "thread1",
 					MentionCreateAt: time.Now(),
 					CreatedAt:       time.Now(),
 				},
 				{
-					ID:              "thread2_user1",
+					ID:              "01981234-5678-7abc-8def-123456789def", // Standard UUID format (36 chars)
 					UserID:          "user1",
 					ThreadID:        "thread2",
 					MentionCreateAt: time.Now().Add(-time.Hour),
 					CreatedAt:       time.Now().Add(-time.Hour),
 				},
 				{
-					ID:              "thread3_user2",
+					ID:              "01981234-5678-7abc-8def-123456789fed", // Standard UUID format (36 chars)
 					UserID:          "user2",
 					ThreadID:        "thread3",
 					MentionCreateAt: time.Now().Add(-2 * time.Hour),
@@ -176,7 +177,7 @@ var _ = Describe("MentionService", func() {
 
 			// Verify the mentions are for the correct user
 			for _, summary := range mentions {
-				Expect(summary.ID).To(MatchRegexp("thread[12]_user1"))
+				Expect(summary.ID).To(MatchRegexp(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)) // UUID format
 				Expect(summary.ThreadID).To(MatchRegexp("thread[12]"))
 			}
 		})
@@ -228,7 +229,7 @@ var _ = Describe("MentionService", func() {
 
 			// Create mention after thread exists
 			testMention = &model.Mention{
-				ID:              "thread123_user456",
+				ID:              "01981234-5678-7abc-8def-123456test1", // Standard UUID format (36 chars)
 				UserID:          "user456",
 				ThreadID:        "thread123",
 				MentionCreateAt: time.Now(),
@@ -240,12 +241,12 @@ var _ = Describe("MentionService", func() {
 
 		It("should return mention summary successfully", func() {
 			// Act
-			summary, err := mentionService.GetMentionByID(ctx, "thread123_user456")
+			summary, err := mentionService.GetMentionByID(ctx, "01981234-5678-7abc-8def-123456test1")
 
 			// Assert
 			Expect(err).ToNot(HaveOccurred())
 			Expect(summary).ToNot(BeNil())
-			Expect(summary.ID).To(Equal("thread123_user456"))
+			Expect(summary.ID).To(Equal("01981234-5678-7abc-8def-123456test1"))
 			Expect(summary.ThreadID).To(Equal("thread123"))
 		})
 
@@ -273,7 +274,7 @@ var _ = Describe("MentionService", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			orphanMention := &model.Mention{
-				ID:              "thread999_user456",
+				ID:              "01981234-5678-7abc-8def-123456test2", // Standard UUID format (36 chars)
 				UserID:          "user456",
 				ThreadID:        "thread999",
 				MentionCreateAt: time.Now(),
@@ -283,12 +284,12 @@ var _ = Describe("MentionService", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Act
-			summary, err := mentionService.GetMentionByID(ctx, "thread999_user456")
+			summary, err := mentionService.GetMentionByID(ctx, "01981234-5678-7abc-8def-123456test2")
 
 			// Assert - Should return summary with empty author data
 			Expect(err).ToNot(HaveOccurred())
 			Expect(summary).ToNot(BeNil())
-			Expect(summary.ID).To(Equal("thread999_user456"))
+			Expect(summary.ID).To(Equal("01981234-5678-7abc-8def-123456test2"))
 			Expect(summary.ThreadID).To(Equal("thread999"))
 			Expect(summary.ThreadAuthor).To(BeNil()) // No author info
 			Expect(summary.ContentPreview).To(Equal("Thread without author"))
