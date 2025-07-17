@@ -411,6 +411,7 @@ func convertGeneratedTweetToTweet(genTweet *generated.Tweet) (*Tweet, error) {
 
 		// Update text with the note tweet content (note tweets usually contain the full text)
 		tweet.Text = note.Text
+		tweet.DisplayTextRange = []int{0, len(note.Text)}
 
 		tweet.Entities = MergeEntities(tweet.Entities, note.EntitySet)
 
