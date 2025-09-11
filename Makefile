@@ -12,9 +12,15 @@ GOFLAGS?=
 help: ## Display this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
+# Generate SQLC code
+.PHONY: sqlc
+sqlc: ## Generate Go code from SQL using SQLC
+	@echo "Generating SQLC code..."
+	$(GO) tool sqlc generate
+
 # Generate Go code only
 .PHONY: generate
-generate:
+generate: sqlc
 	@echo "Generating Go code..."
 	$(GO) generate ./...
 
@@ -72,6 +78,12 @@ test: ## Run tests with testcontainers (requires Docker)
 	@echo "Running tests with testcontainers..."
 	@echo "Note: Docker is required for these tests"
 	$(GO) test -v ./...
+
+# Run unit tests without Docker
+.PHONY: test-unit
+test-unit: ## Run unit tests without Docker (skips integration tests)
+	@echo "Running unit tests (skipping Docker-dependent tests)..."
+	$(GO) test -short -v ./...
 
 # Clean build artifacts
 .PHONY: clean
@@ -140,3 +152,13 @@ docker-all: docker-build docker-run ## Clean, build and run Docker container
 .PHONY: submodule-update
 submodule-update: ## Update git submodules
 	@git submodule update --init --recursive
+
+.PHONY: ruler
+ruler:
+	npx --yes @intellectronica/ruler apply
+
+.PHONY: fmt-sql
+fmt-sql:
+	npx --yes pg-formatter -c .pg_format -i supabase/schemas/*.sql
+	npx --yes pg-formatter -c .pg_format -i supabase/schemas/*/*.sql
+	npx --yes pg-formatter -c .pg_format -i sql/queries/*.sql

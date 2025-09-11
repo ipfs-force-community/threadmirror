@@ -1,8 +1,3 @@
----
-description: 
-globs: 
-alwaysApply: true
----
 When generating code, follow these principles:
 
 ## **Identify and reuse shared logic**

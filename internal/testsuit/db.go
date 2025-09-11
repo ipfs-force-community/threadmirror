@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ipfs-force-community/threadmirror/internal/model"
-	"github.com/ipfs-force-community/threadmirror/internal/repo/sqlrepo"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/redis"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
@@ -147,11 +145,8 @@ func setupGinkgoContainerSuite() *ContainerTestSuite {
 		panic("Failed to connect to PostgreSQL: " + err.Error())
 	}
 
-	// Migrate the schema
-	err = db.AutoMigrate(model.AllModels()...)
-	if err != nil {
-		panic("Failed to migrate database schema: " + err.Error())
-	}
+	// SQLC architecture uses declarative schema files
+	// Migration is handled by Supabase CLI, not needed in tests
 
 	// Create Redis client
 	redisConfig := &redis.RedisConfig{
@@ -167,9 +162,7 @@ func setupGinkgoContainerSuite() *ContainerTestSuite {
 		panic("Failed to connect to Redis: " + err.Error())
 	}
 
-	// Create repositories
-	mentionRepo := sqlrepo.NewMentionRepo(db)
-	threadRepo := sqlrepo.NewThreadRepo(db)
+	// Create services directly (no repository layer)
 
 	// Create mock dependencies
 	mockLLM := &MockLLM{}
@@ -177,19 +170,24 @@ func setupGinkgoContainerSuite() *ContainerTestSuite {
 
 	// Create services
 	mentionService := service.NewMentionService(
-		mentionRepo,
+		db,
 		llm.Model(mockLLM),
 		ipfs.Storage(mockIPFS),
-		threadRepo,
+	)
+
+	threadService := service.NewThreadService(
 		db,
+		ipfs.Storage(mockIPFS),
+		llm.Model(mockLLM),
+		redisClient,
+		slog.Default(),
 	)
 
 	return &ContainerTestSuite{
 		DB:             db,
 		RedisClient:    redisClient,
-		MentionRepo:    mentionRepo,
 		MentionService: mentionService,
-		ThreadRepo:     threadRepo,
+		ThreadService:  threadService,
 		pgContainer:    pgContainer,
 		redisContainer: redisContainer,
 	}
@@ -199,8 +197,8 @@ func setupGinkgoContainerSuite() *ContainerTestSuite {
 // 已弃用：使用 ContainerTestSuite 替代，它提供更完整的testcontainers环境
 type DBTestSuite struct {
 	DB             *sql.DB
-	MentionRepo    *sqlrepo.MentionRepo
 	MentionService *service.MentionService
+	ThreadService  *service.ThreadService
 }
 
 // SetupDBTestSuite creates a new database test suite with all dependencies
@@ -214,21 +212,19 @@ func SetupDBTestSuite(t *testing.T) *DBTestSuite {
 		suite.TearDown(t)
 	})
 
-	// Create repositories
-	mentionRepo := sqlrepo.NewMentionRepo(suite.DB)
-	threadRepo := sqlrepo.NewThreadRepo(suite.DB)
+	// Create services directly (no repository layer)
 
 	// Create mock dependencies
 	mockLLM := &MockLLM{}
 	mockIPFS := &MockIPFSStorage{}
 
 	// Create services
-	mentionService := service.NewMentionService(mentionRepo, llm.Model(mockLLM), ipfs.Storage(mockIPFS), threadRepo, suite.DB)
+	mentionService := service.NewMentionService(suite.DB, llm.Model(mockLLM), ipfs.Storage(mockIPFS))
 
 	return &DBTestSuite{
 		DB:             suite.DB,
-		MentionRepo:    mentionRepo,
 		MentionService: mentionService,
+		ThreadService:  suite.ThreadService,
 	}
 }
 
@@ -241,8 +237,11 @@ func ResetGinkgoDatabase() {
 	ctx := context.Background()
 
 	// Start a transaction to clean up all data
-	tx := ginkgoSuite.DB.Begin()
-	defer tx.Rollback()
+	tx, err := ginkgoSuite.DB.Pool().Begin(ctx)
+	if err != nil {
+		panic("Failed to begin transaction: " + err.Error())
+	}
+	defer tx.Rollback(ctx)
 
 	// Delete data from all tables in reverse dependency order
 	tables := []string{
@@ -253,13 +252,13 @@ func ResetGinkgoDatabase() {
 	}
 
 	for _, table := range tables {
-		err := tx.WithContext(ctx).Exec("DELETE FROM " + table).Error
+		_, err := tx.Exec(ctx, "DELETE FROM "+table)
 		if err != nil {
 			panic("Failed to clean table " + table + ": " + err.Error())
 		}
 	}
 
-	err := tx.Commit().Error
+	err = tx.Commit(ctx)
 	if err != nil {
 		panic("Failed to commit database cleanup: " + err.Error())
 	}

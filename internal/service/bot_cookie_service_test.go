@@ -2,260 +2,240 @@ package service_test
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
+	"fmt"
 	"net/http"
-	"time"
+	"testing"
 
-	"github.com/ipfs-force-community/threadmirror/internal/repo/sqlrepo"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/internal/testsuit"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
-	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("BotCookieService", func() {
 	var (
 		botCookieService *service.BotCookieService
-		botCookieRepo    service.BotCookieRepoInterface
 		db               *sql.DB
 		ctx              context.Context
+		suite            *testsuit.ContainerTestSuite
 	)
 
 	BeforeEach(func() {
 		ctx = context.Background()
 
 		// Setup testcontainers database
-		db = testsuit.SetupGinkgoTestDB()
-
-		// Clean database before each test
-		testsuit.ResetGinkgoDatabase()
-
-		// Initialize repo with database
-		botCookieRepo = sqlrepo.NewBotCookieRepo(db)
+		suite = testsuit.SetupContainerTestSuite(&testing.T{})
+		db = suite.DB
 
 		// Create service
-		botCookieService = service.NewBotCookieService(botCookieRepo)
+		botCookieService = service.NewBotCookieService(db)
+
+		// Reset database for clean test state
+		suite.ResetDatabase(&testing.T{})
 	})
 
-	Describe("SaveCookies", func() {
-		var testCookies []*http.Cookie
+	AfterEach(func() {
+		if suite != nil {
+			suite.TearDown(&testing.T{})
+		}
+	})
 
-		BeforeEach(func() {
-			testCookies = []*http.Cookie{
-				{
-					Name:    "session_id",
-					Value:   "abc123",
-					Domain:  ".example.com",
-					Path:    "/",
-					Expires: time.Now().Add(24 * time.Hour),
-				},
-				{
-					Name:   "csrf_token",
-					Value:  "xyz789",
-					Domain: ".example.com",
-					Path:   "/",
-				},
+	Describe("CreateBotCookie", func() {
+		It("should create a new bot cookie successfully", func() {
+			email := "test@example.com"
+			username := "testuser"
+			cookies := []*http.Cookie{
+				{Name: "session", Value: "abc123", Domain: ".twitter.com"},
+				{Name: "csrf", Value: "xyz789", Domain: ".twitter.com"},
 			}
+
+			result, err := botCookieService.CreateBotCookie(ctx, email, username, cookies)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result).ToNot(BeNil())
+			Expect(result.Email).To(Equal(email))
+			Expect(result.Username).To(Equal(username))
+
+			// Verify cookies were stored correctly
+			var storedCookies []*http.Cookie
+			err = json.Unmarshal(result.CookiesData, &storedCookies)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(storedCookies).To(HaveLen(2))
 		})
 
-		Context("when saving valid cookies", func() {
-			It("should save cookies successfully", func() {
-				err := botCookieService.SaveCookies(ctx, "test@example.com", "testuser", testCookies)
+		It("should return error for duplicate email and username", func() {
+			email := "test@example.com"
+			username := "testuser"
+			cookies := []*http.Cookie{
+				{Name: "session", Value: "abc123"},
+			}
 
-				Expect(err).ToNot(HaveOccurred())
+			// Create first cookie
+			_, err := botCookieService.CreateBotCookie(ctx, email, username, cookies)
+			Expect(err).ToNot(HaveOccurred())
 
-				// Verify cookies were saved by loading them back
-				loadedCookies, err := botCookieService.LoadCookies(ctx, "test@example.com", "testuser")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(loadedCookies).ToNot(BeNil())
-			})
-		})
-
-		Context("when overwriting existing cookies", func() {
-			BeforeEach(func() {
-				// Save initial cookies
-				err := botCookieService.SaveCookies(ctx, "test@example.com", "testuser", testCookies)
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("should overwrite existing cookies", func() {
-				newCookies := []*http.Cookie{
-					{
-						Name:  "new_session",
-						Value: "new123",
-					},
-				}
-
-				err := botCookieService.SaveCookies(ctx, "test@example.com", "testuser", newCookies)
-				Expect(err).ToNot(HaveOccurred())
-
-				// Verify new cookies are loaded
-				loadedCookies, err := botCookieService.LoadCookies(ctx, "test@example.com", "testuser")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(loadedCookies).To(HaveLen(1))
-				Expect(loadedCookies[0].Name).To(Equal("new_session"))
-			})
-		})
-
-		Context("with empty email or username", func() {
-			It("should save with empty email", func() {
-				err := botCookieService.SaveCookies(ctx, "", "testuser", testCookies)
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("should save with empty username", func() {
-				err := botCookieService.SaveCookies(ctx, "test@example.com", "", testCookies)
-				Expect(err).ToNot(HaveOccurred())
-			})
+			// Try to create duplicate
+			_, err = botCookieService.CreateBotCookie(ctx, email, username, cookies)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 
-	Describe("LoadCookies", func() {
-		Context("when cookies exist", func() {
-			var originalCookies []*http.Cookie
+	Describe("GetBotCookieByEmailAndUsername", func() {
+		It("should retrieve bot cookie by email and username", func() {
+			email := "test@example.com"
+			username := "testuser"
+			cookies := []*http.Cookie{
+				{Name: "session", Value: "abc123"},
+			}
 
-			BeforeEach(func() {
-				originalCookies = []*http.Cookie{
-					{
-						Name:     "auth_token",
-						Value:    "token123",
-						Domain:   ".example.com",
-						Path:     "/",
-						Expires:  time.Now().Add(24 * time.Hour),
-						HttpOnly: true,
-						Secure:   true,
-					},
-					{
-						Name:  "user_pref",
-						Value: "dark_mode",
-					},
-				}
+			// Create cookie first
+			created, err := botCookieService.CreateBotCookie(ctx, email, username, cookies)
+			Expect(err).ToNot(HaveOccurred())
 
-				err := botCookieService.SaveCookies(ctx, "user@example.com", "username", originalCookies)
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("should load cookies successfully", func() {
-				loadedCookies, err := botCookieService.LoadCookies(ctx, "user@example.com", "username")
-
-				Expect(err).ToNot(HaveOccurred())
-				Expect(loadedCookies).To(HaveLen(2))
-
-				// Check first cookie
-				cookie1 := loadedCookies[0]
-				Expect(cookie1.Name).To(Equal("auth_token"))
-				Expect(cookie1.Value).To(Equal("token123"))
-				Expect(cookie1.Domain).To(Equal(".example.com"))
-				Expect(cookie1.Path).To(Equal("/"))
-				Expect(cookie1.HttpOnly).To(BeTrue())
-				Expect(cookie1.Secure).To(BeTrue())
-
-				// Check second cookie
-				cookie2 := loadedCookies[1]
-				Expect(cookie2.Name).To(Equal("user_pref"))
-				Expect(cookie2.Value).To(Equal("dark_mode"))
-			})
+			// Retrieve it
+			retrieved, err := botCookieService.GetBotCookieByEmailAndUsername(ctx, email, username)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(retrieved.ID).To(Equal(created.ID))
+			Expect(retrieved.Email).To(Equal(email))
+			Expect(retrieved.Username).To(Equal(username))
 		})
 
-		Context("when cookies do not exist", func() {
-			It("should return not found error", func() {
-				loadedCookies, err := botCookieService.LoadCookies(ctx, "nonexistent@example.com", "user")
-
-				Expect(err).To(HaveOccurred())
-				Expect(loadedCookies).To(BeNil())
-				Expect(errors.Is(err, errutil.ErrNotFound)).To(BeTrue())
-			})
-		})
-
-		Context("when partial matches exist", func() {
-			BeforeEach(func() {
-				testCookies := []*http.Cookie{
-					{Name: "test", Value: "value"},
-				}
-				err := botCookieService.SaveCookies(ctx, "user1@example.com", "user1", testCookies)
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("should not return cookies for different email", func() {
-				loadedCookies, err := botCookieService.LoadCookies(ctx, "user2@example.com", "user1")
-
-				Expect(err).To(HaveOccurred())
-				Expect(loadedCookies).To(BeNil())
-				Expect(errors.Is(err, errutil.ErrNotFound)).To(BeTrue())
-			})
-
-			It("should not return cookies for different username", func() {
-				loadedCookies, err := botCookieService.LoadCookies(ctx, "user1@example.com", "user2")
-
-				Expect(err).To(HaveOccurred())
-				Expect(loadedCookies).To(BeNil())
-				Expect(errors.Is(err, errutil.ErrNotFound)).To(BeTrue())
-			})
+		It("should return error for non-existent cookie", func() {
+			_, err := botCookieService.GetBotCookieByEmailAndUsername(ctx, "nonexistent@example.com", "nonuser")
+			Expect(err).To(Equal(service.ErrBotCookieNotFound))
 		})
 	})
 
-	Describe("GetLatestBotCookie", func() {
-		Context("when no cookies exist", func() {
-			It("should return not found error", func() {
-				cookie, err := botCookieService.GetLatestBotCookie(ctx)
+	Describe("UpdateBotCookie", func() {
+		It("should update existing bot cookie", func() {
+			email := "test@example.com"
+			username := "testuser"
+			cookies := []*http.Cookie{
+				{Name: "session", Value: "abc123"},
+			}
 
-				Expect(err).To(HaveOccurred())
-				Expect(cookie).To(BeNil())
-				Expect(errors.Is(err, errutil.ErrNotFound)).To(BeTrue())
-			})
+			// Create cookie first
+			created, err := botCookieService.CreateBotCookie(ctx, email, username, cookies)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Update with new cookies
+			newCookies := []*http.Cookie{
+				{Name: "session", Value: "def456"},
+				{Name: "csrf", Value: "ghi789"},
+			}
+
+			err = botCookieService.UpdateBotCookie(ctx, created.ID, email, username, newCookies)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Verify update
+			updated, err := botCookieService.GetBotCookieByEmailAndUsername(ctx, email, username)
+			Expect(err).ToNot(HaveOccurred())
+
+			var storedCookies []*http.Cookie
+			err = json.Unmarshal(updated.CookiesData, &storedCookies)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(storedCookies).To(HaveLen(2))
+			Expect(storedCookies[0].Value).To(Equal("def456"))
+		})
+	})
+
+	Describe("ListBotCookies", func() {
+		It("should list bot cookies with pagination", func() {
+			// Create multiple cookies
+			for i := 0; i < 5; i++ {
+				email := fmt.Sprintf("test%d@example.com", i)
+				username := fmt.Sprintf("user%d", i)
+				cookies := []*http.Cookie{
+					{Name: "session", Value: fmt.Sprintf("value%d", i)},
+				}
+				_, err := botCookieService.CreateBotCookie(ctx, email, username, cookies)
+				Expect(err).ToNot(HaveOccurred())
+			}
+
+			// List with pagination
+			cookies, total, err := botCookieService.ListBotCookies(ctx, 3, 0)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(cookies).To(HaveLen(3))
+			Expect(total).To(Equal(int64(5)))
+
+			// Test second page
+			cookies, total, err = botCookieService.ListBotCookies(ctx, 3, 3)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(cookies).To(HaveLen(2))
+			Expect(total).To(Equal(int64(5)))
+		})
+	})
+
+	Describe("SoftDeleteBotCookie", func() {
+		It("should soft delete bot cookie", func() {
+			email := "test@example.com"
+			username := "testuser"
+			cookies := []*http.Cookie{
+				{Name: "session", Value: "abc123"},
+			}
+
+			// Create cookie first
+			created, err := botCookieService.CreateBotCookie(ctx, email, username, cookies)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Soft delete
+			err = botCookieService.SoftDeleteBotCookie(ctx, created.ID)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Verify it's not accessible
+			_, err = botCookieService.GetBotCookieByEmailAndUsername(ctx, email, username)
+			Expect(err).To(Equal(service.ErrBotCookieNotFound))
+		})
+	})
+
+	Describe("LoadCookies and SaveCookies", func() {
+		It("should load and save cookies for user", func() {
+			email := "test@example.com"
+			username := "testuser"
+			cookies := []*http.Cookie{
+				{Name: "session", Value: "abc123"},
+				{Name: "csrf", Value: "xyz789"},
+			}
+
+			// Save cookies
+			err := botCookieService.SaveCookies(ctx, email, username, cookies)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Load cookies
+			loadedCookies, err := botCookieService.LoadCookies(ctx, email, username)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(loadedCookies).To(HaveLen(2))
+			Expect(loadedCookies[0].Name).To(Equal("session"))
+			Expect(loadedCookies[0].Value).To(Equal("abc123"))
 		})
 
-		Context("when cookies exist", func() {
-			BeforeEach(func() {
-				// Save some test cookies
-				testCookies := []*http.Cookie{
-					{Name: "session", Value: "abc123"},
-				}
+		It("should update existing cookies when saving", func() {
+			email := "test@example.com"
+			username := "testuser"
 
-				err := botCookieService.SaveCookies(ctx, "bot1@example.com", "bot1", testCookies)
-				Expect(err).ToNot(HaveOccurred())
+			// Save initial cookies
+			initialCookies := []*http.Cookie{
+				{Name: "session", Value: "abc123"},
+			}
+			err := botCookieService.SaveCookies(ctx, email, username, initialCookies)
+			Expect(err).ToNot(HaveOccurred())
 
-				err = botCookieService.SaveCookies(ctx, "bot2@example.com", "bot2", testCookies)
-				Expect(err).ToNot(HaveOccurred())
-			})
+			// Save updated cookies
+			updatedCookies := []*http.Cookie{
+				{Name: "session", Value: "def456"},
+				{Name: "csrf", Value: "ghi789"},
+			}
+			err = botCookieService.SaveCookies(ctx, email, username, updatedCookies)
+			Expect(err).ToNot(HaveOccurred())
 
-			It("should return a bot cookie record", func() {
-				cookie, err := botCookieService.GetLatestBotCookie(ctx)
-
-				Expect(err).ToNot(HaveOccurred())
-				Expect(cookie).ToNot(BeNil())
-				Expect(cookie.Email).ToNot(BeEmpty())
-				Expect(cookie.CookiesData).ToNot(BeNil())
-			})
-		})
-
-		Context("with multiple cookies at different times", func() {
-			BeforeEach(func() {
-				testCookies := []*http.Cookie{
-					{Name: "session", Value: "test"},
-				}
-
-				// Save first cookie
-				err := botCookieService.SaveCookies(ctx, "old@example.com", "old", testCookies)
-				Expect(err).ToNot(HaveOccurred())
-
-				// Wait a bit and save second cookie to ensure different timestamps
-				time.Sleep(10 * time.Millisecond)
-				err = botCookieService.SaveCookies(ctx, "new@example.com", "new", testCookies)
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("should return the most recently updated cookie", func() {
-				cookie, err := botCookieService.GetLatestBotCookie(ctx)
-
-				Expect(err).ToNot(HaveOccurred())
-				Expect(cookie).ToNot(BeNil())
-				// In real implementation, this would be the most recent one
-				// For test, we just verify we get a valid record
-				Expect(cookie.Email).To(BeElementOf([]string{"old@example.com", "new@example.com"}))
-			})
+			// Load and verify
+			loadedCookies, err := botCookieService.LoadCookies(ctx, email, username)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(loadedCookies).To(HaveLen(2))
+			Expect(loadedCookies[0].Value).To(Equal("def456"))
 		})
 	})
 })

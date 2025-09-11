@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/ipfs-force-community/threadmirror/internal/config"
-	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"github.com/ipfs-force-community/threadmirror/pkg/log"
 	"github.com/samber/lo"
@@ -40,7 +39,7 @@ var MigrateCommand = &cli.Command{
 
 		// Run auto migration for all models and database functions
 		logger.Info("Running auto migration...")
-		if err := db.Migrate(c.Context, model.AllModels()); err != nil {
+		if err := db.Migrate(c.Context, []any{}); err != nil { // SQLC handles schema migration through declarative SQL files
 			return fmt.Errorf("failed to run migration: %w", err)
 		}
 

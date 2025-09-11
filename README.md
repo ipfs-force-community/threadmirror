@@ -83,6 +83,7 @@ Once started:
 
    ```bash
    make setup     # download deps & code generation
+   make generate  # generate SQLC and OpenAPI code
    make dev       # run in debug mode (equivalent to: go run ./cmd/*.go --debug server)
    ```
 
@@ -105,34 +106,64 @@ Once started:
 | Command                    | Purpose                               |
 | -------------------------- | ------------------------------------- |
 | `threadmirror server`      | Start the HTTP API server             |
-| `threadmirror migrate`     | Run database migrations               |
 | `threadmirror bot`         | Run the @mention bot                  |
 | `threadmirror reply`       | Manually reply to a given mention     |
 
 Run `threadmirror <command> --help` for flag details.
 
+## 🧪 Testing
+
+The project includes comprehensive test coverage with two testing modes:
+
+```bash
+# Unit tests (fast, no Docker required)
+make test-unit
+
+# Full integration tests (requires Docker)
+make test
+```
+
 ---
 
-## 🗂️ Directory Layout (short version)
+## 🗂️ Directory Layout (SQL First Architecture)
 
 ```
 threadmirror/
-├── api/            # OpenAPI spec and templates
-├── cmd/            # CLI entry points (server, bot, migrate …)
-├── internal/       # Business logic (API, services, repos, jobs, bot …)
-├── pkg/            # Reusable libraries (auth, db, ipfs, llm, xscraper …)
-├── web/            # React frontend
-├── Makefile        # Dev scripts
+├── api/v1/                    # OpenAPI specification
+├── cmd/                       # CLI entry points (server, bot …)
+├── internal/
+│   ├── api/v1/               # API handlers (generated + custom)
+│   ├── service/              # Business logic (SQL First)
+│   ├── sqlc_generated/       # Generated database code
+│   ├── task/                 # Background jobs & cron
+│   └── testsuit/             # Test utilities & mocks
+├── pkg/                      # Reusable libraries
+│   ├── database/sql/         # Database connection & transactions
+│   ├── ipfs/                 # IPFS storage
+│   ├── llm/                  # AI/LLM integration
+│   └── xscraper/             # Twitter/X scraping
+├── sql/queries/              # SQLC query definitions
+├── web/                      # React frontend
+├── Makefile                  # Development commands
+├── sqlc.yaml                 # SQLC configuration
 └── docker-compose.yml
 ```
+
+### Architecture Highlights
+
+- **SQL First**: Direct database queries via SQLC, no ORM
+- **Generated APIs**: OpenAPI-first development with code generation
+- **Testcontainers**: Real database integration testing
+- **Dependency Injection**: Clean service layer with fx framework
 
 ## 🤝 Contributing
 
 We ❤️ contributions! To get started:
 
-1. Ensure make test passes.
-2. Run make lint and fix any issues.
-3. Follow the API coding guidelines and git‑flow.
+1. Ensure `make test-unit` passes (or `make test` with Docker).
+2. Run `make lint` and fix any issues.
+3. Follow the SQL First architecture and coding guidelines.
+4. Generate code with `make generate` after API/schema changes.
 
 
 ## License

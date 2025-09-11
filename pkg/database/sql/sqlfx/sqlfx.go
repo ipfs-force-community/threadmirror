@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Driver string
 	DSN    string
+	Debug  bool
 }
 
 var Module = fx.Module("database",
@@ -17,7 +18,7 @@ var Module = fx.Module("database",
 )
 
 func NewDB(lc fx.Lifecycle, c *Config, logger *slog.Logger) (*sql.DB, error) {
-	db, err := sql.New(c.Driver, c.DSN, logger)
+	db, err := sql.NewWithDebug(c.Driver, c.DSN, logger, c.Debug)
 	if err != nil {
 		return nil, err
 	}

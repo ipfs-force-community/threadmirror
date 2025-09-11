@@ -13,13 +13,16 @@ import (
 	"github.com/eko/gocache/lib/v4/cache"
 	"github.com/eko/gocache/lib/v4/store"
 	redis_store "github.com/eko/gocache/store/redis/v4"
-	"github.com/ipfs-force-community/threadmirror/internal/model"
-	wrRedis "github.com/ipfs-force-community/threadmirror/pkg/database/redis"
-	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
+	"github.com/google/uuid"
+	"github.com/ipfs-force-community/threadmirror/internal/sqlc_generated"
+	"github.com/ipfs-force-community/threadmirror/pkg/database/redis"
+	dbsql "github.com/ipfs-force-community/threadmirror/pkg/database/sql"
+	
 	"github.com/ipfs-force-community/threadmirror/pkg/ipfs"
 	"github.com/ipfs-force-community/threadmirror/pkg/llm"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"github.com/ipfs/go-cid"
+	"github.com/jackc/pgx/v5"
 	"github.com/tmc/langchaingo/llms"
 )
 
@@ -38,17 +41,6 @@ type ThreadDetail struct {
 	Author     *ThreadAuthor `json:"author,omitempty"`
 }
 
-type ThreadRepoInterface interface {
-	GetThreadByID(ctx context.Context, id string) (*model.Thread, error)
-	CreateThread(ctx context.Context, thread *model.Thread) error
-	UpdateThread(ctx context.Context, thread *model.Thread) error
-	GetTweetsByIDs(ctx context.Context, ids []string) (map[string]*model.Thread, error)
-	UpdateThreadStatus(ctx context.Context, threadID string, status model.ThreadStatus, version int) error
-	GetStuckScrapingThreadsForRetry(ctx context.Context, stuckDuration time.Duration, maxRetries int) ([]*model.Thread, error)
-	GetOldPendingThreadsForRetry(ctx context.Context, pendingDuration time.Duration, maxRetries int) ([]*model.Thread, error)
-	GetFailedThreadsForRetry(ctx context.Context, retryDelay time.Duration, maxRetries int) ([]*model.Thread, error)
-}
-
 // TweetSlice is a helper type that implements encoding.BinaryMarshaler and
 // encoding.BinaryUnmarshaler so that it can be stored directly in gocache / redis.
 type TweetSlice []*xscraper.Tweet
@@ -64,55 +56,63 @@ func (ts *TweetSlice) UnmarshalBinary(data []byte) error {
 }
 
 type ThreadService struct {
-	threadRepo ThreadRepoInterface
-	storage    ipfs.Storage
-	cache      cache.CacheInterface[TweetSlice]
-	llm        llm.Model
-	logger     *slog.Logger
+	db      *dbsql.DB
+	storage ipfs.Storage
+	cache   cache.CacheInterface[TweetSlice]
+	llm     llm.Model
+	logger  *slog.Logger
 }
 
-func NewThreadService(threadRepo ThreadRepoInterface, storage ipfs.Storage, llmModel llm.Model, redisClientWrapper *wrRedis.Client, logger *slog.Logger) *ThreadService {
+func NewThreadService(db *dbsql.DB, storage ipfs.Storage, llmModel llm.Model, redisClientWrapper *redis.Client, logger *slog.Logger) *ThreadService {
 	redisStore := redis_store.NewRedis(redisClientWrapper.Client)
 	cacheManager := cache.New[TweetSlice](redisStore)
-	return &ThreadService{threadRepo: threadRepo, storage: storage, cache: cacheManager, llm: llmModel, logger: logger}
+	return &ThreadService{db: db, storage: storage, cache: cacheManager, llm: llmModel, logger: logger}
 }
 
 func (s *ThreadService) GetThreadByID(ctx context.Context, id string) (*ThreadDetail, error) {
-	thread, err := s.threadRepo.GetThreadByID(ctx, id)
+	threadID, err := uuid.Parse(id)
 	if err != nil {
+		return nil, fmt.Errorf("invalid thread ID: %w", err)
+	}
+
+	thread, err := s.db.QueriesFromContext(ctx).GetThreadByID(ctx, sqlc_generated.GetThreadByIDParams{ThreadID: threadID})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrThreadNotFound
+		}
 		return nil, fmt.Errorf("get thread: %w", err)
 	}
 
 	// Load tweets from IPFS (only if completed and has CID)
 	var tweets []*xscraper.Tweet
-	if thread.Status == model.ThreadStatusCompleted && thread.CID != "" {
-		tweets, err = s.loadTweetsFromIPFS(ctx, thread.CID)
+	if thread.Status == "completed" && thread.Cid != "" {
+		tweets, err = s.loadTweetsFromIPFS(ctx, thread.Cid)
 		if err != nil {
-			return nil, fmt.Errorf("load from ipfs %s: %w", thread.CID, err)
+			return nil, fmt.Errorf("load from ipfs %s: %w", thread.Cid, err)
 		}
 	}
 
 	// Build author info if available
 	var author *ThreadAuthor
-	if thread.AuthorID != "" {
+	if thread.AuthorID != nil && *thread.AuthorID != "" {
 		author = &ThreadAuthor{
-			ID:              thread.AuthorID,
-			Name:            thread.AuthorName,
-			ScreenName:      thread.AuthorScreenName,
-			ProfileImageURL: thread.AuthorProfileImageURL,
+			ID:              *thread.AuthorID,
+			Name:            getStringValue(thread.AuthorName),
+			ScreenName:      getStringValue(thread.AuthorScreenName),
+			ProfileImageURL: getStringValue(thread.AuthorProfileImageUrl),
 		}
 	}
 
 	return &ThreadDetail{
-		ID:             thread.ID,
-		CID:            thread.CID,
+		ID:             thread.ID.String(),
+		CID:            thread.Cid,
 		ContentPreview: thread.Summary,
-		NumTweets:      thread.NumTweets,
+		NumTweets:      int(thread.NumTweets),
 		Tweets:         tweets,
 		CreatedAt:      thread.CreatedAt,
-		Status:         string(thread.Status),
-		RetryCount:     thread.RetryCount,
-		Version:        thread.Version,
+		Status:         thread.Status,
+		RetryCount:     int(thread.RetryCount),
+		Version:        int(thread.Version),
 		Author:         author,
 	}, nil
 }
@@ -120,7 +120,7 @@ func (s *ThreadService) GetThreadByID(ctx context.Context, id string) (*ThreadDe
 // loadTweetsFromIPFS loads tweets from IPFS using the CID
 func (s *ThreadService) loadTweetsFromIPFS(ctx context.Context, cidStr string) ([]*xscraper.Tweet, error) {
 	if cidStr == "" {
-		return nil, errutil.ErrNotFound
+		return nil, ErrNotFound
 	}
 
 	// First, try cache
@@ -183,9 +183,17 @@ func cacheKeyForThread(cid string) string {
 }
 
 // UpdateThreadStatus updates thread status with optimistic locking
-func (s *ThreadService) UpdateThreadStatus(ctx context.Context, threadID string, status model.ThreadStatus, version int) error {
-	// Attempt optimistic update
-	err := s.threadRepo.UpdateThreadStatus(ctx, threadID, status, version)
+func (s *ThreadService) UpdateThreadStatus(ctx context.Context, threadID string, status string, version int) error {
+	threadUUID, err := uuid.Parse(threadID)
+	if err != nil {
+		return fmt.Errorf("invalid thread ID: %w", err)
+	}
+
+	err = s.db.QueriesFromContext(ctx).UpdateThreadStatus(ctx, sqlc_generated.UpdateThreadStatusParams{
+		ThreadID:       threadUUID,
+		Status:         status,
+		CurrentVersion: int32(version),
+	})
 	if err != nil {
 		return fmt.Errorf("failed to update thread status: %w", err)
 	}
@@ -195,18 +203,138 @@ func (s *ThreadService) UpdateThreadStatus(ctx context.Context, threadID string,
 }
 
 // GetStuckScrapingThreadsForRetry gets threads that have been in 'scraping' status for too long and increments their retry count
-func (s *ThreadService) GetStuckScrapingThreadsForRetry(ctx context.Context, stuckDuration time.Duration, maxRetries int) ([]*model.Thread, error) {
-	return s.threadRepo.GetStuckScrapingThreadsForRetry(ctx, stuckDuration, maxRetries)
+func (s *ThreadService) GetStuckScrapingThreadsForRetry(ctx context.Context, stuckDuration time.Duration, maxRetries int) ([]sqlc_generated.Thread, error) {
+	cutoffTime := time.Now().Add(-stuckDuration)
+
+	tx, err := s.db.Pool().Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	queries := s.db.QueriesFromContext(ctx).WithTx(tx)
+
+	// Get stuck threads
+	threads, err := queries.GetStuckScrapingThreads(ctx, sqlc_generated.GetStuckScrapingThreadsParams{
+		CutoffTime: cutoffTime,
+		MaxRetries: int32(maxRetries),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get stuck threads: %w", err)
+	}
+
+	if len(threads) == 0 {
+		return threads, nil
+	}
+
+	// Extract thread IDs
+	threadIDs := make([]uuid.UUID, len(threads))
+	for i, thread := range threads {
+		threadIDs[i] = thread.ID
+	}
+
+	// Increment retry count
+	err = queries.IncrementThreadRetryCount(ctx, sqlc_generated.IncrementThreadRetryCountParams{ThreadIds: threadIDs})
+	if err != nil {
+		return nil, fmt.Errorf("increment retry count: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return threads, nil
 }
 
 // GetOldPendingThreadsForRetry gets threads that have been in 'pending' status for too long and increments their retry count
-func (s *ThreadService) GetOldPendingThreadsForRetry(ctx context.Context, pendingDuration time.Duration, maxRetries int) ([]*model.Thread, error) {
-	return s.threadRepo.GetOldPendingThreadsForRetry(ctx, pendingDuration, maxRetries)
+func (s *ThreadService) GetOldPendingThreadsForRetry(ctx context.Context, pendingDuration time.Duration, maxRetries int) ([]sqlc_generated.Thread, error) {
+	cutoffTime := time.Now().Add(-pendingDuration)
+
+	tx, err := s.db.Pool().Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	queries := s.db.QueriesFromContext(ctx).WithTx(tx)
+
+	// Get old pending threads
+	threads, err := queries.GetOldPendingThreads(ctx, sqlc_generated.GetOldPendingThreadsParams{
+		CutoffTime: cutoffTime,
+		MaxRetries: int32(maxRetries),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get old pending threads: %w", err)
+	}
+
+	if len(threads) == 0 {
+		return threads, nil
+	}
+
+	// Extract thread IDs
+	threadIDs := make([]uuid.UUID, len(threads))
+	for i, thread := range threads {
+		threadIDs[i] = thread.ID
+	}
+
+	// Increment retry count
+	err = queries.IncrementThreadRetryCount(ctx, sqlc_generated.IncrementThreadRetryCountParams{ThreadIds: threadIDs})
+	if err != nil {
+		return nil, fmt.Errorf("increment retry count: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return threads, nil
 }
 
 // GetFailedThreadsForRetry gets failed threads that can be retried and increments their retry count
-func (s *ThreadService) GetFailedThreadsForRetry(ctx context.Context, retryDelay time.Duration, maxRetries int) ([]*model.Thread, error) {
-	return s.threadRepo.GetFailedThreadsForRetry(ctx, retryDelay, maxRetries)
+func (s *ThreadService) GetFailedThreadsForRetry(ctx context.Context, retryDelay time.Duration, maxRetries int) ([]sqlc_generated.Thread, error) {
+	cutoffTime := time.Now().Add(-retryDelay)
+
+	tx, err := s.db.Pool().Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	queries := s.db.QueriesFromContext(ctx).WithTx(tx)
+
+	// Get failed threads for retry
+	threads, err := queries.GetFailedThreadsForRetry(ctx, sqlc_generated.GetFailedThreadsForRetryParams{
+		CutoffTime: cutoffTime,
+		MaxRetries: int32(maxRetries),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get failed threads: %w", err)
+	}
+
+	if len(threads) == 0 {
+		return threads, nil
+	}
+
+	// Extract thread IDs
+	threadIDs := make([]uuid.UUID, len(threads))
+	for i, thread := range threads {
+		threadIDs[i] = thread.ID
+	}
+
+	// Increment retry count
+	err = queries.IncrementThreadRetryCount(ctx, sqlc_generated.IncrementThreadRetryCountParams{ThreadIds: threadIDs})
+	if err != nil {
+		return nil, fmt.Errorf("increment retry count: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return threads, nil
 }
 
 // UpdateThreadWithScrapedData updates thread with complete scraped data including summary generation and IPFS upload
@@ -218,6 +346,11 @@ func (s *ThreadService) UpdateThreadWithScrapedData(
 ) error {
 	if len(tweets) == 0 {
 		return fmt.Errorf("no tweets provided")
+	}
+
+	threadUUID, err := uuid.Parse(threadID)
+	if err != nil {
+		return fmt.Errorf("invalid thread ID: %w", err)
 	}
 
 	// Generate summary using the same logic as MentionService
@@ -237,32 +370,30 @@ func (s *ThreadService) UpdateThreadWithScrapedData(
 		return fmt.Errorf("failed to add tweets to IPFS: %w", err)
 	}
 
-	// Get thread to update (for basic info, not for version)
-	thread, err := s.threadRepo.GetThreadByID(ctx, threadID)
-	if err != nil {
-		return fmt.Errorf("failed to get thread: %w", err)
-	}
-
-	// Set the version passed by caller for optimistic locking
-	thread.Version = version
-
-	// Update thread with scraped data
-	thread.Summary = summary
-	thread.CID = cid.String()
-	thread.NumTweets = len(tweets)
-	thread.Status = model.ThreadStatusCompleted
-
 	// Set author information from last tweet (which is the thread starter)
+	var authorID, authorName, authorScreenName, authorProfileImageURL *string
 	author := tweets[len(tweets)-1].Author
 	if author != nil {
-		thread.AuthorID = author.RestID
-		thread.AuthorName = author.Name
-		thread.AuthorScreenName = author.ScreenName
-		thread.AuthorProfileImageURL = author.ProfileImageURL
+		authorID = &author.RestID
+		authorName = &author.Name
+		authorScreenName = &author.ScreenName
+		authorProfileImageURL = &author.ProfileImageURL
 	}
 
-	// Update in database with optimistic locking
-	err = s.threadRepo.UpdateThread(ctx, thread)
+	// Update thread with scraped data using optimistic locking
+	err = s.db.QueriesFromContext(ctx).UpdateThreadComplete(ctx, sqlc_generated.UpdateThreadCompleteParams{
+		ID:                    threadUUID,
+		Summary:               summary,
+		Cid:                   cid.String(),
+		NumTweets:             int32(len(tweets)),
+		Status:                "completed",
+		RetryCount:            0, // Reset retry count on successful completion
+		ExpectedVersion:       int32(version),
+		AuthorID:              authorID,
+		AuthorName:            authorName,
+		AuthorScreenName:      authorScreenName,
+		AuthorProfileImageUrl: authorProfileImageURL,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to update thread: %w", err)
 	}

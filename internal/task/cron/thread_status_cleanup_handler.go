@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/internal/task/queue"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
@@ -130,7 +129,7 @@ func (h *ThreadStatusCleanupHandler) handleStuckScrapingThreads(ctx context.Cont
 		// DB query already filters threads with retry_count < maxRetries
 
 		// Reset status to pending to allow reprocessing
-		err := h.threadService.UpdateThreadStatus(ctx, thread.ID, model.ThreadStatusPending, thread.Version)
+		err := h.threadService.UpdateThreadStatus(ctx, thread.ID.String(), "pending", int(thread.Version))
 		if err != nil {
 			logger.Error("Failed to reset stuck thread status", "error", err)
 			continue
@@ -140,7 +139,7 @@ func (h *ThreadStatusCleanupHandler) handleStuckScrapingThreads(ctx context.Cont
 		resetCount++
 
 		// Re-enqueue thread scrape job
-		job, err := queue.NewThreadScrapeJob(thread.ID)
+		job, err := queue.NewThreadScrapeJob(thread.ID.String())
 		if err != nil {
 			logger.Error("Failed to create thread scrape job", "error", err)
 			continue
@@ -181,7 +180,7 @@ func (h *ThreadStatusCleanupHandler) handleOldPendingThreads(ctx context.Context
 		)
 
 		// Re-enqueue thread scrape job
-		job, err := queue.NewThreadScrapeJob(thread.ID)
+		job, err := queue.NewThreadScrapeJob(thread.ID.String())
 		if err != nil {
 			logger.Error("Failed to create thread scrape job for old pending thread", "error", err)
 			continue
@@ -226,7 +225,7 @@ func (h *ThreadStatusCleanupHandler) handleFailedThreadsRetry(ctx context.Contex
 		// DB query already filters threads with retry_count < maxRetries
 
 		// Reset status to pending for retry
-		err := h.threadService.UpdateThreadStatus(ctx, thread.ID, model.ThreadStatusPending, thread.Version)
+		err := h.threadService.UpdateThreadStatus(ctx, thread.ID.String(), "pending", int(thread.Version))
 		if err != nil {
 			logger.Error("Failed to reset failed thread status for retry", "error", err)
 			continue
@@ -235,7 +234,7 @@ func (h *ThreadStatusCleanupHandler) handleFailedThreadsRetry(ctx context.Contex
 		logger.Info("Reset failed thread to pending for retry")
 
 		// Re-enqueue thread scrape job
-		job, err := queue.NewThreadScrapeJob(thread.ID)
+		job, err := queue.NewThreadScrapeJob(thread.ID.String())
 		if err != nil {
 			logger.Error("Failed to create thread scrape job for retry", "error", err)
 			continue

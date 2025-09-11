@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
-	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"github.com/samber/lo"
@@ -73,7 +71,7 @@ func (h *ThreadScrapeHandler) HandleJob(ctx context.Context, j *jobq.Job) error 
 
 	// Check if thread already exists and determine action based on status
 	existingThread, err := h.threadService.GetThreadByID(ctx, payload.TweetID)
-	if err != nil && !errors.Is(err, errutil.ErrNotFound) {
+	if err != nil && !errors.Is(err, service.ErrThreadNotFound) {
 		logger.Error("Failed to check existing thread", "error", err)
 		return fmt.Errorf("failed to check existing thread: %w", err)
 	}
@@ -82,18 +80,18 @@ func (h *ThreadScrapeHandler) HandleJob(ctx context.Context, j *jobq.Job) error 
 	if existingThread != nil {
 		logger.Info("Thread exists with status", "thread_id", existingThread.ID, "status", existingThread.Status)
 
-		switch model.ThreadStatus(existingThread.Status) {
-		case model.ThreadStatusCompleted:
+		switch existingThread.Status {
+		case "completed":
 			// Thread already completed, mark as processed and skip
 			logger.Info("Thread already completed, skipping scrape", "thread_id", existingThread.ID)
 			return nil
 
-		case model.ThreadStatusScraping:
+		case "scraping":
 			// Thread currently being scraped (concurrent job), skip to avoid duplicate work
 			logger.Info("Thread already being scraped, skipping", "thread_id", existingThread.ID)
 			return nil
 
-		case model.ThreadStatusPending, model.ThreadStatusFailed:
+		case "pending", "failed":
 			// Thread is pending (user submitted URL) or failed (needs retry) - continue with scraping
 			logger.Info("Thread ready for scraping", "thread_id", existingThread.ID, "status", existingThread.Status)
 			// Continue with scraping logic below
@@ -107,7 +105,7 @@ func (h *ThreadScrapeHandler) HandleJob(ctx context.Context, j *jobq.Job) error 
 	logger.Info("🤖 Starting thread scraping job")
 
 	// Update thread status to scraping with optimistic locking
-	err = h.threadService.UpdateThreadStatus(ctx, payload.TweetID, model.ThreadStatusScraping, existingThread.Version)
+	err = h.threadService.UpdateThreadStatus(ctx, payload.TweetID, "scraping", existingThread.Version)
 	if err != nil {
 		return fmt.Errorf("failed to update thread status to scraping: %w", err)
 	}
@@ -116,7 +114,7 @@ func (h *ThreadScrapeHandler) HandleJob(ctx context.Context, j *jobq.Job) error 
 	tweets, err := h.getCompleteThreadFromTweetID(ctx, payload.TweetID)
 	if err != nil {
 		logger.Error("Failed to get complete thread", "error", err)
-		if errors.Is(err, errutil.ErrNotFound) {
+		if errors.Is(err, service.ErrThreadNotFound) {
 			return fmt.Errorf("thread not found: %w", err)
 		}
 		return fmt.Errorf("failed to get complete thread: %w", err)
@@ -148,7 +146,7 @@ func (h *ThreadScrapeHandler) HandleJob(ctx context.Context, j *jobq.Job) error 
 	// Update the existing thread with scraped data (status, author info, content)
 	err = h.threadService.UpdateThreadWithScrapedData(ctx, payload.TweetID, tweets, finalThread.Version)
 	if err != nil {
-		_ = h.threadService.UpdateThreadStatus(ctx, payload.TweetID, model.ThreadStatusFailed, finalThread.Version)
+		_ = h.threadService.UpdateThreadStatus(ctx, payload.TweetID, "failed", finalThread.Version)
 		logger.Error("Failed to update thread after scraping", "error", err)
 		return fmt.Errorf("failed to update thread after scraping: %w", err)
 	}

@@ -11,7 +11,6 @@ import (
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/internal/task/queue"
 	"github.com/ipfs-force-community/threadmirror/pkg/auth"
-	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"github.com/ipfs-force-community/threadmirror/pkg/util"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
 	"github.com/samber/lo"
@@ -24,7 +23,7 @@ var ErrCodeThreadNotFound = v1errors.NewErrorCode(14001, "thread not found")
 func (h *V1Handler) GetThreadId(c *gin.Context, id string) {
 	thread, err := h.threadService.GetThreadByID(c.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, errutil.ErrNotFound) {
+		if errors.Is(err, service.ErrThreadNotFound) {
 			_ = c.Error(v1errors.NotFound(err).WithCode(ErrCodeThreadNotFound))
 			return
 		}

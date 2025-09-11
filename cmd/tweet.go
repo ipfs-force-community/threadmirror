@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/ipfs-force-community/threadmirror/internal/config"
-	"github.com/ipfs-force-community/threadmirror/internal/repo/sqlrepo"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"github.com/ipfs-force-community/threadmirror/pkg/log"
@@ -116,11 +115,13 @@ func getScraper(c *cli.Context) (*xscraper.XScraper, error) {
 	}
 	defer db.Close() // nolint:errcheck
 
-	botCookieService := service.NewBotCookieService(sqlrepo.NewBotCookieRepo(db))
-	botCookie, err := botCookieService.GetLatestBotCookie(c.Context)
-	if err != nil {
-		return nil, err
+	botCookieService := service.NewBotCookieService(db)
+	// TODO: Implement GetLatestBotCookie method or use ListBotCookies
+	botCookies, _, err := botCookieService.ListBotCookies(c.Context, 1, 0)
+	if err != nil || len(botCookies) == 0 {
+		return nil, fmt.Errorf("no bot cookies found: %w", err)
 	}
+	botCookie := botCookies[0]
 
 	return xscraper.New(xscraper.LoginOptions{
 		LoadCookies: func(ctx context.Context) ([]*http.Cookie, error) {

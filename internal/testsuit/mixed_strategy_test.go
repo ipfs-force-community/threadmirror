@@ -4,9 +4,8 @@ import (
 	"context"
 	"log/slog"
 	"testing"
+	"time"
 
-	"github.com/ipfs-force-community/threadmirror/internal/model"
-	"github.com/ipfs-force-community/threadmirror/internal/repo/sqlrepo"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/ipfs"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +14,7 @@ import (
 
 // TestMixedStrategy 展示了如何在集成测试中混合使用真实和Mock组件
 // 这是一个最佳实践示例，展示了：
-// 1. 使用真实数据库进行Repository和Service测试
+// 1. 使用真实数据库进行Service测试（SQL First架构）
 // 2. Mock外部依赖（LLM, IPFS, XScraper）
 // 3. 验证组件之间的集成
 
@@ -33,39 +32,50 @@ func TestMixedStrategy_ThreadService(t *testing.T) {
 	mockIPFS := &MockIPFSStorage{}
 	mockLLM := &MockLLM{}
 
-	// 真实数据库Repository
-	threadRepo := sqlrepo.NewThreadRepo(suite.DB)
-
-	// 创建ThreadService
+	// 创建ThreadService（SQL First架构，直接使用数据库）
 	threadService := service.NewThreadService(
-		threadRepo,
+		suite.DB,
 		ipfs.Storage(mockIPFS),
 		mockLLM,
 		suite.RedisClient,
 		slog.Default(),
 	)
 
-	t.Run("GetThreadByID", func(t *testing.T) {
+	t.Run("GetThreadByID_NotFound", func(t *testing.T) {
 		ctx := context.Background()
 		suite.ResetDatabase(t)
 
-		// 先通过repository创建一个thread（真实数据库）
-		thread := &model.Thread{
-			ID:        "mixed-test-thread-1",
-			Summary:   "Mixed strategy test thread",
-			CID:       "QmYjtig7VJQ6XsnUjqqJvj7QaMcCAwtrgNdahSiFofrE7o",
-			NumTweets: 3,
-			Status:    model.ThreadStatusCompleted,
-		}
+		// 测试获取不存在的thread
+		_, err := threadService.GetThreadByID(ctx, "nonexistent-thread-id")
+		require.Error(t, err)
+		assert.Equal(t, service.ErrThreadNotFound, err)
+	})
 
-		err := threadRepo.CreateThread(ctx, thread)
-		require.NoError(t, err)
+	t.Run("UpdateThreadStatus", func(t *testing.T) {
+		ctx := context.Background()
+		suite.ResetDatabase(t)
 
-		// 通过service获取（使用Redis缓存和IPFS mock）
-		result, err := threadService.GetThreadByID(ctx, thread.ID)
+		// 测试更新不存在thread的状态
+		err := threadService.UpdateThreadStatus(ctx, "nonexistent-thread-id", "completed", 1)
+		require.Error(t, err)
+	})
+
+	t.Run("GetRetryThreads", func(t *testing.T) {
+		ctx := context.Background()
+		suite.ResetDatabase(t)
+
+		// 测试获取重试线程（应该返回空列表）
+		threads, err := threadService.GetStuckScrapingThreadsForRetry(ctx, 3600, 3)
 		require.NoError(t, err)
-		assert.Equal(t, thread.ID, result.ID)
-		assert.Equal(t, thread.Summary, result.ContentPreview)
+		assert.Empty(t, threads)
+
+		threads, err = threadService.GetOldPendingThreadsForRetry(ctx, 3600, 3)
+		require.NoError(t, err)
+		assert.Empty(t, threads)
+
+		threads, err = threadService.GetFailedThreadsForRetry(ctx, 3600, 3)
+		require.NoError(t, err)
+		assert.Empty(t, threads)
 	})
 }
 
@@ -121,5 +131,52 @@ func TestMockComponents_Isolation(t *testing.T) {
 		n, _ := content.Read(buf)
 		jsonContent := string(buf[:n])
 		assert.Contains(t, jsonContent, "mock-tweet-1")
+	})
+}
+
+// TestServiceIntegration 测试服务层集成
+func TestServiceIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("跳过需要testcontainers的测试")
+	}
+
+	suite := SetupContainerTestSuite(t)
+	defer suite.TearDown(t)
+
+	t.Run("MentionService_Integration", func(t *testing.T) {
+		ctx := context.Background()
+		suite.ResetDatabase(t)
+
+		// 测试MentionService的基本功能
+		mentionService := suite.MentionService
+		require.NotNil(t, mentionService)
+
+		// 测试创建mention（会自动创建thread）
+		userID := "test-user-123"
+		threadID := "test-thread-456"
+
+		mention, err := mentionService.CreateMention(ctx, userID, threadID, nil, time.Now())
+		require.NoError(t, err)
+		assert.NotNil(t, mention)
+		assert.Equal(t, threadID, mention.ThreadID)
+
+		// 测试获取mentions
+		mentions, total, err := mentionService.GetMentions(ctx, userID, 10, 0)
+		require.NoError(t, err)
+		assert.Equal(t, int64(1), total)
+		assert.Len(t, mentions, 1)
+	})
+
+	t.Run("ThreadService_Integration", func(t *testing.T) {
+		ctx := context.Background()
+		suite.ResetDatabase(t)
+
+		// 测试ThreadService的基本功能
+		threadService := suite.ThreadService
+		require.NotNil(t, threadService)
+
+		// 测试获取不存在的thread
+		_, err := threadService.GetThreadByID(ctx, "nonexistent")
+		assert.Equal(t, service.ErrThreadNotFound, err)
 	})
 }

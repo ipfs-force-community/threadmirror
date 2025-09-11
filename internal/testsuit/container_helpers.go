@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ipfs-force-community/threadmirror/internal/model"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/redis"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
 	"github.com/stretchr/testify/require"
@@ -70,9 +69,8 @@ func SetupPostgresContainer(t *testing.T, config *ContainerConfig) (testcontaine
 	db, err := sql.New("postgres", connStr, slog.Default())
 	require.NoError(t, err, "Failed to connect to PostgreSQL")
 
-	// Run migrations
-	err = db.AutoMigrate(model.AllModels()...)
-	require.NoError(t, err, "Failed to migrate database schema")
+	// SQLC architecture uses declarative schema files
+	// Migration is handled by Supabase CLI, not needed in tests
 
 	t.Logf("PostgreSQL container started successfully: %s", connStr)
 

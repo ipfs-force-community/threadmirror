@@ -13,7 +13,6 @@ import (
 	"github.com/ipfs-force-community/threadmirror/internal/comm"
 	"github.com/ipfs-force-community/threadmirror/internal/config"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
-	"github.com/ipfs-force-community/threadmirror/pkg/errutil"
 	"github.com/ipfs-force-community/threadmirror/pkg/jobq"
 	"github.com/ipfs-force-community/threadmirror/pkg/util"
 	"github.com/ipfs-force-community/threadmirror/pkg/xscraper"
@@ -95,7 +94,7 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 
 	mention, err := h.mentionService.GetMentionByID(ctx, payload.MentionID)
 	if err != nil {
-		if errors.Is(err, errutil.ErrNotFound) {
+		if errors.Is(err, service.ErrNotFound) {
 			return fmt.Errorf("mention not found: %s", payload.MentionID)
 		}
 		return fmt.Errorf("get mention by id %s: %w", payload.MentionID, err)
@@ -171,7 +170,7 @@ func (h *ReplyTweetHandler) HandleJob(ctx context.Context, j *jobq.Job) error {
 		logger.Info("tweet already exists", "tweet_id", tweets[0].RestID, "mention_id", payload.MentionID, "search_query", searchQuery)
 	}
 
-	err = h.processedMarkService.MarkProcessed(ctx, payload.MentionID, TypeReplyTweet)
+	err = h.processedMarkService.MarkAsProcessed(ctx, payload.MentionID, TypeReplyTweet)
 	if err != nil {
 		return fmt.Errorf("mark thread as processed: %w", err)
 	}

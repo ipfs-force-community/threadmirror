@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ipfs-force-community/threadmirror/internal/model"
-	"github.com/ipfs-force-community/threadmirror/internal/repo/sqlrepo"
 	"github.com/ipfs-force-community/threadmirror/internal/service"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/redis"
 	"github.com/ipfs-force-community/threadmirror/pkg/database/sql"
@@ -24,9 +22,8 @@ import (
 type ContainerTestSuite struct {
 	DB             *sql.DB
 	RedisClient    *redis.Client
-	MentionRepo    *sqlrepo.MentionRepo
 	MentionService *service.MentionService
-	ThreadRepo     *sqlrepo.ThreadRepo
+	ThreadService  *service.ThreadService
 
 	// Container references for cleanup
 	pgContainer    testcontainers.Container
@@ -76,9 +73,8 @@ func SetupContainerTestSuite(t *testing.T) *ContainerTestSuite {
 	db, err := sql.New("postgres", pgConnStr, slog.Default())
 	require.NoError(t, err, "Failed to connect to PostgreSQL")
 
-	// Migrate the schema
-	err = db.AutoMigrate(model.AllModels()...)
-	require.NoError(t, err, "Failed to migrate database schema")
+	// SQLC architecture uses declarative schema files
+	// Migration is handled by Supabase CLI, not needed in tests
 
 	// Create Redis client
 	redisConfig := &redis.RedisConfig{
@@ -92,9 +88,7 @@ func SetupContainerTestSuite(t *testing.T) *ContainerTestSuite {
 	err = redisClient.Ping(ctx).Err()
 	require.NoError(t, err, "Failed to connect to Redis")
 
-	// Create repositories
-	mentionRepo := sqlrepo.NewMentionRepo(db)
-	threadRepo := sqlrepo.NewThreadRepo(db)
+	// Create services directly (no repository layer)
 
 	// Create mock dependencies
 	mockLLM := &MockLLM{}
@@ -102,19 +96,24 @@ func SetupContainerTestSuite(t *testing.T) *ContainerTestSuite {
 
 	// Create services
 	mentionService := service.NewMentionService(
-		mentionRepo,
+		db,
 		llm.Model(mockLLM),
 		ipfs.Storage(mockIPFS),
-		threadRepo,
+	)
+
+	threadService := service.NewThreadService(
 		db,
+		ipfs.Storage(mockIPFS),
+		llm.Model(mockLLM),
+		redisClient,
+		slog.Default(),
 	)
 
 	return &ContainerTestSuite{
 		DB:             db,
 		RedisClient:    redisClient,
-		MentionRepo:    mentionRepo,
 		MentionService: mentionService,
-		ThreadRepo:     threadRepo,
+		ThreadService:  threadService,
 		pgContainer:    pgContainer,
 		redisContainer: redisContainer,
 	}
@@ -161,8 +160,11 @@ func (s *ContainerTestSuite) ResetDatabase(t *testing.T) {
 	ctx := context.Background()
 
 	// Start a transaction to clean up all data
-	tx := s.DB.Begin()
-	defer tx.Rollback()
+	tx, err := s.DB.Pool().Begin(ctx)
+	if err != nil {
+		panic("Failed to begin transaction: " + err.Error())
+	}
+	defer tx.Rollback(ctx)
 
 	// Delete data from all tables in reverse dependency order
 	tables := []string{
@@ -173,11 +175,11 @@ func (s *ContainerTestSuite) ResetDatabase(t *testing.T) {
 	}
 
 	for _, table := range tables {
-		err := tx.WithContext(ctx).Exec("DELETE FROM " + table).Error
+		_, err := tx.Exec(ctx, "DELETE FROM "+table)
 		require.NoError(t, err, "Failed to clean table %s", table)
 	}
 
-	err := tx.Commit().Error
+	err = tx.Commit(ctx)
 	require.NoError(t, err, "Failed to commit database cleanup")
 }
 
