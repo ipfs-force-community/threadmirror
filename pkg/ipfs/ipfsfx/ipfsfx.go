@@ -30,6 +30,22 @@ func (k *KuboConfig) Validate() error {
 	return nil
 }
 
+// LocalConfig represents configuration for Local IPFS backend
+type LocalConfig struct {
+	BasePath string `json:"base_path" yaml:"base_path"`
+}
+
+func (l *LocalConfig) GetBackend() string {
+	return "local"
+}
+
+func (l *LocalConfig) Validate() error {
+	if l.BasePath == "" {
+		return fmt.Errorf("base_path is required for local backend")
+	}
+	return nil
+}
+
 // PDPConfig represents configuration for PDP IPFS backend
 type PDPConfig struct {
 	ServiceURL  string `json:"service_url" yaml:"service_url"`
@@ -57,9 +73,10 @@ func (p *PDPConfig) Validate() error {
 
 // Config represents the main configuration that wraps backend-specific configs
 type Config struct {
-	Backend string      `json:"backend" yaml:"backend"`
-	Kubo    *KuboConfig `json:"kubo,omitempty" yaml:"kubo,omitempty"`
-	PDP     *PDPConfig  `json:"pdp,omitempty" yaml:"pdp,omitempty"`
+	Backend string       `json:"backend" yaml:"backend"`
+	Kubo    *KuboConfig  `json:"kubo,omitempty" yaml:"kubo,omitempty"`
+	Local   *LocalConfig `json:"local,omitempty" yaml:"local,omitempty"`
+	PDP     *PDPConfig   `json:"pdp,omitempty" yaml:"pdp,omitempty"`
 }
 
 // GetBackendConfig returns the appropriate backend configuration
@@ -70,13 +87,18 @@ func (c *Config) GetBackendConfig() (BackendConfig, error) {
 			return nil, fmt.Errorf("kubo configuration is required when backend is 'kubo'")
 		}
 		return c.Kubo, c.Kubo.Validate()
+	case "local":
+		if c.Local == nil {
+			return nil, fmt.Errorf("local configuration is required when backend is 'local'")
+		}
+		return c.Local, c.Local.Validate()
 	case "pdp":
 		if c.PDP == nil {
 			return nil, fmt.Errorf("pdp configuration is required when backend is 'pdp'")
 		}
 		return c.PDP, c.PDP.Validate()
 	default:
-		return nil, fmt.Errorf("unsupported backend: %s, supported backends: kubo, pdp", c.Backend)
+		return nil, fmt.Errorf("unsupported backend: %s, supported backends: kubo, local, pdp", c.Backend)
 	}
 }
 
@@ -96,6 +118,9 @@ func NewStorage(config *Config, logger *slog.Logger) (ipfs.Storage, error) {
 	case "kubo":
 		kuboConfig := backendConfig.(*KuboConfig)
 		return ipfs.NewKuboStorage(kuboConfig.NodeURL)
+	case "local":
+		localConfig := backendConfig.(*LocalConfig)
+		return ipfs.NewLocalStorage(localConfig.BasePath)
 	case "pdp":
 		pdpConfig := backendConfig.(*PDPConfig)
 		return ipfs.NewPDP(pdpConfig.ServiceURL, pdpConfig.ServiceName, pdpConfig.PrivateKey, pdpConfig.ProofSetID, logger)

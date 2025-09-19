@@ -29,6 +29,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/michimani/gotwi v0.18.1
 	github.com/multiformats/go-multiaddr v0.16.0
+	github.com/multiformats/go-multihash v0.2.3
 	github.com/nicksnyder/go-i18n/v2 v2.6.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/onsi/ginkgo/v2 v2.23.3
@@ -315,7 +316,6 @@ require (
 	github.com/multiformats/go-multiaddr-fmt v0.1.0 // indirect
 	github.com/multiformats/go-multibase v0.2.0 // indirect
 	github.com/multiformats/go-multicodec v0.9.0 // indirect
-	github.com/multiformats/go-multihash v0.2.3 // indirect
 	github.com/multiformats/go-multistream v0.6.0 // indirect
 	github.com/multiformats/go-varint v0.0.7 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
